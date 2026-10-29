@@ -481,17 +481,16 @@ body {
     position: absolute;
 }
 .radial-pie {
-    left: -88px;
-    top: -88px;
+    left: 0;
+    top: 0;
+    translate: -50% -50%;
+    shape-rendering: crispEdges;
     overflow: visible;
     filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.45));
 }
 .radial-slice,
 .radial-hub {
     cursor: pointer;
-    stroke: var(--ink);
-    stroke-width: 3;
-    stroke-linejoin: round;
 }
 .radial-slice {
     fill: var(--panel);
@@ -505,10 +504,9 @@ body {
 .radial-slice[data-locked="true"] {
     fill: var(--bg);
 }
-/* The four cuts between the slices, drawn over them. */
-.radial-cut {
-    stroke: var(--ink);
-    stroke-width: 4;
+/* The outlines and the four cuts between the slices. */
+.radial-ink {
+    fill: var(--ink);
     pointer-events: none;
 }
 .radial-hub {

@@ -8,9 +8,11 @@ import { state } from "./store.js";
 // left, one tab per slice. It doesn't dodge the window's edges; a player who opens it too close to one just moves
 // a little and right-clicks again. Text fields keep the native menu (copy and paste a backup code, edit a bet).
 
-// The ring's outer radius, and its inner one, which is the centre button's edge (they touch).
-const OUTER = 84;
-const INNER = 32;
+// The pie is pixel art, not a perfect circle: a grid of PX-sized cells, each one painted by which part of the pie
+// its centre falls in. Radii are in cells: the hub, the ring around it, and a one-cell ink outline outside each.
+const PX = 4;
+const HUB = 8;
+const OUTER = 21;
 // Clockwise from the top: each slice spans 90 degrees, centred on a diagonal (`mid`, 0 = right, 90 = down).
 const SLICES = [
     { tab: "slot", icon: "i-seven", mid: -45 },
@@ -24,25 +26,42 @@ const at = (deg, r) => {
     return [Math.round(Math.cos(a) * r * 100) / 100, Math.round(Math.sin(a) * r * 100) / 100];
 };
 
-// One ring slice from `mid - 45` to `mid + 45` degrees, as an SVG path around (0, 0).
-function slicePath(mid) {
-    const [a, b] = [mid - 45, mid + 45];
-    const [o1, o2, i1, i2] = [at(a, OUTER), at(b, OUTER), at(b, INNER), at(a, INNER)];
-    return `M${o1} A${OUTER} ${OUTER} 0 0 1 ${o2} L${i1} A${INNER} ${INNER} 0 0 0 ${i2} Z`;
+// Which part of the pie the cell centred at (x, y) belongs to: "hub", a slice's tab, "ink" (outlines and the four
+// cuts, two cells wide on the axes) or null (outside).
+function partAt(x, y) {
+    const d = Math.hypot(x, y);
+    if (d > OUTER + 1) return null;
+    if (d <= HUB) return "hub";
+    if (d <= HUB + 1 || d > OUTER || Math.abs(x) < 1 || Math.abs(y) < 1) return "ink";
+    return SLICES[(y < 0 ? (x > 0 ? 0 : 3) : x > 0 ? 1 : 2)].tab;
+}
+
+// Every part as one SVG path made of its cells, so each slice is a single shape to hover and click.
+function pixelParts() {
+    const parts = {};
+    const n = OUTER + 1;
+    for (let i = -n; i < n; i++) {
+        for (let j = -n; j < n; j++) {
+            const part = partAt(i + 0.5, j + 0.5);
+            if (part) parts[part] = (parts[part] ?? "") + `M${i * PX} ${j * PX}h${PX}v${PX}h-${PX}z`;
+        }
+    }
+    return parts;
 }
 
 export function createRadial({ goTab, openMenu, blocked }) {
-    const size = OUTER * 2 + 8;
+    const size = (OUTER + 2) * 2 * PX;
+    const parts = pixelParts();
     const root = document.createElement("div");
     root.className = "radial";
     root.hidden = true;
     root.innerHTML = `<svg class="radial-pie" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">
-            ${SLICES.map(({ tab, mid }) => `<path class="radial-slice" data-go="${tab}" d="${slicePath(mid)}" />`).join("")}
-            ${[0, 90, 180, 270].map((deg) => `<line class="radial-cut" x1="${at(deg, INNER)[0]}" y1="${at(deg, INNER)[1]}" x2="${at(deg, OUTER)[0]}" y2="${at(deg, OUTER)[1]}" />`).join("")}
-            <circle class="radial-hub" data-go="menu" r="${INNER}" />
+            ${SLICES.map(({ tab }) => `<path class="radial-slice" data-go="${tab}" d="${parts[tab]}" />`).join("")}
+            <path class="radial-ink" d="${parts.ink}" />
+            <path class="radial-hub" data-go="menu" d="${parts.hub}" />
         </svg>
         ${SLICES.map(({ tab, icon, mid }) => {
-            const [x, y] = at(mid, (OUTER + INNER) / 2);
+            const [x, y] = at(mid, ((OUTER + HUB + 2) / 2) * PX);
             return `<span class="radial-label" data-for="${tab}" style="--x:${x}px;--y:${y}px">${svgFit(icon, 16)}<small>${tab.toUpperCase()}</small></span>`;
         }).join("")}
         <span class="radial-hub-icon">${svgFit("i-menu", 16)}</span>`;
