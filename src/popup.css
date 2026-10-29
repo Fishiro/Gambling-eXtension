@@ -121,6 +121,95 @@ body {
         "stage dock";
     height: 100%;
 }
+/* ---- the menu's ABOUT page (about.js) ---- */
+.about {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    padding-top: var(--s2);
+}
+.about-card {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    padding: var(--s3) var(--s4);
+    background: var(--panel);
+    box-shadow:
+        0 calc(var(--b) * -1) 0 0 var(--line),
+        0 var(--b) 0 0 var(--line),
+        calc(var(--b) * -1) 0 0 0 var(--line),
+        var(--b) 0 0 0 var(--line);
+}
+.about-logo {
+    flex: none;
+    image-rendering: pixelated;
+}
+.about-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    min-width: 0;
+}
+.about-main p {
+    margin: var(--s1) 0 0;
+    color: var(--muted);
+}
+.about-title {
+    font: 700 var(--fs-3)/1 "Silkscreen", monospace;
+}
+.about-title em {
+    font-style: normal;
+    color: var(--gold);
+}
+.about-version,
+.about-label {
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+.about-name {
+    font-size: var(--fs-2);
+    color: var(--cyan);
+}
+.about-avatar {
+    display: inline-flex;
+    flex: none;
+    padding: var(--s2);
+    background: var(--ink);
+}
+.about-facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    margin: 0;
+    padding: 0 var(--s1);
+    list-style: none;
+    color: var(--muted);
+}
+.about-facts li::before {
+    content: "> ";
+    color: var(--green);
+}
+.about-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(var(--b) * 2 + 8px);
+    margin: var(--b);
+}
+/* Two classes deep so it beats .primary's space-between: icon and label sit together in the middle. */
+.about-links .about-link {
+    justify-content: center;
+    gap: var(--s2);
+    min-height: 44px;
+}
+.about-kofi {
+    background: var(--cyan);
+    color: var(--ink);
+}
+.about-url {
+    color: var(--cyan);
+    word-break: break-all;
+}
+
 /* ---- right-click quick menu (radial.js): four tabs on a ring around the pointer, the menu in its centre ---- */
 .radial {
     position: fixed;

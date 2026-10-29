@@ -31,6 +31,7 @@ import { TEXT } from "./text.js";
 import { $ } from "./ui.js";
 import { MINE_CODES } from "./keys.js";
 import { createRadial } from "./radial.js";
+import { createAbout } from "./about.js";
 
 const el = {
     tabs: document.querySelectorAll("[data-tab]"),
@@ -496,6 +497,7 @@ subscribe(() => {
 });
 
 const tour = createTutorial({ setTab });
+createAbout();
 // Right-click quick menu (radial.js): a tab or the menu, from anywhere. Not over a popup or during a tour.
 const radial = createRadial({
     goTab(name) {
