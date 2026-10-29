@@ -210,7 +210,9 @@ body {
     word-break: break-all;
 }
 
-/* ---- right-click quick menu (radial.js): four tabs on a ring around the pointer, the menu in its centre ---- */
+/* ---- right-click quick menu (radial.js): four tabs on a ring around the pointer, the menu in its centre ----
+   Buttons are placed with left/top, never transform: every button's press (button:active) and release spring
+   (fx.spring) animate transform, which would otherwise yank a ring button back to the centre mid-click. */
 .radial {
     position: fixed;
     z-index: 72;
@@ -220,15 +222,14 @@ body {
 }
 .radial > * {
     position: absolute;
-    left: 0;
-    top: 0;
     pointer-events: auto;
 }
 .radial-ring {
-    width: 196px;
-    height: 196px;
+    left: -84px;
+    top: -84px;
+    width: 168px;
+    height: 168px;
     border-radius: 50%;
-    transform: translate(-50%, -50%);
     background: rgba(26, 28, 44, 0.72);
     box-shadow:
         inset 0 0 0 var(--b) var(--line),
@@ -237,14 +238,15 @@ body {
     animation: radial-in 0.14s steps(4);
 }
 .radial-item {
+    left: calc(var(--x) - 28px);
+    top: calc(var(--y) - 23px);
     flex-direction: column;
-    gap: 3px;
-    width: 64px;
-    height: 54px;
-    padding: 4px 2px;
+    gap: 2px;
+    width: 56px;
+    height: 46px;
+    padding: 3px 2px;
     font-size: var(--fs-0);
-    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y)));
-    animation: radial-item-in 0.16s steps(4);
+    animation: radial-in 0.16s steps(4);
 }
 .radial-item[aria-current] {
     background: var(--text);
@@ -254,22 +256,17 @@ body {
     opacity: 0.4;
 }
 .radial-center {
-    width: 40px;
-    height: 40px;
+    left: -18px;
+    top: -18px;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    transform: translate(-50%, -50%);
     background: var(--gold);
     color: var(--ink);
 }
 @keyframes radial-in {
     from {
-        transform: translate(-50%, -50%) scale(0.4);
-        opacity: 0;
-    }
-}
-@keyframes radial-item-in {
-    from {
-        transform: translate(-50%, -50%) scale(0.5);
+        scale: 0.5;
         opacity: 0;
     }
 }

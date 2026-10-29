@@ -8,7 +8,8 @@ import { state } from "./store.js";
 // who opens it too close to one just moves a little and right-clicks again. Text fields keep the native menu
 // (copy and paste a backup code, edit a bet).
 
-const RADIUS = 72;
+// Distance from the pointer to each tab button: short, so a flick of the mouse reaches any of them.
+const RADIUS = 56;
 // Clockwise from the top.
 const ITEMS = [
     { tab: "slot", icon: "i-seven", angle: -90 },
