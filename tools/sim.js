@@ -121,7 +121,6 @@ export function playSession({ player = PLAYERS.casual, minutes = 240, seed = 1 }
                 const win = econ.payout(bet, outcome, grade, state.heat, econ.spinBoost(state, { burn: econ.burnApplied(state.burned, grade), lucky }));
                 state.coins += win - bet;
                 state.burned += bet;
-                luck.trackBet(state, bet);
                 income.slot += win - bet;
                 if (bet) state.heat = econ.nextHeat(state.heat, grade);
                 state.skill = econ.nextSkill(state.skill, grade);
@@ -130,9 +129,10 @@ export function playSession({ player = PLAYERS.casual, minutes = 240, seed = 1 }
                 g[grade]++;
                 spinsAt[state.level] = (spinsAt[state.level] ?? 0) + 1;
                 levelUp(econ.gainXp(state, econ.spinXp(bet, grade)));
-                if (bet && rand() < LUCK.chestPerSpin) {
+                const chest = econ.spinChest(bet, outcome, rand);
+                if (chest !== null) {
                     const before = state.coins;
-                    levelUp(openChest(state, 0, rand).levels);
+                    levelUp(openChest(state, chest, rand).levels);
                     income.chest += state.coins - before;
                 }
                 clock.now += SPIN_SECONDS * 1000;

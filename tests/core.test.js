@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TIMING, LEVELS, MINE, LUCK, BET, STAT_CAPS, FARM, MARKET, SYMBOLS, PET_REEL } from "../src/core/config.js";
+import { TIMING, LEVELS, MINE, LUCK, BET, STAT_CAPS, FARM, MARKET, SYMBOLS, PET_REEL, GEAR, GEAR_MAX, STAR_CHANCE, STAR_COST } from "../src/core/config.js";
 import { recordGroups } from "../src/core/records.js";
 import * as econ from "../src/core/economy.js";
 import * as luck from "../src/core/luck.js";
 import * as farming from "../src/core/farming.js";
 import * as market from "../src/core/market.js";
-import { softcap, bonus } from "../src/core/items.js";
+import { softcap, bonus, upgrade, upgradeChance, gearLevel } from "../src/core/items.js";
 import { freshState, restore, SAVE_VERSION } from "../src/core/save.js";
 import { withClock } from "../tools/sim.js";
 import { seeded } from "../src/core/farming.js";
@@ -313,4 +313,69 @@ test("stats: every record group renders for a fresh and an old save", () => {
         assert.ok(groups.length >= 4);
         for (const g of groups) for (const [label, value] of g.rows) assert.ok(label && value !== undefined && !String(value).includes("NaN"), `${g.title} ${label}`);
     }
+});
+
+test("chests: a bet spin drops one chest 10% of the time, whatever the bet", () => {
+    const lose = econ.evaluateSpin(["gem", "bell", "cherry"]);
+    const triple = econ.evaluateSpin(["seven", "seven", "seven"]);
+    for (const bet of [1, 1000, 1_000_000]) {
+        const rand = seeded(bet);
+        let drops = 0;
+        for (let i = 0; i < 100_000; i++) if (econ.spinChest(bet, lose, rand) !== null) drops++;
+        assert.ok(Math.abs(drops / 100_000 - LUCK.chestPerSpin) < 0.005, `bet ${bet}: ${drops / 1000}%`);
+    }
+    assert.equal(econ.spinChest(0, triple, () => 0), null, "practice spins drop nothing");
+    assert.equal(econ.spinChest(5, triple, () => 0.99), null, "a jackpot is not a free chest");
+    assert.equal(econ.spinChest(5, triple, () => 0), LUCK.tripleBoost);
+    // Burn past the top tier is just maxed: no more chests from betting.
+    assert.equal(econ.burnTier(1e12).toNext, 0);
+});
+
+test("chest coins follow the level, never the bet", () => {
+    const a = freshState(0);
+    const b = freshState(0);
+    a.level = b.level = 20;
+    b.bet = 1_000_000;
+    b.burned = 1e12;
+    assert.equal(luck.rewardUnit(a), LUCK.coinPerLevel * 20);
+    assert.equal(luck.rewardUnit(b), luck.rewardUnit(a));
+});
+
+test("gear: LV1-5 always work, stars succeed at STAR_CHANCE and a crack keeps the stars", () => {
+    assert.deepEqual(STAR_CHANCE, [...STAR_CHANCE].sort((x, y) => y - x), "star odds must only fall");
+    assert.equal(STAR_CHANCE[0], 0.8);
+    assert.equal(STAR_CHANCE.at(-1), 0.15);
+    const gear = GEAR[0];
+    const rich = () => {
+        const s = freshState(0);
+        s.coins = 1e12;
+        s.gems = 1e6;
+        for (const cost of STAR_COST) for (const id of Object.keys(cost)) if (!["coins", "gems"].includes(id)) s.bag[id] = 1e6;
+        s.gear[gear.id] = GEAR_MAX;
+        return s;
+    };
+    const s = rich();
+    assert.equal(upgradeChance(s, gear), STAR_CHANCE[0]);
+    const coins = s.coins;
+    assert.equal(upgrade(s, gear, () => 0.99), "fail");
+    assert.equal(gearLevel(s, gear.id), GEAR_MAX, "a crack keeps the level");
+    assert.ok(s.coins < coins, "a crack still costs");
+    assert.equal(upgrade(s, gear, () => 0), "up");
+    assert.equal(upgradeChance(s, gear), STAR_CHANCE[1]);
+    // Over many tries each star lands at its odds.
+    const rand = seeded(9);
+    for (let star = 0; star < STAR_CHANCE.length; star++) {
+        let ok = 0;
+        const n = 20_000;
+        for (let i = 0; i < n; i++) {
+            const t = rich();
+            t.gear[gear.id] = GEAR_MAX + star;
+            if (upgrade(t, gear, rand) === "up") ok++;
+        }
+        assert.ok(Math.abs(ok / n - STAR_CHANCE[star]) < 0.015, `star ${star + 1}: ${ok / n}`);
+    }
+    const fresh = freshState(0);
+    fresh.bag.stone = 100;
+    fresh.coins = 1e6;
+    assert.equal(upgrade(fresh, gear, () => 0.99), "up", "plain levels never fail");
 });

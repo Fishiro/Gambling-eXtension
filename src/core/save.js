@@ -19,7 +19,6 @@ export const freshState = (now = Date.now()) => ({
     upgrades: { pick: 0, drill: 0, cart: 0 },
     chests: [],
     burned: 0,
-    betEma: 0,
     burnChests: 0,
     buffs: { goldRush: 0, hotSpins: 0, rockSpins: 0, loadedSpins: 0, sevenSpins: 0, midas: 0, titan: 0, phoenix: 0, starSpins: 0, breakerSpins: 0, freeze: 0, bottomless: 0, hype: 0, surge: 0 },
     heat: 0,
@@ -143,7 +142,6 @@ export function sanitize(save, now = Date.now()) {
     s.xp = num(save.xp, 0);
     s.level = int(save.level, 1, 1, 999);
     s.burned = num(save.burned, 0);
-    s.betEma = num(save.betEma, 0);
     s.burnChests = int(save.burnChests, 0, 0);
     s.bet = int(save.bet, base.bet, 0, betCap(s.level));
     s.heat = int(save.heat, 0, 0, TIMING.heatMax);

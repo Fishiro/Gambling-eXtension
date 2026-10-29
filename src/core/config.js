@@ -138,13 +138,16 @@ export const LUCK = {
         legendary: [{ type: "coins", mult: 40 }, { type: "bundle" }, { type: "gems", n: 5 }, { type: "relic" }],
     },
     fallbackMult: { ore: 3, freeSpin: 8, bundle: 15 },
-    betSmoothing: 0.2,
-    earlyLevels: 5,
-    earlyFloor: 0.3,
+    // Coins in chests (and junk scrap) are counted in units of coinPerLevel x level, never the bet: a big bet is
+    // pure risk, chests can't pay it back.
+    coinPerLevel: 25,
     maxChests: 25,
     legendaryBoost: 100,
     chestPerTap: 0.006,
-    chestPerSpin: 0.01,
+    // Every bet spin (any bet above 0, any size) has exactly this chance of one chest. Nothing raises it and a
+    // spin never gives more than one: chests must not turn big bets into a safe bet. A GEM/SEVEN triple or a
+    // double star makes that chest blessed. (The chest stat only feeds mine taps.)
+    chestPerSpin: 0.1,
     chestTripleSymbols: ["gem", "seven"],
     awayMinutesPerChest: 40,
     awayMaxChests: 3,
@@ -507,8 +510,6 @@ export const BURN = {
         { name: "SUPERNOVA", at: 250000, bonus: 0.25 },
     ],
     gradeShare: { perfect: 1, good: 0.6, miss: 0.25 },
-    overflowPerChest: 10000,
-    overflowChestBoost: 2,
 };
 
 // `window` is how long you may pause between taps before the combo dies. It shrinks tier by tier,
@@ -671,6 +672,9 @@ export const STAR_COST = [
     { coins: 3e8, gems: 35, meteor: 5, goldfruit: 2, relicDust: 20 },
     { coins: 1e9, gems: 50, meteor: 8, goldfruit: 3, relicDust: 35 },
 ];
+// The chance each star attempt (1st .. 5th star) succeeds. A failed attempt still spends its cost; the piece
+// keeps the stars it had.
+export const STAR_CHANCE = [0.8, 0.65, 0.45, 0.3, 0.15];
 // Every piece of a set at 3 stars or more switches on the set bonus.
 export const SET_STARS = 3;
 export const GEAR_SETS = [

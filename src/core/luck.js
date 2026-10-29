@@ -53,17 +53,8 @@ export function addChest(state, boost = 0) {
     return true;
 }
 
-// The coin unit chest rewards (and scrap) scale with: about the bet the player usually makes, smaller early on.
-export function rewardUnit(state) {
-    const maxBet = econ.maxBet(state);
-    const typical = econ.clamp(state.betEma || maxBet, 1, maxBet);
-    const early = Math.max(LUCK.earlyFloor, Math.min(1, state.level / LUCK.earlyLevels));
-    return typical * early;
-}
-
-export const trackBet = (state, bet) => {
-    state.betEma = state.betEma ? state.betEma + (bet - state.betEma) * LUCK.betSmoothing : bet;
-};
+// The coin unit chest rewards (and scrap) are counted in: it grows with the level, never with the bet.
+export const rewardUnit = (state) => LUCK.coinPerLevel * state.level;
 
 // Junk scrap: what one piece of junk `id` is worth in coins right now.
 export const scrapValue = (state, id) => (ITEMS[id]?.junk ? Math.max(1, Math.round(rewardUnit(state) * SCRAP[ITEMS[id].rarity])) : 0);

@@ -58,10 +58,7 @@ export function burnTier(burned) {
     while (i < tiers.length - 1 && burned >= tiers[i + 1].at) i++;
     const tier = tiers[i];
     const next = tiers[i + 1] ?? null;
-    if (!next) {
-        const over = (burned - tier.at) % BURN.overflowPerChest;
-        return { index: i, tier, next, progress: over / BURN.overflowPerChest, toNext: BURN.overflowPerChest - over };
-    }
+    if (!next) return { index: i, tier, next, progress: 1, toNext: 0 };
     return { index: i, tier, next, progress: (burned - tier.at) / (next.at - tier.at), toNext: next.at - burned };
 }
 
@@ -71,11 +68,6 @@ export function burnBonus(burned) {
 }
 
 export const burnApplied = (burned, grade) => burnBonus(burned) * BURN.gradeShare[grade];
-
-export function burnOverflowChests(burned) {
-    const max = BURN.tiers[BURN.tiers.length - 1].at;
-    return Math.max(0, Math.floor((burned - max) / BURN.overflowPerChest));
-}
 
 export function formatPercent(fraction) {
     const p = fraction * 100;
@@ -152,6 +144,13 @@ export function payout(bet, outcome, grade, heat, boost = 1) {
 export function spinBoost(state, { burn = 0, lucky = false, hot = false, midas = false } = {}) {
     const spikes = (lucky ? LUCK.luckySpinMult : 1) * (hot ? LUCK.hotMachineMult : 1) * (midas ? BREW_FX.midasMult : 1);
     return spikes * (1 + bonus(state, "payout", burn));
+}
+
+// The one chest a bet spin may drop: LUCK.chestPerSpin, whatever the bet. Returns its boost, or null for none.
+export function spinChest(bet, outcome, rand = Math.random) {
+    if (!bet || rand() >= LUCK.chestPerSpin) return null;
+    const rareTriple = outcome.kind === "triple" && LUCK.chestTripleSymbols.includes(outcome.symbol);
+    return rareTriple ? LUCK.tripleBoost : outcome.stars === 2 ? COSMIC.double.chestBoost : 0;
 }
 
 export function winTier(outcome, win, bet) {

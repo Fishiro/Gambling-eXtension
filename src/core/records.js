@@ -55,6 +55,7 @@ export function recordGroups(state) {
                 ["HARVESTS", n(f.harvests)],
                 ["GOLD FRUIT", n(f.goldfruits)],
                 ["GEAR CRAFTED", n(f.crafts)],
+                ["STARS CRACKED", n(f.ascendFails)],
                 ["BREWS DRUNK", n(f.brews)],
                 ["JUNK SCRAPPED", `${n(f.scrapCoins)} COIN`],
                 ["BEST VAULT", n(f.bestVault ?? state.vault.tier)],

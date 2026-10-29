@@ -1,4 +1,4 @@
-import { BET, TIMING, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./core/config.js";
+import { BET, TIMING, LUCK, COSMIC, GEMS, BREW_FX } from "./core/config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./core/economy.js";
 import * as luck from "./core/luck.js";
@@ -145,7 +145,6 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         else {
             state.coins -= bet;
             state.burned += bet;
-            luck.trackBet(state, bet);
         }
         state.stats.spins++;
         const lucky = bet > 0 && luck.chance(LUCK.luckySpinChance);
@@ -268,9 +267,9 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         onResult({ tier, win, bet, grade, symbols, kind: outcome.kind });
         emit("settle");
         if (tier === "cosmic") onCosmic(win);
-        const rareTriple = outcome.kind === "triple" && LUCK.chestTripleSymbols.includes(outcome.symbol);
         if (drops.length) emit("drops", { drops, from: el.machine });
-        if (bet && (rareTriple || luck.chance(LUCK.chestPerSpin * (1 + items.bonus(state, "chest"))))) onChest(el.machine, rareTriple ? LUCK.tripleBoost : 0);
+        const chest = econ.spinChest(bet, outcome);
+        if (chest !== null) onChest(el.machine, chest);
         scheduleAuto(tier);
     }
 
@@ -340,7 +339,6 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         if (double) {
             sfx.chest();
             fx.cosmicStorm(fx.centerOf(el.machine).y, 1800);
-            onChest(el.machine, COSMIC.double.chestBoost);
         }
         if (!onScreen()) return;
         outcome.cells.forEach((i) => {
@@ -359,11 +357,6 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
             fx.burst(p.x, p.y, { count: 40, colors: ["R", "y", "r", "w"], speed: [1.5, 4.5], life: [24, 44] });
             fx.float(p.x, p.y - 16, `${now.tier.name}!`, { color: "R", size: 24, life: 90 });
             fx.shake(el.burn, 3, 300);
-        }
-        const chests = econ.burnOverflowChests(state.burned);
-        while (state.burnChests < chests) {
-            state.burnChests++;
-            onChest(el.burn, BURN.overflowChestBoost);
         }
         if (!onScreen()) return;
         const from = fx.centerOf(el.spin);
@@ -432,7 +425,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         el.burnTier.textContent = burn.tier.name;
         el.burnValue.textContent = `+${econ.formatPercent(econ.burnBonus(state.burned))}`;
         el.burnFill.style.width = `${burn.progress * 100}%`;
-        el.burnNext.textContent = burn.next ? `${burn.next.name} IN ${econ.formatNumber(burn.toNext)}` : `CHEST IN ${econ.formatNumber(burn.toNext)}`;
+        el.burnNext.textContent = burn.next ? `${burn.next.name} IN ${econ.formatNumber(burn.toNext)}` : TEXT.burnMax;
         el.burn.dataset.tier = burn.index;
     }
 

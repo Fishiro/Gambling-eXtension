@@ -82,9 +82,13 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
   (was ~x8 uncapped).
 - **Mine upgrades compound** (`value = (base + step*lv) * compound^lv`), so payback grows ~x1.3 per level instead of
   exploding. Bots earn ~45-55% of their coins from the mine.
-- **Chests follow the usual bet** (`luck.rewardUnit`), with pity: an epic+ at least every 15, a legendary every 60.
-  Chests drop half as often as in 1.1 (per tap, per spin, bats, time away), and the common/rare weights were
-  halved (shares: common ~54%, rare 25%, epic 18%, legendary 3.6%): fewer chests, each one better.
+- **Chests never depend on the bet (high risk, high reward).** A bet spin of any size drops exactly one chest
+  10% of the time (`economy.spinChest`, nothing raises it; a GEM/SEVEN triple or double star makes it blessed).
+  Burn past SUPERNOVA no longer pays chests (one 1M bet used to fill the stash with 25). Chest coins (and scrap)
+  are `25 x level` units (`luck.rewardUnit`), so chests can't pay a big bet back: with bet-scaled coins they
+  added ~+0.30x bet a spin. Pity: an epic+ at least every 15, a legendary every 60. Mine taps, bats and time away
+  drop half as often as in 1.1; common/rare weights halved (common ~54%, rare 25%, epic 18%, legendary 3.6%).
+- **Stars can crack:** star 1..5 succeed 80/65/45/30/15% (`STAR_CHANCE`). A crack spends the cost, keeps the stars.
 - **Play drops:** common and rare finds drop half as often; epic and legendary finds keep their odds.
 
 ## 8. Rejected alternatives (do not re-propose)
@@ -104,6 +108,8 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
 - Easy lines land at EASY_KEEP of their weight odds (Monte Carlo within 8%); SEVEN never passes 2.5% 7-7-7 and a
   bend never makes a jackpot.
 - Bet cap never above 1M, VIP included; typed bets parse ("2.5K", "1M") and clamp.
+- A bet spin drops a chest 10% of the time at bet 1 and at 1M alike, never at bet 0; chest coins ignore the bet.
+- Star odds only fall, 80% to 15%, and each lands within 1.5% over 20,000 tries; LV1-5 never fail.
 - Difficulty: rising peaks, each chapter opens easier than the last peak, 0 at LV1, 1 at the end.
 - XP: logarithmic (x10 bet = same flat gain); one perfect spin at the top VIP bet is under 1/4 of a level; LV30 under 200 spins.
 - Something unlocks at every level 2-11.

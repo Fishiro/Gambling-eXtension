@@ -1,4 +1,4 @@
-import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./core/config.js";
+import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, STAR_CHANCE, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./core/config.js";
 import { formatNumber, lineOdds } from "./core/economy.js";
 import { PALETTE, svgIcon, iconScale } from "./sprites.js";
 import { TEXT } from "./text.js";
@@ -192,6 +192,8 @@ function guideHtml() {
             `${flow(node(`${icon("stone", 2)}${icon("iron", 2)}${icon("meteor", 2)}`, "MATERIALS"), node(icon("i-hammer"), "FORGE"), node(`${icon(GEAR[0].icon)}${icon("pstar", 2).repeat(3)}`, "GEAR + STARS"))}
             ${tiles(BREWS.slice(0, 5).map((b) => [icon(b.id), ITEMS[b.id].name]), 5)}
             <p>GEAR IS FOREVER. BREWS ARE ONE-USE BOOSTS.</p>
+            ${tiles(STAR_CHANCE.map((p, i) => [icon("pstar", 2).repeat(i + 1), `STAR ${i + 1}`, `${pct(p)} WORKS`]), 5)}
+            <p>A STAR CAN CRACK: THE COST IS GONE, THE GEAR KEEPS ITS STARS.</p>
             ${tiles(BREWS.filter((b) => b.combo).map((b) => [icon(b.id), ITEMS[b.id].name, ITEMS[b.id].effect]), 3)}
             <p>COMBO BREWS ARE MADE FROM JUNK. EACH STAYS SECRET UNTIL YOU HAVE FOUND ALL ITS INGREDIENTS ONCE.</p>`,
         ),
@@ -263,7 +265,7 @@ function slotOdds() {
         ${rows.join("")}
         ${sub("COSMIC STARS (ANY REEL)")}
         ${row(reels(["cherry", "cosmic", "lemon"], [1]), "1 STAR", COSMIC.odds[1], { note: `+x${COSMIC.single.scatter}, LINE x${COSMIC.single.lineMult}`, c: "v" })}
-        ${row(reels(["cosmic", "cosmic", "bell"], [0, 1]), "2 STARS", COSMIC.odds[2], { note: `+x${COSMIC.double.scatter} + A CHEST`, c: "v" })}
+        ${row(reels(["cosmic", "cosmic", "bell"], [0, 1]), "2 STARS", COSMIC.odds[2], { note: `+x${COSMIC.double.scatter}, ITS CHEST IS BLESSED`, c: "v" })}
         ${row(reels(["cosmic", "cosmic", "cosmic"], [0, 1, 2]), "3 STARS", COSMIC.odds[3], { note: `x${COSMIC.payout}!`, c: "v" })}
         <p class="o-tip">${icon("i-star", 2)} A PERFECT STOP DOUBLES EVERY STAR CHANCE.</p>
         ${sub("YOUR TIMING MULTIPLIES THE WIN")}
@@ -274,13 +276,13 @@ function slotOdds() {
         ])}
         ${sub("EXTRAS ON EVERY BET SPIN")}
         ${row(icon("i-star", 3), "LUCKY SPIN", LUCK.luckySpinChance, { note: `THIS SPIN PAYS x${LUCK.luckySpinMult}` })}
-        ${row(icon("chest", 3), "A CHEST DROPS", LUCK.chestPerSpin, { note: "GEAR, PETS, VIP AND RELICS RAISE IT" })}
+        ${row(icon("chest", 3), "A CHEST DROPS", LUCK.chestPerSpin, { note: "SAME FOR EVERY BET, AT MOST ONE A SPIN" })}
         ${row(reels(["seven", "seven", "seven"], [0, 1, 2]), "JACKPOT 7-7-7", null, { value: `+${GEMS.tiers.jackpot} ${icon("gem", 2)}` })}`;
     return card("i-seven", "SLOT", `ABOUT 1 SPIN IN ${Math.round(1 / win)} WINS SOMETHING`, body, true);
 }
 
 const REWARD_ART = {
-    coins: (r) => [icon("coin", 3), `COINS x${r.mult}`],
+    coins: (r) => [icon("coin", 3), `${formatNumber(r.mult * LUCK.coinPerLevel)} x LV`],
     ore: (r) => [icon("ore", 3), `ORE ${Math.round(r.fill * 100)}% CART`],
     xp: (r) => [icon("i-star", 3), `XP ${Math.round(r.frac * 100)}%`],
     item: (r) => [icon(r.id, 3), `${r.n} ${ITEMS[r.id].name}`],
@@ -308,9 +310,8 @@ function chestOdds() {
             .join("")}
         ${sub("WHERE CHESTS COME FROM")}
         ${row(icon("i-pick", 3), "EVERY MINE TAP", LUCK.chestPerTap)}
-        ${row(icon("i-seven", 3), "EVERY BET SPIN", LUCK.chestPerSpin)}
+        ${row(icon("i-seven", 3), "EVERY BET SPIN", LUCK.chestPerSpin, { note: "ANY BET, AT MOST ONE. BLESSED ON A GEM/SEVEN TRIPLE" })}
         ${row(icon("bat0", 3), "GOLDEN BAT", 1, { note: "A BLESSED CHEST: BETTER RARITY" })}
-        ${row(reels(["gem", "gem", "gem"], [0, 1, 2]), "GEM OR SEVEN TRIPLE", 1, { note: "A BLESSED CHEST" })}
         ${row(icon("i-clock", 3), "WHILE AWAY", null, { value: `1 / ${LUCK.awayMinutesPerChest} MIN`, note: `UP TO ${LUCK.awayMaxChests}` })}`;
     return card("chest", "CHESTS", `MOSTLY COMMON. ABOUT 1 IN ${Math.round(total / legendary.weight)} IS ${legendary.name}`, body);
 }

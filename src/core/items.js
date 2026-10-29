@@ -1,4 +1,4 @@
-import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
+import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, STAR_CHANCE, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
 import { vipBonus } from "./vip.js";
 import { relicBonus } from "./relics.js";
 
@@ -51,10 +51,17 @@ export const setActive = (state, set) => set.gear.every((id) => gearStars(state,
 
 export const canUpgrade = (state, gear) => !isMaxed(state, gear) && canAfford(state, gearCost(gear, gearLevel(state, gear.id)));
 
-export function upgrade(state, gear) {
-    if (isMaxed(state, gear) || !spend(state, gearCost(gear, gearLevel(state, gear.id)))) return false;
-    state.gear[gear.id] = gearLevel(state, gear.id) + 1;
-    return true;
+// The chance the next upgrade of `gear` works: always for LV1-5, STAR_CHANCE for each star.
+export const upgradeChance = (state, gear) => STAR_CHANCE[gearStars(state, gear.id)] ?? (gearLevel(state, gear.id) < GEAR_MAX ? 1 : 0);
+
+// Pay and try: "up" when the piece gained a level or star, "fail" when a star attempt missed (the cost is
+// spent anyway), null when it can't be paid or is maxed.
+export function upgrade(state, gear, rand = Math.random) {
+    const lv = gearLevel(state, gear.id);
+    if (isMaxed(state, gear) || !spend(state, gearCost(gear, lv))) return null;
+    if (lv >= GEAR_MAX && rand() >= upgradeChance(state, gear)) return "fail";
+    state.gear[gear.id] = lv + 1;
+    return "up";
 }
 
 // Diminishing returns past `knee`: slope 1 at the knee, easing toward `cap` and never reaching it.

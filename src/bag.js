@@ -83,7 +83,8 @@ export function createBag() {
         const lv = items.gearLevel(state, gear.id);
         const maxed = items.isMaxed(state, gear);
         const cost = items.gearCost(gear, lv);
-        const label = lv >= GEAR_MAX ? TEXT.ascend : lv ? TEXT.upgrade : TEXT.craft;
+        // A star attempt can fail, so its button says the odds.
+        const label = lv >= GEAR_MAX ? TEXT.ascendChance(Math.round(items.upgradeChance(state, gear) * 100)) : lv ? TEXT.upgrade : TEXT.craft;
         const button = maxed
             ? `<button disabled>${TEXT.max}</button>`
             : `<button class="primary-sm" data-action="upgrade" data-id="${gear.id}" ${items.canAfford(state, cost) ? "" : "disabled"}>${label}</button>`;
@@ -159,8 +160,17 @@ export function createBag() {
         upgrade(id, button) {
             const gear = GEAR.find((g) => g.id === id);
             econ.settleOre(state);
-            if (!items.upgrade(state, gear)) return deny(button);
+            const result = items.upgrade(state, gear);
+            if (!result) return deny(button);
             commit();
+            if (result === "fail") {
+                sfx.lose();
+                fx.shake(button.closest(".row") ?? button, 3, 300);
+                const p = fx.centerOf(button.closest(".row") ?? button);
+                fx.float(p.x, p.y - 16, TEXT.ascendFail, { color: "R", life: 70 });
+                emit("ascend-fail", { id });
+                return;
+            }
             sfx.upgrade();
             celebrate(button, `${gear.name} ${levelText(items.gearLevel(state, id))}`);
             emit("craft", { id, level: items.gearLevel(state, id) });
