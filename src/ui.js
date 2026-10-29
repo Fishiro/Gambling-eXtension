@@ -1,5 +1,5 @@
-import * as items from "./items.js";
-import { formatNumber } from "./economy.js";
+import * as items from "./core/items.js";
+import { formatNumber } from "./core/economy.js";
 import { svgIcon } from "./sprites.js";
 
 // Small DOM + markup helpers shared across panels so costs and loot look the same everywhere.

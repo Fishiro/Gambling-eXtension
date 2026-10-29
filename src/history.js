@@ -1,6 +1,6 @@
-import { HISTORY, LUCK } from "./config.js";
+import { HISTORY, LUCK } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
+import * as econ from "./core/economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import { TEXT } from "./text.js";
 import { $ } from "./ui.js";

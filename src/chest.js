@@ -1,7 +1,7 @@
-import { LUCK, COSMIC } from "./config.js";
+import { LUCK, COSMIC } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as luck from "./luck.js";
+import * as econ from "./core/economy.js";
+import * as luck from "./core/luck.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
@@ -135,7 +135,7 @@ export function createChests({ onLevelUp, onOpened }) {
     async function open() {
         if (opening || !el.loot.hidden || !state.chests.length) return;
         opening = true;
-        const rarity = luck.rollRarity(state.chests[0]);
+        const rarity = luck.openRarity(state, state.chests[0]);
         showClosed();
         await spinRoulette(ROULETTE, luck.rarityIndex(rarity));
 
@@ -154,7 +154,7 @@ export function createChests({ onLevelUp, onOpened }) {
         const lines = [];
         const levels = [];
         for (let i = 0; i < count; i++) {
-            const got = claim(luck.rollRarity(state.chests[0]));
+            const got = claim(luck.openRarity(state, state.chests[0]));
             lines.push(...got.lines);
             levels.push(...got.levels);
         }
@@ -174,7 +174,7 @@ export function createChests({ onLevelUp, onOpened }) {
     function openAll() {
         const count = state.chests.length;
         if (opening || count < 2) return;
-        const rarities = state.chests.map((boost) => luck.rollRarity(boost));
+        const rarities = state.chests.map((boost) => luck.openRarity(state, boost));
         const best = rarities.reduce((a, b) => (luck.rarityIndex(b) > luck.rarityIndex(a) ? b : a));
         const lines = [];
         const levels = [];

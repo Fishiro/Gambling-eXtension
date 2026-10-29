@@ -1,5 +1,5 @@
 import { PALETTE } from "./sprites.js";
-import { gradeAt } from "./economy.js";
+import { gradeAt } from "./core/economy.js";
 
 const W = 72;
 const H = 6;

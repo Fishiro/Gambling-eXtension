@@ -1,8 +1,8 @@
-import { ITEMS, GEAR, GEAR_MAX, GEAR_STARS, GEAR_SETS, SET_STARS, BREWS } from "./config.js";
+import { ITEMS, GEAR, GEAR_MAX, GEAR_STARS, GEAR_SETS, SET_STARS, BREWS } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as luck from "./luck.js";
-import * as items from "./items.js";
+import * as econ from "./core/economy.js";
+import * as luck from "./core/luck.js";
+import * as items from "./core/items.js";
 import { svgIcon, PALETTE } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
@@ -63,9 +63,12 @@ export function createBag() {
         const item = items.item(selected);
         const rarity = items.rarityOf(selected);
         const n = items.count(state, selected);
+        // Junk scraps for coins; keep it instead if a combo brew needs it.
         const use = item.use
             ? `<button class="primary-sm" data-action="use" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.use}</button>`
-            : "";
+            : item.junk
+              ? `<button class="primary-sm" data-action="scrap" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.scrap(econ.formatNumber(n * luck.scrapValue(state, selected)))}</button>`
+              : "";
         return `<span class="detail-art">${svgIcon(selected, 4)}</span>
             <div class="detail-info">
                 <b style="color:${PALETTE[rarity.color]}">${item.name}</b>
@@ -170,6 +173,14 @@ export function createBag() {
             sfx.chest();
             celebrate(button, `+1 ${items.item(id).name}`);
             emit("brew", { id });
+        },
+        scrap(id, button) {
+            const coins = luck.scrap(state, id);
+            if (!coins) return deny(button);
+            commit();
+            sfx.coin();
+            celebrate(button, `+${econ.formatNumber(coins)} COIN`);
+            emit("scrap", { id, coins });
         },
         use(id, button) {
             if (!items.spend(state, { [id]: 1 })) return deny(button);

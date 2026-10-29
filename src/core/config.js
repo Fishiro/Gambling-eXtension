@@ -25,8 +25,14 @@ export const TIMING = {
     },
     heatStep: 0.05,
     heatMax: 5,
-    zone: { base: 0.34, perLevel: 0.016, min: 0.08, max: 0.45 },
-    speed: { base: 0.8, perLevel: 0.07, min: 0.6, max: 2.4 },
+    // Zone width and sweep speed follow difficulty(level) (economy.js) from `base` to `hard`; min/max clamp the
+    // adaptive nudge on top.
+    zone: { base: 0.34, hard: 0.1, min: 0.08, max: 0.45 },
+    speed: { base: 0.8, hard: 2.2, min: 0.6, max: 2.4 },
+    // Sawtooth difficulty: the trend climbs to 1 at peakLevel (front-loaded by `shape` < 1). Each `chapter`
+    // levels rise by `tooth` from start to end, so a new chapter opens a little easier than the last peak,
+    // and every peak sits higher than the one before.
+    curve: { peakLevel: 26, shape: 0.85, chapter: 5, tooth: 0.12 },
     perfectRatio: 0.3,
     skillTarget: 0.6,
     skillSmoothing: 0.25,
@@ -34,6 +40,7 @@ export const TIMING = {
 };
 
 // Features open by level, so a new player meets one thing at a time. Each comes with its own short tour.
+// Levels 6-10 keep the drip going: VOLCANO trips (FARM.zones) at 6, the vault at 7, relics + SPACE at 10.
 export const UNLOCKS = [
     // Open from the start: new players meet it in the first tour, older saves get its own tour once.
     { id: "market", level: 1, name: "MARKET" },
@@ -41,12 +48,17 @@ export const UNLOCKS = [
     { id: "pets", level: 3, name: "PETS" },
     { id: "farm", level: 4, name: "FARM" },
     { id: "forge", level: 5, name: "FORGE" },
-    { id: "endgame", level: 10, name: "VIP + VAULT + RELICS" },
+    { id: "vault", level: 7, name: "VIP + VAULT" },
+    { id: "relics", level: 10, name: "RELICS" },
 ];
 
+// XP to the next level grows by xpGrowth while each level still opens a bigger bet, then by the gentler
+// xpTailGrowth from xpTailFrom on (the bet stops growing there, so the steep curve would become a wall).
 export const LEVELS = {
     xpBase: 50,
     xpGrowth: 1.8,
+    xpTailFrom: 12,
+    xpTailGrowth: 1.25,
     coinRewardPerLevel: 25,
     firstMaxBetIndex: 3,
 };
@@ -54,6 +66,8 @@ export const LEVELS = {
 // Overheat: each tap adds 1 heat, `rest` heat cools off per second. Past `free` heat each tap loses 1/span
 // of its yield, down to `floor`. Steady tapping (~rest taps/s) never overheats; frantic spam does.
 // XP: per ore sold, times the market price, so a dump at x0.25 also earns a quarter of the XP.
+// Upgrades: value = (base + step * lv) * compound^lv, cost = cost * growth^lv. Value compounds too, so the
+// payback time of each level grows slowly (growth / compound per level) instead of hitting a wall.
 export const MINE = {
     orePrice: 1,
     xpPerOre: 0.1,
@@ -61,9 +75,9 @@ export const MINE = {
     luckyChance: 0.06,
     luckyMult: 5,
     upgrades: {
-        pick: { name: "PICK", unit: "/TAP", cost: 20, growth: 1.65, base: 1, step: 1 },
-        drill: { name: "DRILL", unit: "/MIN", cost: 35, growth: 1.7, base: 6, step: 5 },
-        cart: { name: "CART", unit: " CAP", cost: 25, growth: 1.6, base: 100, step: 100 },
+        pick: { name: "PICK", unit: "/TAP", cost: 20, growth: 1.5, base: 1, step: 1, compound: 1.12 },
+        drill: { name: "DRILL", unit: "/MIN", cost: 35, growth: 1.55, base: 6, step: 5, compound: 1.12 },
+        cart: { name: "CART", unit: " CAP", cost: 25, growth: 1.5, base: 100, step: 100, compound: 1.1 },
     },
 };
 
@@ -126,6 +140,8 @@ export const LUCK = {
     batSeconds: 5,
     batBoost: 1,
     tripleBoost: 2,
+    // Bad-luck protection: after this many chests in a row below a rarity, the next one is that rarity.
+    pity: { epic: 15, legendary: 60 },
     luckySpinChance: 0.04,
     luckySpinMult: 2,
     hotMachineMult: 1.5,
@@ -595,6 +611,23 @@ export const DROPS = {
     ],
 };
 
+// Every bonus source (gear, sets, pets, VIP, relics) adds into one of a few stats. Past `knee` a stat gives
+// diminishing returns and can never pass `cap`, so stacking everything stays strong without breaking the game.
+// `payout` also takes the burn bonus. Stats not listed are uncapped.
+export const STAT_CAPS = {
+    payout: { knee: 0.25, cap: 0.5 },
+    zone: { knee: 0.25, cap: 0.5 },
+    chest: { knee: 1, cap: 2 },
+    sell: { knee: 0.6, cap: 1.2 },
+    drill: { knee: 1, cap: 3 },
+    loot: { knee: 1, cap: 2.5 },
+    grow: { knee: 0.5, cap: 0.75 },
+    petCd: { knee: 0.3, cap: 0.6 },
+};
+
+// Junk can be scrapped for coins: `per` x the chest coin unit (about your usual bet) per piece, by rarity.
+export const SCRAP = { common: 0.2, rare: 0.8, epic: 3, legendary: 12 };
+
 // Permanent upgrades. Each level adds `per` to `stat`; costs grow by GEAR_GROWTH per level.
 export const GEAR_MAX = 5;
 export const GEAR_GROWTH = 1.7;
@@ -677,6 +710,12 @@ export const FARM = {
         { minutes: 240, label: "4H", rolls: 30, luck: 5 },
     ],
     luckCurve: 0.5,
+    // How DIGGS spends the trip: FORAGE brings more finds, DELVE fewer but much rarer ones.
+    stances: [
+        { id: "steady", name: "STEADY", rolls: 1, luck: 1 },
+        { id: "forage", name: "FORAGE", rolls: 1.4, luck: 0.6 },
+        { id: "delve", name: "DELVE", rolls: 0.6, luck: 1.8 },
+    ],
     // Pets riding along: index = pets sent (0 = DIGGS alone), value = finds multiplier.
     party: [1, 1.5, 2.2, 3.2],
     zones: [

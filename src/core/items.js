@@ -1,4 +1,4 @@
-import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, GEAR_SETS, SET_STARS, LUCK, PETS } from "./config.js";
+import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
 import { vipBonus } from "./vip.js";
 import { relicBonus } from "./relics.js";
 
@@ -57,13 +57,28 @@ export function upgrade(state, gear) {
     return true;
 }
 
-// Everything feeding one stat: gear (and set bonuses), every equipped pet's passive, VIP tier, worn relics.
-// Cheap enough to call per frame.
-export function bonus(state, stat) {
+// Diminishing returns past `knee`: slope 1 at the knee, easing toward `cap` and never reaching it.
+export function softcap(raw, { knee, cap }) {
+    if (raw <= knee) return raw;
+    const room = cap - knee;
+    const over = raw - knee;
+    return knee + (room * over) / (over + room);
+}
+
+// Everything feeding one stat before the cap: gear (and set bonuses), every equipped pet's passive, VIP tier,
+// worn relics.
+export function rawBonus(state, stat) {
     const gear = GEAR.reduce((sum, g) => (g.stat === stat ? sum + gearValue(g, gearLevel(state, g.id)) : sum), 0);
     const sets = GEAR_SETS.reduce((sum, set) => (set.stat === stat && setActive(state, set) ? sum + set.per : sum), 0);
     const pets = PETS.reduce((sum, p) => sum + (state.pets?.team?.includes(p.id) && p.passive?.stat === stat ? p.passive.per : 0), 0);
     return gear + sets + pets + vipBonus(state, stat) + relicBonus(state, stat);
+}
+
+// The stat as the game uses it: raw sources plus `extra` (e.g. burn for payout), through STAT_CAPS.
+// Cheap enough to call per frame.
+export function bonus(state, stat, extra = 0) {
+    const raw = rawBonus(state, stat) + extra;
+    return STAT_CAPS[stat] ? softcap(raw, STAT_CAPS[stat]) : raw;
 }
 
 export function rollDrops(state, source, rand = Math.random) {

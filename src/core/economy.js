@@ -1,4 +1,4 @@
-import { SYMBOLS, BET_STEPS, BASE_BET_MAX, TIMING, LEVELS, MINE, BURN, COSMIC, LUCK, GEMS, UNLOCKS } from "./config.js";
+import { SYMBOLS, BET_STEPS, BASE_BET_MAX, TIMING, LEVELS, MINE, BURN, COSMIC, LUCK, GEMS, UNLOCKS, FARM, BREW_FX } from "./config.js";
 import { bonus } from "./items.js";
 import { vipTier } from "./vip.js";
 
@@ -9,8 +9,8 @@ const totalWeight = SYMBOLS.reduce((sum, s) => sum + s.weight, 0);
 
 export const getSymbol = (id) => symbolById[id] ?? { id, name: id.toUpperCase() };
 
-export function rollSymbol() {
-    let r = Math.random() * totalWeight;
+export function rollSymbol(rand = Math.random) {
+    let r = rand() * totalWeight;
     for (const s of SYMBOLS) {
         r -= s.weight;
         if (r < 0) return s.id;
@@ -18,7 +18,7 @@ export function rollSymbol() {
     return SYMBOLS[0].id;
 }
 
-export const rollReels = () => [rollSymbol(), rollSymbol(), rollSymbol()];
+export const rollReels = (rand = Math.random) => [rollSymbol(rand), rollSymbol(rand), rollSymbol(rand)];
 
 function evaluate([a, b, c]) {
     if (a === b && b === c) return { kind: "triple", symbol: a, mult: symbolById[a].triple, cells: [0, 1, 2] };
@@ -59,9 +59,9 @@ export function formatPercent(fraction) {
     return `${formatNumber(p)}%`;
 }
 
-export function rollStars(grade, boost = 1) {
+export function rollStars(grade, boost = 1, rand = Math.random) {
     const scale = (grade === "perfect" ? COSMIC.perfectMult : 1) * boost;
-    let r = Math.random();
+    let r = rand();
     for (let n = 3; n > 0; n--) {
         r -= COSMIC.odds[n] * scale;
         if (r < 0) return n;
@@ -72,8 +72,8 @@ export function rollStars(grade, boost = 1) {
 // Dicey's loaded die: a roll that would pay nothing is bent into a pair.
 export const loadDice = ([a, b, c]) => (evaluate([a, b, c]).mult ? [a, b, c] : [a, a, c]);
 
-export function placeStars(result, stars) {
-    const spots = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, stars);
+export function placeStars(result, stars, rand = Math.random) {
+    const spots = [0, 1, 2].sort(() => rand() - 0.5).slice(0, stars);
     return result.map((s, i) => (spots.includes(i) ? "cosmic" : s));
 }
 
@@ -107,6 +107,13 @@ export function payout(bet, outcome, grade, heat, boost = 1) {
     return Math.round(bet * outcome.mult * TIMING.grades[grade].mult * heatBonus(heat) * boost);
 }
 
+// Everything a bet spin's win is multiplied by besides the line, grade and heat: the lucky and hot spin
+// spikes, the payout stat (burn included, through its soft cap) and MIDAS.
+export function spinBoost(state, { burn = 0, lucky = false, hot = false, midas = false } = {}) {
+    const spikes = (lucky ? LUCK.luckySpinMult : 1) * (hot ? LUCK.hotMachineMult : 1) * (midas ? BREW_FX.midasMult : 1);
+    return spikes * (1 + bonus(state, "payout", burn));
+}
+
 export function winTier(outcome, win, bet) {
     if (outcome.kind === "cosmic") return "cosmic";
     if (outcome.kind === "triple" && outcome.symbol === "seven") return "jackpot";
@@ -117,13 +124,27 @@ export function winTier(outcome, win, bet) {
     return "win";
 }
 
-export function meterSpec(level, skill, zoneBonus = 0) {
+const lerp = (a, b, t) => a + (b - a) * t;
+
+// The designed difficulty of `level`, 0 (first spin) to 1 (hardest): a front-loaded trend with a sawtooth on
+// top. Inside a chapter it climbs; the first level of the next chapter drops back below the last peak.
+export function difficulty(level) {
+    const { peakLevel, shape, chapter, tooth } = TIMING.curve;
+    const trend = clamp((level - 1) / (peakLevel - 1), 0, 1) ** shape;
+    const t = ((level - 1) % chapter) / (chapter - 1);
+    return clamp(trend + tooth * (t - 0.5), 0, 1);
+}
+
+// The timing meter for a spin: width and speed follow difficulty(level), then the adaptive nudge from recent
+// skill (missing widens and slows it, a perfect streak tightens it), then the zone bonus.
+export function meterSpec(level, skill, zoneBonus = 0, rand = Math.random) {
     const { zone, speed, adaptStrength, skillTarget, perfectRatio } = TIMING;
+    const d = difficulty(level);
     const adapt = (skillTarget - skill) * adaptStrength;
-    const width = clamp((zone.base - zone.perLevel * (level - 1)) * (1 + adapt), zone.min, zone.max) * (1 + zoneBonus);
-    const sweep = clamp((speed.base + speed.perLevel * (level - 1)) * (1 - adapt * 0.5), speed.min, speed.max);
+    const width = clamp(lerp(zone.base, zone.hard, d) * (1 + adapt), zone.min, zone.max) * (1 + zoneBonus);
+    const sweep = clamp(lerp(speed.base, speed.hard, d) * (1 - adapt * 0.5), speed.min, speed.max);
     const margin = width / 2 + 0.04;
-    const center = margin + Math.random() * (1 - margin * 2);
+    const center = margin + rand() * (1 - margin * 2);
     return { center, width, perfect: width * perfectRatio, speed: sweep };
 }
 
@@ -134,7 +155,12 @@ export function gradeAt(spec, p) {
     return "miss";
 }
 
-export const xpToNext = (level) => Math.round(LEVELS.xpBase * LEVELS.xpGrowth ** (level - 1));
+export function xpToNext(level) {
+    const { xpBase, xpGrowth, xpTailFrom, xpTailGrowth } = LEVELS;
+    const steep = Math.min(level, xpTailFrom) - 1;
+    const tail = Math.max(0, level - xpTailFrom);
+    return Math.round(xpBase * xpGrowth ** steep * xpTailGrowth ** tail);
+}
 
 // Level opens bet steps up to 10,000; past that each VIP tier opens one more.
 const maxBetIndex = (level, vip = 0) => Math.min(BET_STEPS.length - 1, BASE_BET_MAX + vip, LEVELS.firstMaxBetIndex + level - 1);
@@ -148,6 +174,7 @@ export function unlocksAt(level) {
     const list = [];
     if (maxBetIndex(level) > maxBetIndex(level - 1)) list.push(`BET ${formatNumber(BET_STEPS[maxBetIndex(level)])}`);
     UNLOCKS.filter((u) => u.level === level).forEach((u) => list.push(u.name));
+    FARM.zones.filter((z) => z.level === level && level > 1).forEach((z) => list.push(`${z.name} TRIPS`));
     return list;
 }
 
@@ -166,7 +193,10 @@ export function gainXp(state, amount) {
     return gained;
 }
 
-export const upgradeValue = (kind, lv) => MINE.upgrades[kind].base + MINE.upgrades[kind].step * lv;
+export function upgradeValue(kind, lv) {
+    const { base, step, compound } = MINE.upgrades[kind];
+    return Math.round((base + step * lv) * compound ** lv);
+}
 
 export const upgradeCost = (kind, lv) => Math.round(MINE.upgrades[kind].cost * MINE.upgrades[kind].growth ** lv);
 

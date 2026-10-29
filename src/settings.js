@@ -4,7 +4,8 @@ import * as fx from "./fx.js";
 import { TEXT } from "./text.js";
 import * as modal from "./modal.js";
 import { svgIcon } from "./sprites.js";
-import { formatNumber } from "./economy.js";
+import { formatNumber } from "./core/economy.js";
+import { restore } from "./core/save.js";
 import { $ } from "./ui.js";
 
 const VOLUME_STEP = 10;
@@ -123,8 +124,7 @@ export function createSettings({ startTour, openGuide, bump }) {
         try {
             const raw = el.importText.value.trim();
             if (!raw.startsWith(SAVE_PREFIX)) return null;
-            const data = JSON.parse(decodeURIComponent(escape(atob(raw.slice(SAVE_PREFIX.length)))));
-            return typeof data.coins === "number" && typeof data.level === "number" ? data : null;
+            return restore(JSON.parse(decodeURIComponent(escape(atob(raw.slice(SAVE_PREFIX.length))))));
         } catch {
             return null;
         }

@@ -1,6 +1,6 @@
 import { state } from "./store.js";
-import * as items from "./items.js";
-import { formatNumber } from "./economy.js";
+import * as items from "./core/items.js";
+import { formatNumber } from "./core/economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import { TEXT } from "./text.js";
 

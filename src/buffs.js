@@ -1,7 +1,7 @@
-import { BUFF_CHIPS } from "./config.js";
+import { BUFF_CHIPS } from "./core/config.js";
 import { state } from "./store.js";
-import { formatClock } from "./economy.js";
-import { timedLeft } from "./luck.js";
+import { formatClock } from "./core/economy.js";
+import { timedLeft } from "./core/luck.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import { $ } from "./ui.js";
 

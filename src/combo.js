@@ -1,10 +1,10 @@
-import { COMBO } from "./config.js";
-import { formatNumber } from "./economy.js";
+import { COMBO } from "./core/config.js";
+import { formatNumber } from "./core/economy.js";
 import * as fx from "./fx.js";
 import { sfx, drone } from "./sound.js";
 import { emit } from "./events.js";
 import { state } from "./store.js";
-import { timedLeft } from "./luck.js";
+import { timedLeft } from "./core/luck.js";
 
 const LAST = COMBO.tiers.length - 1;
 const COSMIC = COMBO.cosmicFrom;

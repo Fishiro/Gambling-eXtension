@@ -1,10 +1,10 @@
-import { PETS, PET_SLOTS, PET_ROLES, LUCK } from "./config.js";
+import { PETS, PET_SLOTS, PET_ROLES, LUCK } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as luck from "./luck.js";
-import * as items from "./items.js";
-import * as farming from "./farming.js";
-import * as market from "./market.js";
+import * as econ from "./core/economy.js";
+import * as luck from "./core/luck.js";
+import * as items from "./core/items.js";
+import * as farming from "./core/farming.js";
+import * as market from "./core/market.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";

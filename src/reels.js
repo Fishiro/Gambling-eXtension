@@ -1,6 +1,6 @@
-import { SYMBOLS } from "./config.js";
+import { SYMBOLS } from "./core/config.js";
 import { PALETTE, drawSprite } from "./sprites.js";
-import { rollSymbol, clamp } from "./economy.js";
+import { rollSymbol, clamp } from "./core/economy.js";
 
 const CELL = 16;
 const REEL_W = 20;

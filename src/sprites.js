@@ -741,6 +741,13 @@ export function svgIcon(name, scale = 2) {
     return `<svg class="ico" viewBox="0 0 ${w} ${h}" width="${w * scale}" height="${h * scale}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
 }
 
+// The whole-number scale that brings a sprite closest to `box` px on its long side, so sprites of different
+// sizes (7x7 UI glyphs, 8x8 items, 10x12 pets) line up at one size while staying pixel-sharp.
+export function iconScale(name, box) {
+    const rows = SPRITES[name] ?? SPRITES[`i-${name}`];
+    return Math.max(1, Math.round(box / Math.max(rows[0].length, rows.length)));
+}
+
 export function hydrateIcons(root = document) {
     root.querySelectorAll("[data-icon]").forEach((el) => {
         el.innerHTML = svgIcon(el.dataset.icon, Number(el.dataset.scale) || 2);

@@ -1,5 +1,5 @@
 import { state } from "./store.js";
-import * as econ from "./economy.js";
+import * as econ from "./core/economy.js";
 import * as fx from "./fx.js";
 import { toast } from "./toast.js";
 import { sfx } from "./sound.js";

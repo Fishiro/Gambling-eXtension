@@ -1,9 +1,9 @@
-import { MINE, LUCK, GEMS, BREW_FX } from "./config.js";
+import { MINE, LUCK, GEMS, BREW_FX } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as luck from "./luck.js";
-import * as items from "./items.js";
-import * as market from "./market.js";
+import * as econ from "./core/economy.js";
+import * as luck from "./core/luck.js";
+import * as items from "./core/items.js";
+import * as market from "./core/market.js";
 import { createMineScene } from "./mine-scene.js";
 import { createCombo } from "./combo.js";
 import { petById } from "./pets.js";

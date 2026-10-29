@@ -23,13 +23,23 @@ There is no build step. After editing, hit the reload icon on the extension card
 ## Layout
 
 ```
-manifest.json     extension manifest
-popup.html/.css   the whole UI
-src/main.js       entry point, wires every module together
-src/config.js     all balance numbers (odds, costs, drops, pets...)
-src/store.js      game state, saved to localStorage under "gx_state"
-src/economy.js    pure formulas (payouts, XP, ore, upgrade costs)
-src/*.js          one module per feature (slot, mine, farm, pets, ...)
-animator.html     standalone sprite animator tool (not part of the extension)
-assets/, icons/   fonts and icons
+manifest.json        extension manifest
+popup.html/.css      the whole UI
+src/main.js          entry point, wires every module together
+src/core/            pure game logic, no DOM (config, economy, items, luck, farming, market, save...)
+src/store.js         live game state, saved to localStorage under "gx_state"
+src/*.js             one UI module per feature (slot, mine, farm, pets, ...)
+tests/               node --test suites (logic, saves, balance, import graph)
+tools/               balance report, bot simulator, sprite animator (not part of the extension)
+docs/                game design document and research notes
+assets/, icons/      fonts and icons
+```
+
+## Tests and balance
+
+Needs Node 20+, nothing to install.
+
+```
+npm test            # all tests
+npm run report      # difficulty curve, slot return, mine payback, bot playthroughs
 ```

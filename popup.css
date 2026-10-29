@@ -1609,6 +1609,16 @@ main,
     text-align: center;
     background: var(--bg);
 }
+/* The picture row of a tile: one line of icons (or a meter) at a fixed height, so tiles in a row line up. */
+.g-tile-art {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    min-height: 24px;
+}
 .g-tile > b {
     font-size: var(--fs-1);
 }
@@ -3156,4 +3166,237 @@ body.is-calm::after {
 /* Effects already in flight hide while the menu or history sheet is open (new ones are skipped, see fx.covered). */
 body:has(.sheet:not([hidden])) #fx {
     visibility: hidden;
+}
+
+/* ---- ODDS tab: folding cards, one per system; each chance as words plus a bar (guide.js) ----
+   Every picture sits in a fixed box (24px icons, see iconScale) so rows and chips line up on one grid. */
+.o-legend {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s2);
+    margin: var(--s2) 0 var(--s3);
+}
+.o-legend span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: var(--s2);
+    background: var(--panel);
+    box-shadow: 0 0 0 2px var(--line);
+}
+.o-legend b {
+    color: var(--gold);
+}
+.o-legend small {
+    color: var(--muted);
+}
+.o-card {
+    margin-top: var(--s3);
+    background: var(--panel);
+    box-shadow: 0 0 0 2px var(--line);
+}
+.o-card[open] {
+    box-shadow: 0 0 0 2px var(--gold);
+}
+.o-card summary {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: var(--s3);
+    cursor: pointer;
+    list-style: none;
+}
+.o-card summary::-webkit-details-marker {
+    display: none;
+}
+.o-head-art {
+    display: inline-flex;
+    flex: 0 0 24px;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+.o-card summary > span:not(.o-head-art) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+.o-card summary b {
+    font: 700 var(--fs-2)/1.1 "Silkscreen", monospace;
+    color: var(--gold);
+}
+.o-card summary small {
+    color: var(--text);
+}
+.o-chev {
+    display: inline-flex;
+    color: var(--muted);
+}
+.o-card[open] .o-chev {
+    transform: rotate(90deg);
+}
+.o-body {
+    padding: 0 var(--s3) var(--s3);
+}
+.o-sub {
+    margin: var(--s3) 0 var(--s2);
+    font: 700 var(--fs-1)/1 "Silkscreen", monospace;
+    color: var(--cyan);
+}
+.o-row,
+.o-rewards {
+    display: grid;
+    align-items: center;
+    gap: var(--s3);
+    min-height: 40px;
+    padding: 6px var(--s2);
+    background: var(--bg);
+}
+.o-row + .o-row,
+.o-rewards + .o-rewards {
+    margin-top: 2px;
+}
+.o-row {
+    grid-template-columns: 64px minmax(0, 1fr) 140px;
+}
+.o-art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 24px;
+    color: var(--muted);
+}
+.o-art .g-reels > span {
+    width: 20px;
+    height: 20px;
+}
+.o-art .g-reels .ico {
+    width: 16px;
+    height: 16px;
+}
+.o-what {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.o-what small {
+    color: var(--muted);
+}
+.o-odds {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    text-align: right;
+}
+.o-odds b {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text);
+}
+.o-bar {
+    display: block;
+    width: 100%;
+    height: 5px;
+    background: var(--ink);
+    box-shadow: 0 0 0 1px var(--line);
+}
+.o-bar i {
+    display: block;
+    height: 100%;
+}
+.o-stack {
+    display: flex;
+    height: 14px;
+    box-shadow: 0 0 0 2px var(--ink);
+}
+.o-stack i {
+    min-width: 3px;
+}
+.o-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px var(--s3);
+    margin: var(--s2) 0 var(--s1);
+}
+.o-key span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.o-key i {
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 0 1px var(--ink);
+}
+.o-rewards {
+    grid-template-columns: 148px minmax(0, 1fr);
+}
+.o-rewards > b {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--s2);
+    row-gap: 2px;
+}
+.o-rewards > b small {
+    grid-column: 2;
+    font-weight: 400;
+    color: var(--muted);
+}
+.o-rewards > span {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s1);
+}
+.o-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    width: 52px;
+}
+.o-chip > .ico {
+    height: 24px;
+}
+.o-chip small {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 8px;
+    line-height: 1.2;
+    color: var(--text);
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.o-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s2);
+    margin: var(--s2) 0 0;
+    color: var(--gold);
+}
+.o-tip .ico {
+    flex: 0 0 auto;
+    margin-top: 1px;
+}
+.o-icons {
+    display: flex;
+    gap: 2px;
+}
+/* Reward chips carry a word label ("GOLD RUSH 90S"), so they get two lines instead of an ellipsis. */
+.o-chip.is-label {
+    width: 72px;
+}
+.o-chip.is-label small {
+    white-space: normal;
+    overflow: visible;
 }

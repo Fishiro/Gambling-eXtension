@@ -1,8 +1,8 @@
-import { BET_STEPS, TIMING, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./config.js";
+import { BET_STEPS, TIMING, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as luck from "./luck.js";
-import * as items from "./items.js";
+import * as econ from "./core/economy.js";
+import * as luck from "./core/luck.js";
+import * as items from "./core/items.js";
 import { createReels } from "./reels.js";
 import { createMeter } from "./meter.js";
 import { svgIcon } from "./sprites.js";
@@ -238,8 +238,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
     function settle(grade, outcome, symbols) {
         const { bet, heat, lucky, hot } = round;
         const burn = bet ? econ.burnApplied(state.burned, grade) : 0;
-        const midas = luck.timedLeft(state, "midas") > 0 ? BREW_FX.midasMult : 1;
-        const boost = (lucky ? LUCK.luckySpinMult : 1) * (hot ? LUCK.hotMachineMult : 1) * (1 + burn) * (1 + items.bonus(state, "payout")) * midas;
+        const boost = econ.spinBoost(state, { burn, lucky, hot, midas: luck.timedLeft(state, "midas") > 0 });
         let win = econ.payout(bet, outcome, grade, heat, boost);
         if (bet && doubleWin(win)) win *= 2;
         const tier = bet ? econ.winTier(outcome, win, bet) : "free";

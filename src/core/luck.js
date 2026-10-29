@@ -1,4 +1,4 @@
-import { LUCK, BET_STEPS, TIMING } from "./config.js";
+import { LUCK, BET_STEPS, TIMING, ITEMS, SCRAP } from "./config.js";
 import * as relics from "./relics.js";
 import * as econ from "./economy.js";
 import * as items from "./items.js";
@@ -17,10 +17,25 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)];
 export const rarityIndex = (rarity) => LUCK.rarities.indexOf(rarity);
 
 // A boost of LUCK.legendaryBoost or more is a sure legendary (Luck Brew).
-export const rollRarity = (boost = 0) =>
+export const rollRarity = (boost = 0, rand = Math.random) =>
     boost >= LUCK.legendaryBoost
         ? LUCK.rarities[LUCK.rarities.length - 1]
-        : pickWeighted(LUCK.rarities, (r) => (r.id === "common" ? r.weight : r.weight * (1 + boost)));
+        : pickWeighted(LUCK.rarities, (r) => (r.id === "common" ? r.weight : r.weight * (1 + boost)), rand);
+
+const byRarity = Object.fromEntries(LUCK.rarities.map((r) => [r.id, r]));
+
+// The rarity of the next chest opened, with bad-luck protection: state.pity counts chests since the last
+// epic-or-better and since the last legendary, and a counter at its LUCK.pity limit forces that rarity.
+export function openRarity(state, boost = 0, rand = Math.random) {
+    const pity = (state.pity ??= { epic: 0, legendary: 0 });
+    let rarity = rollRarity(boost, rand);
+    if (pity.legendary + 1 >= LUCK.pity.legendary) rarity = byRarity.legendary;
+    else if (pity.epic + 1 >= LUCK.pity.epic && rarityIndex(rarity) < rarityIndex(byRarity.epic)) rarity = byRarity.epic;
+    const rank = rarityIndex(rarity);
+    pity.epic = rank >= rarityIndex(byRarity.epic) ? 0 : pity.epic + 1;
+    pity.legendary = rarity === byRarity.legendary ? 0 : pity.legendary + 1;
+    return rarity;
+}
 
 export const rollReward = (rarity) => pick(LUCK.rewards[rarity.id]);
 
@@ -38,7 +53,8 @@ export function addChest(state, boost = 0) {
     return true;
 }
 
-function rewardUnit(state) {
+// The coin unit chest rewards (and scrap) scale with: about the bet the player usually makes, smaller early on.
+export function rewardUnit(state) {
     const maxBet = BET_STEPS[econ.maxBet(state)];
     const typical = econ.clamp(state.betEma || maxBet, BET_STEPS[1], maxBet);
     const early = Math.max(LUCK.earlyFloor, Math.min(1, state.level / LUCK.earlyLevels));
@@ -48,6 +64,19 @@ function rewardUnit(state) {
 export const trackBet = (state, bet) => {
     state.betEma = state.betEma ? state.betEma + (bet - state.betEma) * LUCK.betSmoothing : bet;
 };
+
+// Junk scrap: what one piece of junk `id` is worth in coins right now.
+export const scrapValue = (state, id) => (ITEMS[id]?.junk ? Math.max(1, Math.round(rewardUnit(state) * SCRAP[ITEMS[id].rarity])) : 0);
+
+// Scrap every piece of junk `id` for coins. The item stays known (the junk collection still counts it).
+export function scrap(state, id) {
+    const n = state.bag[id] ?? 0;
+    const coins = n * scrapValue(state, id);
+    if (!coins) return 0;
+    state.bag[id] = 0;
+    state.coins += coins;
+    return coins;
+}
 
 // A reward line: `n` is the amount, `fmt` turns any amount back into text so lines can be summed.
 const line = (icon, key, n, fmt, extra) => ({ icon, key, n, fmt, text: fmt(n), ...extra });

@@ -168,7 +168,7 @@ export const TEXT = {
         ],
         farm: [
             { target: '[data-tab="farm"]', text: "LEVEL 4: THE FARM IS OPEN! TAP FARM.", wait: "tab-farm" },
-            { target: "#trip", text: "SEND ME ON A TRIP: PICK A ZONE, A TIME AND UP TO 3 PETS. LONGER TRIPS ARE LUCKIER, MORE PETS CARRY MORE LOOT." },
+            { target: "#trip", text: "SEND ME ON A TRIP: PICK A ZONE, A TIME, A PLAN AND UP TO 3 PETS. LONGER TRIPS ARE LUCKIER, MORE PETS CARRY MORE LOOT. FORAGE FINDS MORE, DELVE FINDS RARER." },
             { target: "#garden", text: "PLANT SEEDS HERE. THEY GROW ON THEIR OWN. SEEDS COME FROM CHESTS AND THE FOREST.", last: true },
         ],
         forge: [
@@ -182,10 +182,12 @@ export const TEXT = {
             { target: ".pet-team", text: "YOUR TEAM: 1 SLOT NOW, 2 MORE FOR DIAMONDS. EVERY PET ON THE TEAM WORKS AT ONCE." },
             { target: "#pet-list", text: "HELPERS DO CHORES: SPINNY AUTO SPINS, CHESTER OPENS CHESTS. THE REST PICK A PLAYSTYLE. Q USES A SKILL.", last: true },
         ],
-        endgame: [
-            { target: "#vip", tab: "slot", text: "LEVEL 10: MAIN CHARACTER ERA! VIP: EVERY COIN YOU BET RAISES YOUR TIER AND YOUR MAX BET." },
-            { target: "#vault", text: "THE VAULT: SPINS AND MINE TAPS CRACK IT. ONE A DAY, HUGE LOOT." },
-            { target: '[data-tab="bag"]', text: "VAULTS DROP RELICS. OPEN YOUR BAG.", wait: "tab-bag" },
+        vault: [
+            { target: "#vip", tab: "slot", text: "LEVEL 7: MAIN CHARACTER ERA! VIP: EVERY COIN YOU BET RAISES YOUR TIER AND YOUR MAX BET." },
+            { target: "#vault", text: "THE VAULT: SPINS AND MINE TAPS CRACK IT. ONE A DAY, HUGE LOOT. RELICS FROM IT OPEN AT LV10.", last: true },
+        ],
+        relics: [
+            { target: '[data-tab="bag"]', tab: "slot", text: "LEVEL 10: RELICS! VAULTS AND LEGENDARY CHESTS DROP THEM. OPEN YOUR BAG.", wait: "tab-bag" },
             { target: '[data-bag="relics"]', text: "TAP RELICS.", wait: "bag-relics" },
             { target: "#relic-list", text: "WEAR UP TO 3. EACH HAS RANDOM STATS. REROLL THEM WITH DIAMONDS.", last: true },
         ],
@@ -253,6 +255,8 @@ export const TEXT = {
     send: "SEND DIGGS",
     sendWith: (n) => (n ? `SEND DIGGS + ${n} PET${n > 1 ? "S" : ""}` : "SEND DIGGS"),
     luckPct: (luck) => `${Math.round(luck * 100)}% LUCK`,
+    scrap: (coins) => `SCRAP +${coins}`,
+    stanceNote: (s) => (s.rolls === 1 && s.luck === 1 ? "BALANCED" : s.rolls > 1 ? `MORE x${s.rolls}` : `RARER x${s.luck}`),
     partyTitle: "PETS ALONG",
     partyTier: ["DIGGS ALONE: x1 FINDS", "1 PET: x1.5 FINDS", "2 PETS: x2.2 FINDS. NICE", "3 PETS: x3.2 FINDS. HUGE"],
     partyRemove: "LEAVE BEHIND",

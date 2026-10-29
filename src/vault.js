@@ -1,9 +1,9 @@
-import { VAULT, VIP, BET_STEPS, BREW_FX } from "./config.js";
+import { VAULT, VIP, BET_STEPS, BREW_FX } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as luck from "./luck.js";
-import * as items from "./items.js";
-import { vipInfo } from "./vip.js";
+import * as econ from "./core/economy.js";
+import * as luck from "./core/luck.js";
+import * as items from "./core/items.js";
+import { vipInfo } from "./core/vip.js";
 import { svgIcon, PALETTE } from "./sprites.js";
 import * as fx from "./fx.js";
 import * as modal from "./modal.js";
@@ -50,7 +50,7 @@ export function createVault() {
     }
 
     function damage(amount, from) {
-        if (!isOpen(state, "endgame")) return;
+        if (!isOpen(state, "vault")) return;
         refresh();
         const v = state.vault;
         if (v.cracked || amount <= 0) return;
@@ -129,7 +129,7 @@ export function createVault() {
     }
 
     function render() {
-        if (!isOpen(state, "endgame")) return;
+        if (!isOpen(state, "vault")) return;
         refresh();
         const v = state.vault;
         const full = maxHp(v.cracked ? v.tier - 1 : v.tier);

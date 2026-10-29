@@ -1,6 +1,6 @@
-import { PETS, GEAR, FARM, GEAR_MAX, TIMING, LUCK, SKINS, VIP, GEAR_SETS, RELICS, BREWS, ITEMS } from "./config.js";
+import { PETS, GEAR, FARM, GEAR_MAX, TIMING, LUCK, SKINS, VIP, GEAR_SETS, RELICS, BREWS, ITEMS } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
+import * as econ from "./core/economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";
 import { toast } from "./toast.js";

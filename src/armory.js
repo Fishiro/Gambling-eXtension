@@ -1,7 +1,7 @@
-import { RELICS } from "./config.js";
+import { RELICS } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as relics from "./relics.js";
-import * as items from "./items.js";
+import * as relics from "./core/relics.js";
+import * as items from "./core/items.js";
 import { svgIcon, PALETTE } from "./sprites.js";
 import * as fx from "./fx.js";
 import * as modal from "./modal.js";

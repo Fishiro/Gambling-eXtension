@@ -1,4 +1,4 @@
-import { SKINS } from "./config.js";
+import { SKINS } from "./core/config.js";
 import { state, commit } from "./store.js";
 import { svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";

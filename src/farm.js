@@ -1,8 +1,8 @@
-import { FARM, PETS } from "./config.js";
+import { FARM, PETS } from "./core/config.js";
 import { state, commit } from "./store.js";
-import * as econ from "./economy.js";
-import * as items from "./items.js";
-import * as farming from "./farming.js";
+import * as econ from "./core/economy.js";
+import * as items from "./core/items.js";
+import * as farming from "./core/farming.js";
 import { svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
@@ -18,6 +18,7 @@ export function createFarm({ reveal, onLoot, replant }) {
     const el = { panel: $("tab-farm"), trip: $("trip"), garden: $("garden") };
     let zoneId = FARM.zones[0].id;
     let tripIndex = 1;
+    let stanceId = FARM.stances[0].id;
     let recallArmed = 0;
     // Pets picked to ride along on the next trip (at most FARM.party.length - 1).
     let party = [];
@@ -55,23 +56,28 @@ export function createFarm({ reveal, onLoot, replant }) {
         const times = FARM.trips
             .map((t, i) => `<button data-action="time" data-id="${i}" class="trip-time ${i === tripIndex ? "is-active" : ""}">${t.label}<small>${TEXT.luckPct(t.luck)}</small></button>`)
             .join("");
+        const stance = farming.stanceById(stanceId);
+        const stances = FARM.stances
+            .map((s) => `<button data-action="stance" data-id="${s.id}" class="trip-time ${s.id === stanceId ? "is-active" : ""}">${s.name}<small>${TEXT.stanceNote(s)}</small></button>`)
+            .join("");
         const back = clockAt(Date.now() + plan.minutes * 60000);
         return `<div class="zones">${zones}</div>
             <div class="seg">${times}</div>
+            <div class="seg">${stances}</div>
             ${partyHtml()}
-            <p class="hint">${TEXT.tripPlan(farming.tripRolls(state, plan, party.length), zone.name, back, TEXT.luckPct(plan.luck))}</p>
+            <p class="hint">${TEXT.tripPlan(farming.tripRolls(state, plan, party.length, 1, stance), zone.name, back, TEXT.luckPct(farming.tripLuck(plan, stance)))}</p>
             <button class="primary" data-action="send" data-fx="G,y,w">${TEXT.sendWith(party.length)}</button>`;
     }
 
     function runningHtml(status) {
         const action = status.done
             ? `<button class="primary" data-action="collect" data-fx="y,G,w">${TEXT.collect}</button>`
-            : `<button data-action="recall">${recallArmed ? TEXT.recallSure(farming.tripRolls(state, status.plan, status.pets.length, status.progress)) : TEXT.recall}</button>`;
+            : `<button data-action="recall">${recallArmed ? TEXT.recallSure(farming.tripRolls(state, status.plan, status.pets.length, status.progress, status.stance)) : TEXT.recall}</button>`;
         const crew = status.pets.map((id) => svgIcon(id, 2)).join("");
         return `<div class="trip-run" data-done="${status.done}">
                 <span class="trip-art">${svgIcon(status.zone.icon, 4)}</span>
                 <div class="row-main">
-                    <b>${status.zone.name} <em>${status.plan.label} · ${TEXT.luckPct(status.plan.luck ?? 1)}</em></b>
+                    <b>${status.zone.name} <em>${status.plan.label} · ${status.stance.name} · ${TEXT.luckPct(status.luck)}</em></b>
                     ${crew ? `<span class="trip-crew">${svgIcon("miner", 1)}${crew}</span>` : ""}
                     <div class="bar"><div class="fill" data-live="trip"></div></div>
                     <small data-live="trip-left"></small>
@@ -162,6 +168,10 @@ export function createFarm({ reveal, onLoot, replant }) {
             tripIndex = Number(id);
             render();
         },
+        stance(id) {
+            stanceId = id;
+            render();
+        },
         seat(id) {
             if (party.length >= seats || party.includes(id)) return;
             party = [...party, id];
@@ -174,7 +184,7 @@ export function createFarm({ reveal, onLoot, replant }) {
             render();
         },
         send(_, button) {
-            if (!farming.startTrip(state, zoneId, tripIndex, party)) return deny(button);
+            if (!farming.startTrip(state, zoneId, tripIndex, party, stanceId)) return deny(button);
             const pets = party.length;
             party = [];
             commit();

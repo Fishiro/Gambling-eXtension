@@ -1,12 +1,14 @@
-import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./config.js";
-import { formatNumber } from "./economy.js";
-import { PALETTE, svgIcon } from "./sprites.js";
+import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./core/config.js";
+import { formatNumber } from "./core/economy.js";
+import { PALETTE, svgIcon, iconScale } from "./sprites.js";
 import { TEXT } from "./text.js";
 
-// The in-game manual: START (four steps), GUIDE (one picture-first card per system), ODDS (every number).
+// The in-game manual: START (four steps), GUIDE (one picture-first card per system), ODDS (every chance,
+// one folding card per system).
 // Pictures carry the explanation; text stays to one short line per idea.
 
-const icon = (name, scale = 3) => svgIcon(name, scale);
+// `size` 3 = a 24px box, 2 = 16px, 1 = 8px; every sprite is fitted into it (see iconScale) so they match.
+const icon = (name, size = 3) => svgIcon(name, iconScale(name, size * 8));
 const pct = (x) => `${Math.round(x * 100)}%`;
 const keycap = (label) => `<kbd>${label}</kbd>`;
 const color = (c, text) => `<em style="color:${PALETTE[c]}">${text}</em>`;
@@ -51,11 +53,10 @@ const node = (art, label = "") => `<span class="g-node"><span class="g-art">${ar
 
 // A grid of picture tiles: [art, title, sub].
 const tiles = (list, cols = 3) =>
-    `<div class="g-tiles" style="--cols:${cols}">${list.map(([art, title, sub = ""]) => `<div class="g-tile">${art}<b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</div>`).join("")}</div>`;
+    `<div class="g-tiles" style="--cols:${cols}">${list.map(([art, title, sub = ""]) => `<div class="g-tile"><span class="g-tile-art">${art}</span><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</div>`).join("")}</div>`;
 
 const section = (iconName, title, body) => `<section class="g-section"><h4>${icon(iconName, 2)}${title}</h4>${body}</section>`;
 
-const table = (rows) => `<div class="g-table">${rows.map((r) => `<div>${r.map((c) => `<span>${c}</span>`).join("")}</div>`).join("")}</div>`;
 
 // ---- START ----
 
@@ -116,10 +117,11 @@ function guideHtml() {
             "MINE",
             `${flow(node(icon("i-pick"), "TAP"), node(icon("ore"), "ORE"), node(icon("i-cart"), "CART"), node(icon("coin"), "SELL"))}
             ${tiles([
-                [icon("i-pick"), "PICK", `+${u.pick.step} / TAP`],
-                [icon("i-drill"), "DRILL", `+${u.drill.step} / MIN`],
-                [icon("i-cart"), "CART", `+${u.cart.step} SPACE`],
+                [icon("i-pick"), "PICK", `ORE / TAP`],
+                [icon("i-drill"), "DRILL", `ORE / MIN`],
+                [icon("i-cart"), "CART", `SPACE`],
             ])}
+            <p>EVERY UPGRADE LEVEL ADDS A STEP AND GROWS THE WHOLE VALUE BY ${pct(u.pick.compound - 1)}, SO BIG LEVELS STAY WORTH BUYING.</p>
             <p>THE DRILL KEEPS DIGGING WHILE THE POPUP IS CLOSED.</p>
             <p>SPAM FASTER THAN ~${MINE.overheat.rest} TAPS A SECOND AND THE PICK OVERHEATS: EACH TAP DIGS LESS, DOWN TO ${pct(MINE.overheat.floor)}. EASE OFF A SECOND AND IT COOLS.</p>
             <p>SELLING GIVES ${MINE.xpPerOre} XP PER ORE x THE MARKET PRICE.</p>`,
@@ -169,7 +171,7 @@ function guideHtml() {
         section(
             "i-paw",
             "PETS",
-            `${tiles(Object.entries(PET_ROLES).map(([id, r]) => [`${PETS.filter((p) => p.role === id).map((p) => icon(p.id, 2)).join("")}`, color(r.color, r.name), r.desc]), 5)}
+            `${tiles(Object.entries(PET_ROLES).map(([id, r]) => [`${PETS.filter((p) => p.role === id).map((p) => icon(p.id, 2)).join("")}`, color(r.color, r.name), r.desc]), 3)}
             ${tiles(PETS.map((p) => [icon(p.id), p.name, formatNumber(p.price)]), 5)}
             <p>UP TO ${PET_SLOTS.length} ON YOUR TEAM, ALL WORKING AT ONCE. SLOT 2 COSTS ${PET_SLOTS[1]} DIAMONDS, SLOT 3 COSTS ${PET_SLOTS[2]}. SKILLS RECHARGE EVEN WHILE CLOSED.</p>`,
         ),
@@ -179,6 +181,7 @@ function guideHtml() {
             `${tiles(FARM.zones.map((z) => [icon(z.icon), z.name, `LV${z.level}`]), 4)}
             ${tiles(FARM.trips.map((t) => [icon("i-clock"), t.label, `${Math.round(t.luck * 100)}% LUCK`]), 4)}
             <p>LONGER TRIPS ARE LUCKIER: RARE, EPIC AND LEGENDARY FINDS SHOW UP MORE.</p>
+            ${tiles(FARM.stances.map((s) => [icon(s.id === "delve" ? "crystal" : s.id === "forage" ? "wood" : "i-clock"), s.name, `x${s.rolls} FINDS, x${s.luck} LUCK`]), 3)}
             ${tiles(FARM.party.map((m, n) => [n ? PETS.slice(0, n).map(() => icon("i-paw", 2)).join("") : icon("miner", 2), n ? `${n} PET${n > 1 ? "S" : ""}` : "DIGGS ALONE", `x${m} FINDS`]), 4)}
             <p>PETS ON A TRIP LEAVE YOUR TEAM UNTIL YOU COLLECT. CHEAP BUDDIES ARE PERFECT FOR THIS.</p>
             ${flow(node(icon("seed"), "PLANT"), node(icon("sprout"), `${FARM.crops.seed.minutes} MIN`), node(icon("herb"), "HARVEST"))}`,
@@ -205,156 +208,202 @@ function guideHtml() {
     ].join("");
 }
 
-function payHtml() {
-    const sym = (id) => icon(id, 2);
-    const rows = [...SYMBOLS]
-        .reverse()
-        .map(
-            (s) => `<div class="pt-row">
-                <span class="pt-syms">${sym(s.id)}${sym(s.id)}${sym(s.id)}</span><b>x${s.triple}</b>
-                <span class="pt-syms">${sym(s.id)}${sym(s.id)}<i class="pt-any"></i></span><b>x${s.pair}</b>
-            </div>`,
-        )
-        .join("");
-    return `<p class="g-lead">MATCHES COUNT FROM THE LEFT. PAYOUT = BET x MULTIPLIER x BONUSES.</p>
-        <div class="paytable">${rows}</div>
-        <div class="pt-row pt-cosmic"><span class="pt-syms">${sym("cosmic")}${sym("cosmic")}${sym("cosmic")}</span><b>x${COSMIC.payout}</b><span>1 IN ${formatNumber(1 / COSMIC.odds[3])}</span></div>
-        <div class="pt-row pt-star"><span class="pt-syms">${sym("cosmic")}${sym("cosmic")}<i class="pt-any"></i></span><b>+x${COSMIC.double.scatter}</b><span>ANY 2 REELS</span></div>
-        <div class="pt-row pt-star"><span class="pt-syms">${sym("cosmic")}<i class="pt-any"></i><i class="pt-any"></i></span><b>+x${COSMIC.single.scatter}</b><span>ANY REEL, LINE x${COSMIC.single.lineMult}</span></div>`;
-}
+// ---- ODDS: every chance in the game, computed straight from config so it can never drift ----
+// Each system is one folding card: a picture-first takeaway on top, the numbers inside. Every chance is
+// written the same way (see odds) and drawn as a bar, so nothing needs reading twice.
 
-// ---- ODDS: every number, computed straight from config so it can never drift ----
-
-// 3 decimals for tiny chances, whole numbers otherwise.
-const rate = (p) => (p >= 0.1 ? `${Math.round(p * 100)}%` : p >= 0.001 ? `${+(p * 100).toFixed(2)}%` : `1 IN ${formatNumber(Math.round(1 / p))}`);
 const totalWeight = (list, w = (x) => x.weight) => list.reduce((sum, x) => sum + w(x), 0);
 
-function slotOddsHtml() {
+// One way to say a chance everywhere: plain % when common, "1 IN N" when rare, both in between.
+function odds(p) {
+    if (p >= 1) return "ALWAYS";
+    if (p >= 0.1) return `${Math.round(p * 100)}%`;
+    const one = `1 IN ${formatNumber(Math.round(1 / p))}`;
+    return p >= 0.01 ? `${+(p * 100).toFixed(1)}% · ${one}` : one;
+}
+
+// The short form for small chips under an icon: "5.3%" or "1 IN 113".
+const brief = (p) => (p >= 1 ? "100%" : p >= 0.01 ? `${+(p * 100).toFixed(1)}%` : `1 IN ${formatNumber(Math.round(1 / p))}`);
+
+// A chance as a bar. Rare chances get a log scale so 1 in 7,000 still shows a sliver next to 1 in 4.
+const bar = (p, c = "y") => `<span class="o-bar"><i style="width:${Math.max(3, Math.min(100, p >= 0.01 ? p * 100 : 3 + Math.log10(p * 1e4) * 4))}%;background:${PALETTE[c]}"></i></span>`;
+
+// One line: picture, what it is (and a hint), the chance in words and as a bar.
+const row = (art, label, p, { note = "", c = "y", value } = {}) => `<div class="o-row">
+        <span class="o-art">${art}</span>
+        <span class="o-what"><b>${label}</b>${note ? `<small>${note}</small>` : ""}</span>
+        <span class="o-odds"><b>${value ?? odds(p)}</b>${p === null ? "" : bar(p, c)}</span>
+    </div>`;
+
+// A whole distribution as one bar split into colored parts: [{ p, c, label }].
+const stack = (parts) => `<div class="o-stack">${parts.map(({ p, c }) => `<i style="flex:${p};background:${PALETTE[c]}"></i>`).join("")}</div>
+    <div class="o-key">${parts.map(({ p, c, label }) => `<span><i style="background:${PALETTE[c]}"></i>${label} ${Math.round(p * 100)}%</span>`).join("")}</div>`;
+
+const sub = (text) => `<h5 class="o-sub">${text}</h5>`;
+
+// A folding card: icon, title and a one-line takeaway; the numbers open underneath.
+const card = (iconName, title, takeaway, body, open = false) => `<details class="o-card" ${open ? "open" : ""}>
+        <summary><span class="o-head-art">${icon(iconName, 3)}</span><span><b>${title}</b><small>${takeaway}</small></span><i class="o-chev">${icon("i-next", 2)}</i></summary>
+        <div class="o-body">${body}</div>
+    </details>`;
+
+function slotOdds() {
     const total = totalWeight(SYMBOLS);
-    let ret = 0;
     let win = 0;
-    const rows = [...SYMBOLS].reverse().map((s) => {
+    const rows = [...SYMBOLS].reverse().flatMap((s) => {
         const p = s.weight / total;
         const triple = p ** 3;
         const pair = p * p * (1 - p);
-        ret += triple * s.triple + pair * s.pair;
         win += triple + pair;
-        return [icon(s.id, 2), `${s.name} ${rate(p)} / REEL`, `3X ${rate(triple)} = x${s.triple}`, `2X ${rate(pair)} = x${s.pair}`];
+        return [
+            row(reels([s.id, s.id, s.id], [0, 1, 2]), `3 ${s.name}`, triple, { note: `PAYS x${s.triple}`, c: "y" }),
+            row(reels([s.id, s.id, null], [0, 1]), `2 ${s.name}`, pair, { note: `PAYS x${s.pair}`, c: "G" }),
+        ];
     });
-    const starRows = [1, 2, 3].map((n) => [
-        `${icon("cosmic", 2).repeat(n)}`,
-        `${n} STAR${n > 1 ? "S" : ""}`,
-        rate(COSMIC.odds[n]),
-        `PERFECT: ${rate(COSMIC.odds[n] * COSMIC.perfectMult)}`,
-    ]);
-    return section(
-        "i-seven",
-        "SLOT ODDS",
-        `<p>EACH REEL ROLLS ON ITS OWN. A PAIR MEANS THE FIRST TWO REELS MATCH.</p>
-        ${table(rows)}
-        <p>ANY WIN: ${rate(win)} OF SPINS. BASE RETURN: x${ret.toFixed(2)} OF YOUR BET BEFORE TIMING, HEAT, BURN, PETS, GEAR, VIP AND RELICS.</p>
-        ${table(starRows)}
-        ${table([
-            [icon("i-star", 2), "LUCKY SPIN", rate(LUCK.luckySpinChance), `x${LUCK.luckySpinMult} PAYOUT`],
-            [icon("chest", 2), "CHEST PER BET SPIN", rate(LUCK.chestPerSpin), "+GEAR / PET / VIP / RELIC CHEST BONUS"],
-            [icon("chest", 2), "GEM OR SEVEN TRIPLE", "100%", "A BLESSED CHEST"],
-            [icon("gem", 2), "JACKPOT 7-7-7", `+${GEMS.tiers.jackpot} DIAMONDS`, ""],
-            [icon("gem", 2), "COSMIC ROLL", `+${GEMS.tiers.cosmic} DIAMONDS`, ""],
-        ])}`,
-    );
+    const g = TIMING.grades;
+    const body = `${sub("WHAT PAYS (MATCH FROM THE LEFT)")}
+        ${rows.join("")}
+        ${sub("COSMIC STARS (ANY REEL)")}
+        ${row(reels(["cherry", "cosmic", "lemon"], [1]), "1 STAR", COSMIC.odds[1], { note: `+x${COSMIC.single.scatter}, LINE x${COSMIC.single.lineMult}`, c: "v" })}
+        ${row(reels(["cosmic", "cosmic", "bell"], [0, 1]), "2 STARS", COSMIC.odds[2], { note: `+x${COSMIC.double.scatter} + A CHEST`, c: "v" })}
+        ${row(reels(["cosmic", "cosmic", "cosmic"], [0, 1, 2]), "3 STARS", COSMIC.odds[3], { note: `x${COSMIC.payout}!`, c: "v" })}
+        <p class="o-tip">${icon("i-star", 2)} A PERFECT STOP DOUBLES EVERY STAR CHANCE.</p>
+        ${sub("YOUR TIMING MULTIPLIES THE WIN")}
+        ${tiles([
+            [meter(0.5), color("y", "PERFECT"), `WIN x${g.perfect.mult}`],
+            [meter(0.38), color("g", "GOOD"), `WIN x${g.good.mult}`],
+            [meter(0.12), "MISS", "WIN x1"],
+        ])}
+        ${sub("EXTRAS ON EVERY BET SPIN")}
+        ${row(icon("i-star", 3), "LUCKY SPIN", LUCK.luckySpinChance, { note: `THIS SPIN PAYS x${LUCK.luckySpinMult}` })}
+        ${row(icon("chest", 3), "A CHEST DROPS", LUCK.chestPerSpin, { note: "GEAR, PETS, VIP AND RELICS RAISE IT" })}
+        ${row(reels(["seven", "seven", "seven"], [0, 1, 2]), "JACKPOT 7-7-7", null, { value: `+${GEMS.tiers.jackpot} ${icon("gem", 2)}` })}`;
+    return card("i-seven", "SLOT", `ABOUT 1 SPIN IN ${Math.round(1 / win)} WINS SOMETHING`, body, true);
 }
 
-function chestOddsHtml() {
+const REWARD_ART = {
+    coins: (r) => [icon("coin", 3), `COINS x${r.mult}`],
+    ore: (r) => [icon("ore", 3), `ORE ${Math.round(r.fill * 100)}% CART`],
+    xp: (r) => [icon("i-star", 3), `XP ${Math.round(r.frac * 100)}%`],
+    item: (r) => [icon(r.id, 3), `${r.n} ${ITEMS[r.id].name}`],
+    freeSpin: () => [icon("i-gift", 3), "FREE SPIN"],
+    heat: (r) => [icon("flame", 3), `+${r.amount} HEAT`],
+    goldRush: (r) => [icon("ore", 3), `GOLD RUSH ${r.seconds}S`],
+    hotMachine: (r) => [icon("flame", 3), `${r.spins} HOT SPINS`],
+    gems: (r) => [icon("gem", 3), `${r.n} DIAMOND${r.n > 1 ? "S" : ""}`],
+    bundle: () => [icon("chest", 3), "CHEST BUNDLE"],
+    relic: () => [icon("relic", 3), "A RELIC"],
+};
+
+function chestOdds() {
     const total = totalWeight(LUCK.rarities);
-    const name = (r) => (r.type === "item" ? `${r.n} ${ITEMS[r.id].name}` : r.type === "gems" ? `${r.n} DIAMOND${r.n > 1 ? "S" : ""}` : r.type.toUpperCase());
-    return section(
-        "chest",
-        "CHEST ODDS",
-        `<p>A CHEST PICKS A RARITY, THEN ONE REWARD OF THAT RARITY AT EVEN ODDS. BOOSTED CHESTS (BATS, TRIPLES, COSMIC) TILT TOWARD RARE.</p>
-        ${table(
-            LUCK.rarities.map((r) => {
+    const legendary = LUCK.rarities[LUCK.rarities.length - 1];
+    const body = `${sub("A CHEST PICKS A RARITY...")}
+        ${stack(LUCK.rarities.map((r) => ({ p: r.weight / total, c: r.color, label: r.name })))}
+        ${sub("...THEN ONE OF ITS REWARDS, EVEN ODDS")}
+        ${LUCK.rarities
+            .map((r) => {
                 const list = LUCK.rewards[r.id];
-                return [`<em style="color:${PALETTE[r.color]}">${r.name}</em>`, rate(r.weight / total), list.map(name).join(" / ")];
-            }),
-        )}
-        ${table([
-            [icon("ore", 2), "PER MINE TAP", rate(LUCK.chestPerTap), ""],
-            [icon("bat0", 2), "GOLDEN BAT", "100%", "BLESSED"],
-            [icon("chest", 2), "AWAY", `1 / ${LUCK.awayMinutesPerChest} MIN`, `MAX ${LUCK.awayMaxChests}`],
-        ])}`,
-    );
+                return `<div class="o-rewards"><b style="color:${PALETTE[r.color]}"><span class="o-head-art">${icon("chest", 3)}</span>${r.name}<small>EACH ${brief(1 / list.length)}</small></b>
+                    <span>${list.map((rw) => REWARD_ART[rw.type](rw)).map(([art, label]) => `<span class="o-chip is-label">${art}<small>${label}</small></span>`).join("")}</span></div>`;
+            })
+            .join("")}
+        ${sub("WHERE CHESTS COME FROM")}
+        ${row(icon("i-pick", 3), "EVERY MINE TAP", LUCK.chestPerTap)}
+        ${row(icon("i-seven", 3), "EVERY BET SPIN", LUCK.chestPerSpin)}
+        ${row(icon("bat0", 3), "GOLDEN BAT", 1, { note: "A BLESSED CHEST: BETTER RARITY" })}
+        ${row(reels(["gem", "gem", "gem"], [0, 1, 2]), "GEM OR SEVEN TRIPLE", 1, { note: "A BLESSED CHEST" })}
+        ${row(icon("i-clock", 3), "WHILE AWAY", null, { value: `1 / ${LUCK.awayMinutesPerChest} MIN`, note: `UP TO ${LUCK.awayMaxChests}` })}`;
+    return card("chest", "CHESTS", `MOSTLY COMMON. ABOUT 1 IN ${Math.round(total / legendary.weight)} IS ${legendary.name}`, body);
 }
 
-// Every way to get each item, with the chance.
-function itemSources(id) {
-    const out = [];
-    const DROP_LABELS = { tap: "MINE TAP", luckyTap: "LUCKY TAP", win: "SLOT WIN", star: "COSMIC STAR", bat: "GOLDEN BAT" };
-    Object.entries(DROPS).forEach(([src, list]) => list.forEach((d) => d.id === id && out.push(`${DROP_LABELS[src]} ${rate(d.chance)}`)));
-    FARM.zones.forEach((z) => {
-        const w = z.loot.find(([lid]) => lid === id);
-        if (w) out.push(`${z.name} ${rate(w[1] / totalWeight(z.loot, ([, x]) => x))} OF FINDS`);
-    });
-    Object.entries(FARM.crops).forEach(([seed, crop]) =>
-        crop.yields.forEach(([lid, n, p]) => lid === id && out.push(`${ITEMS[seed].name} HARVEST ${rate(p)} (x${n})`)),
-    );
-    const chestTotal = totalWeight(LUCK.rarities);
-    LUCK.rarities.forEach((r) => {
-        const list = LUCK.rewards[r.id];
-        list.forEach((rw) => rw.type === "item" && rw.id === id && out.push(`CHEST ${rate((r.weight / chestTotal) * (1 / list.length))} (x${rw.n})`));
-    });
-    if (["relicDust", "stardust", "meteor", "goldfruit"].includes(id)) out.push("THE VAULT");
-    if (id === "relicDust") out.push("SALVAGED RELICS");
-    if (BREWS.some((b) => b.id === id)) out.push("BREWED IN THE FORGE");
-    return out.length ? out.join(" · ") : ITEMS[id].from;
-}
-
-function marketOddsHtml() {
+function marketOdds() {
     const total = totalWeight(MARKET.phases);
+    const mood = (p) => (p.spike ? `JUMPS +${pct(p.spike[0])}-${pct(p.spike[1])}` : p.drift > 0 ? `+${pct(p.drift)} EACH MIN` : p.drift < 0 ? `${pct(p.drift)} EACH MIN` : "STAYS NEAR x1");
     const glut = (n) => MARKET.dump * Math.max(0, n - MARKET.freeCarts) ** MARKET.dumpCurve;
-    const carts = [MARKET.demandUpTo, MARKET.freeCarts, 2, 3, 5, 9].map((n) => [icon("i-cart", 2), `${n} CART${n === 1 ? "" : "S"} IN ONE MINUTE`, n <= MARKET.demandUpTo ? `+${MARKET.demandBump} NEXT MIN` : n <= MARKET.freeCarts ? "NO GLUT" : `+${glut(n).toFixed(2)} GLUT`, ""]);
-    return section(
-        "coin",
-        "MARKET",
-        `<p>A NEW MOOD IS PICKED WHEN THE LAST ONE ENDS. EACH MINUTE: PRICE += MOOD + NOISE, THEN PULLED BACK TOWARD x1. THE MOOD ALONE KEEPS IT BETWEEN x${MARKET.floor} AND x${MARKET.cap}.</p>
-        ${table(MARKET.phases.map((p) => [color(p.color, p.name), rate(p.weight / total), `${p.ticks[0] === p.ticks[1] ? p.ticks[0] : p.ticks.join("-")} MIN`, p.spike ? `JUMPS +${pct(p.spike[0])}-${pct(p.spike[1])}, PULL ${pct(p.revert)}` : `${p.drift >= 0 ? "+" : ""}${pct(p.drift)} / MIN, PULL ${pct(p.revert)}`]))}
-        ${table(carts)}
-        <p>GLUT: SELLING PAST ${MARKET.freeCarts} CART IN A MINUTE ADDS ${MARKET.dump} x EXTRA CARTS^${MARKET.dumpCurve}. THE PRICE FEELS IT SLOWLY: EACH MINUTE IT TAKES ${pct(MARKET.dragRate)} OF THE WAY TO x e^-GLUT, AND ${pct(1 - MARKET.glutKeep)} OF THE GLUT CLEARS. ${pct(MARKET.jolt.chance)} OF MINUTES ALSO JOLT UP OR DOWN BY UP TO ${pct(MARKET.jolt.size)}.</p>`,
-    );
+    const next = (n) => (n <= MARKET.demandUpTo ? color("G", "GOES UP A BIT") : n <= MARKET.freeCarts ? color("l", "STAYS STEADY") : glut(n) < 0.5 ? color("y", "DIPS SLOWLY") : glut(n) < 2 ? color("R", "DIPS") : color("r", "SINKS TO PENNIES"));
+    const body = `${sub("THE PRICE MOVES ONCE A MINUTE, IN MOODS")}
+        ${stack(MARKET.phases.map((p) => ({ p: p.weight / total, c: p.color, label: p.name })))}
+        ${MARKET.phases.map((p) => row(`<span class="g-dot" style="--c:${PALETTE[p.color]}"></span>`, color(p.color, p.name), p.weight / total, { note: `${mood(p)} · ${p.ticks[0] === p.ticks[1] ? p.ticks[0] : p.ticks.join("-")} MIN`, c: p.color })).join("")}
+        ${row(icon("flame", 3), "SURPRISE JOLT", MARKET.jolt.chance, { note: `ANY MINUTE CAN JUMP UP OR DOWN BY UP TO ${pct(MARKET.jolt.size)}` })}
+        ${sub("WHAT SELLING DOES TO THE NEXT MINUTES")}
+        ${[MARKET.demandUpTo, MARKET.freeCarts, 2, 3, 9].map((n) => row(`${icon("i-cart", 3)}<small>x${n}</small>`, `${n} CART${n === 1 ? "" : "S"} A MINUTE`, null, { value: next(n) })).join("")}
+        <p class="o-tip">${icon("coin", 2)} YOU ALWAYS GET THIS MINUTE'S PRICE. A BIG DUMP ONLY BITES IN THE MINUTES AFTER, AND FADES AGAIN.</p>`;
+    return card("coin", "ORE MARKET", `SELL ABOUT ${MARKET.freeCarts} CART A MINUTE AND THE PRICE STAYS HEALTHY`, body);
 }
 
-function itemOddsHtml() {
-    return section(
-        "i-bag",
-        "ITEM DROP RATES",
-        `<p>CHANCES ARE PER EVENT. TRIP FINDS: EACH ROLL OF AN EXPEDITION PICKS ONE ITEM BY THESE ODDS. LUCKY TAPS ARE ${rate(MINE.luckyChance)} OF TAPS.</p>
-        ${table(Object.keys(ITEMS).map((id) => [icon(id, 2), `<em style="color:${PALETTE[LUCK.rarities.find((r) => r.id === ITEMS[id].rarity).color]}">${ITEMS[id].name}</em>`, itemSources(id)]))}`,
-    );
+function tripOdds() {
+    const maxLuck = FARM.trips[FARM.trips.length - 1].luck;
+    const boost = (rank) => (maxLuck ** (rank * FARM.luckCurve)).toFixed(1);
+    const zoneParts = (zone) => {
+        const total = totalWeight(zone.loot, ([, w]) => w);
+        return zone.loot.map(([id, w]) => `<span class="o-chip" data-tip="${id}">${icon(id, 3)}<small>${brief(w / total)}</small></span>`).join("");
+    };
+    const body = `${sub("LONGER TRIPS ARE LUCKIER")}
+        ${FARM.trips.map((t) => row(icon("i-clock", 3), t.label, t.luck / maxLuck, { value: `${Math.round(t.luck * 100)}% LUCK`, note: `~${t.rolls} FINDS ALONE`, c: "G" })).join("")}
+        <p class="o-tip">${icon("i-star", 2)} AT ${Math.round(maxLuck * 100)}% LUCK: RARE FINDS x${boost(1)}, EPIC x${boost(2)}, LEGENDARY x${boost(3)} AS LIKELY.</p>
+        ${sub("MORE PETS CARRY MORE LOOT")}
+        ${tiles(FARM.party.map((m, n) => [`<span class="o-icons">${n ? icon("i-paw", 2).repeat(n) : icon("miner", 2)}</span>`, n ? `${n} PET${n > 1 ? "S" : ""}` : "DIGGS ALONE", `x${m} FINDS`]), 4)}
+        ${sub("WHAT EACH ZONE DROPS (AT 100% LUCK)")}
+        ${FARM.zones.map((z) => `<div class="o-rewards"><b><span class="o-head-art">${icon(z.icon, 3)}</span>${z.name}<small>LV${z.level}</small></b><span>${zoneParts(z)}</span></div>`).join("")}`;
+    return card("i-farm", "EXPEDITIONS", `${FARM.trips[FARM.trips.length - 1].label} IS THE LUCKIEST. EACH PET ADDS LOOT`, body);
 }
 
-function endgameOddsHtml() {
+const DROP_SOURCES = [
+    ["tap", `<span class="o-head-art">${icon("i-pick", 3)}</span>`, "MINE TAP", "EVERY TAP"],
+    ["luckyTap", `<span class="o-head-art">${icon("i-star", 3)}</span>`, "LUCKY TAP", `${brief(MINE.luckyChance)} OF TAPS`],
+    ["win", `<span class="o-head-art">${icon("i-seven", 3)}</span>`, "SLOT WIN", "EVERY WIN"],
+    ["star", `<span class="o-head-art">${icon("cosmic", 3)}</span>`, "COSMIC STAR", "EVERY STAR"],
+    ["bat", `<span class="o-head-art">${icon("bat0", 3)}</span>`, "GOLDEN BAT", "EVERY BAT"],
+];
+
+function itemOdds() {
+    const sources = DROP_SOURCES.map(([src, art, label, note]) => `<div class="o-rewards"><b>${art}${label}<small>${note}</small></b><span>${DROPS[src].map((d) => `<span class="o-chip" data-tip="${d.id}">${icon(d.id, 3)}<small>${brief(d.chance)}</small></span>`).join("")}</span></div>`).join("");
+    const crops = Object.entries(FARM.crops)
+        .map(([seed, crop]) => `<div class="o-rewards"><b><span class="o-head-art">${icon(seed, 3)}</span>${ITEMS[seed].name}<small>${crop.minutes} MIN</small></b><span>${crop.yields.map(([id, n, p]) => `<span class="o-chip" data-tip="${id}">${icon(id, 3)}<small>${n > 1 ? `x${n} ` : ""}${brief(p)}</small></span>`).join("")}</span></div>`)
+        .join("");
+    const body = `${sub("DROPS WHILE YOU PLAY (CHANCE EACH TIME)")}
+        ${sources}
+        ${sub("GARDEN HARVESTS")}
+        ${crops}
+        <p class="o-tip">${icon("i-bag", 2)} HOVER AN ITEM FOR ITS NAME. THE BAG SHOWS EVERY PLACE IT COMES FROM.</p>`;
+    return card("i-bag", "ITEM DROPS", "TAPS, WINS AND BATS DROP MATERIALS. TRIPS BRING THE REST", body);
+}
+
+function rareOdds() {
     const relicTotal = totalWeight(RELICS.rarities);
-    return section(
-        "relic",
-        "RELICS, DIAMONDS, VAULT",
-        `${table(RELICS.rarities.map((r) => [icon("relic", 2), r.id.toUpperCase(), rate(r.weight / relicTotal), `${r.stats} STAT${r.stats > 1 ? "S" : ""} x${r.mult} / REROLL ${r.reroll} DIAMONDS`]))}
-        ${table(RELICS.stats.map((s) => [s.adj, s.label, `+${Math.round(s.min * 100)}-${Math.round(s.max * 100)}% (BEFORE RARITY)`]))}
-        ${table([
-            [icon("gem", 2), "EPIC / LEGENDARY CHEST", "1 / 5 DIAMONDS", ""],
-            [icon("gem", 2), "LUCKY TAP", rate(GEMS.luckyTapChance), "1 DIAMOND"],
-            [icon("gem", 2), `EVERY ${GEMS.levelEvery} LEVELS`, `${GEMS.perMilestone} DIAMONDS`, ""],
-            [icon("vault", 2), "VAULT HP", `${formatNumber(VAULT.baseHp)} x${VAULT.growth} EACH`, `SPIN: BET x${VAULT.spinGrade.perfect}/${VAULT.spinGrade.good}/${VAULT.spinGrade.miss} + WIN`],
-        ])}`,
-    );
+    const relicColor = { rare: "B", epic: "v", legendary: "y" };
+    const lucky = MINE.luckyChance * GEMS.luckyTapChance;
+    const body = `${sub("DIAMONDS")}
+        ${row(icon("i-pick", 3), "ANY MINE TAP", lucky, { note: "A LUCKY TAP THAT SPARKLES", c: "c" })}
+        ${row(reels(["seven", "seven", "seven"], [0, 1, 2]), "JACKPOT 7-7-7", null, { value: `+${GEMS.tiers.jackpot} ${icon("gem", 2)}` })}
+        ${row(reels(["cosmic", "cosmic", "cosmic"], [0, 1, 2]), "COSMIC ROLL", null, { value: `+${GEMS.tiers.cosmic} ${icon("gem", 2)}` })}
+        ${row(icon("i-star", 3), `EVERY ${GEMS.levelEvery} LEVELS`, null, { value: `+${GEMS.perMilestone} ${icon("gem", 2)}` })}
+        ${row(icon("chest", 3), "EPIC / LEGENDARY CHEST", null, { value: `1 / 5 ${icon("gem", 2)}`, note: "WHEN THAT REWARD COMES UP" })}
+        ${sub("RELICS: HOW RARE")}
+        ${stack(RELICS.rarities.map((r) => ({ p: r.weight / relicTotal, c: relicColor[r.id], label: r.id.toUpperCase() })))}
+        ${tiles(RELICS.rarities.map((r) => [icon("relic"), color(relicColor[r.id], r.id.toUpperCase()), `${r.stats} STAT${r.stats > 1 ? "S" : ""}, x${r.mult} STRONG`]))}
+        ${sub("THE VAULT")}
+        ${row(icon("vault", 3), "FIRST VAULT OF THE DAY", null, { value: `${formatNumber(VAULT.baseHp)} HP`, note: `EACH NEXT ONE x${VAULT.growth} TOUGHER` })}
+        ${row(icon("i-seven", 3), "A SPIN HITS FOR", null, { value: `BET x${VAULT.spinGrade.perfect}/${VAULT.spinGrade.good}/${VAULT.spinGrade.miss}`, note: "PERFECT / GOOD / MISS, PLUS THE WIN" })}`;
+    return card("gem", "DIAMONDS, RELICS, VAULT", `ABOUT ${odds(lucky)} MINE TAPS FINDS A DIAMOND`, body);
 }
 
 function oddsHtml() {
-    return `<p class="g-lead">EVERY CHANCE IN THE GAME, STRAIGHT FROM THE RULES.</p>${[slotOddsHtml(), chestOddsHtml(), marketOddsHtml(), itemOddsHtml(), endgameOddsHtml()].join("")}`;
+    const legend = `<div class="o-legend">
+            <span><b>100%</b><small>ALWAYS</small></span>
+            <span><b>25%</b><small>1 TIME IN 4</small></span>
+            <span><b>1 IN 1,000</b><small>VERY RARE</small></span>
+        </div>`;
+    return `<p class="g-lead">EVERY CHANCE IN THE GAME. TAP A CARD TO OPEN IT.</p>
+        ${legend}
+        ${[slotOdds(), chestOdds(), marketOdds(), tripOdds(), itemOdds(), rareOdds()].join("")}`;
 }
 
 export function buildGuide(onPlay, onTour) {
     document.getElementById("menu-start").innerHTML = startHtml();
     document.getElementById("menu-guide").innerHTML = guideHtml();
-    document.getElementById("menu-pay").innerHTML = payHtml() + oddsHtml();
+    document.getElementById("menu-pay").innerHTML = oddsHtml();
     document.getElementById("btn-guide-play").addEventListener("click", onPlay);
     document.getElementById("btn-guide-tour").addEventListener("click", onTour);
 }

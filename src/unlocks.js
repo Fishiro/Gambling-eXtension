@@ -1,4 +1,4 @@
-import { UNLOCKS } from "./config.js";
+import { UNLOCKS } from "./core/config.js";
 import { state, commit } from "./store.js";
 import * as fx from "./fx.js";
 import { hint } from "./tooltip.js";
@@ -17,7 +17,7 @@ export const isOpen = (state, id) => !byId[id] || state.level >= byId[id].level;
 // Which feature each dock tab and bag view belongs to.
 const TABS = { farm: "farm", bag: "bag" };
 // Skins open with the bag itself, so they have no entry here.
-const VIEWS = { forge: "forge", pets: "pets", relics: "endgame" };
+const VIEWS = { forge: "forge", pets: "pets", relics: "relics" };
 
 export const tabOpen = (tab) => isOpen(state, TABS[tab]);
 export const viewOpen = (view) => isOpen(state, VIEWS[view]);
@@ -38,7 +38,7 @@ export function createUnlocks({ tour, stopAuto }) {
         document.querySelectorAll("[data-bag]").forEach((b) => (b.hidden = !viewOpen(b.dataset.bag)));
         $("btn-pet").hidden = !isOpen(state, "pets");
         $("gems").hidden = !isOpen(state, "skins") && !state.gems;
-        $("vip").hidden = $("vault").hidden = !isOpen(state, "endgame");
+        $("vip").hidden = $("vault").hidden = !isOpen(state, "vault");
     }
 
     // A tap on something still locked: say when it opens.
