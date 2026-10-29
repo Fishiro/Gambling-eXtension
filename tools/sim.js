@@ -153,7 +153,7 @@ export function playSession({ player = PLAYERS.casual, minutes = 240, seed = 1 }
                 state.ore -= amount;
                 state.coins += coins;
                 income.mine += coins;
-                levelUp(econ.gainXp(state, econ.sellXp(coins)));
+                levelUp(econ.gainXp(state, market.sellXpFor(state, coins)));
             }
             shop(state);
         }

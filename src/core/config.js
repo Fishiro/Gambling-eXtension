@@ -66,13 +66,14 @@ export const UNLOCKS = [
 // ~+2.3 x xpScale more XP, so big bets help a little instead of inflating levels.
 // A level costs spinsBase * spinsGrowth^(level - 1) GOOD spins at that level's top (non-VIP) bet, so the pace is
 // set in spins, the thing a player actually feels, and stays the same whatever the bet table looks like.
-// Selling a cart is worth sellXp spins' worth of the coins it brought.
+// Mining XP is a trickle: everything sold in one market minute counts together, worth sellXp spins staking the
+// coins it brought (core/market.sellXpFor), so splitting or spamming sales earns nothing extra.
 export const LEVELS = {
     xpScale: 10,
     xpUnit: 10,
     spinsBase: 8,
     spinsGrowth: 1.1,
-    sellXp: 2,
+    sellXp: 0.5,
     coinRewardPerLevel: 25,
 };
 

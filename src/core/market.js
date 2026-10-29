@@ -1,5 +1,5 @@
 import { MARKET } from "./config.js";
-import { clamp, cartCap } from "./economy.js";
+import { clamp, cartCap, sellXp } from "./economy.js";
 
 // The ore market. state.market.price is the base price, glut the oversupply players piled up and drag the
 // part of it the price already feels; ore pays base * e^-drag (see price). It only moves once per tick, run on
@@ -49,6 +49,7 @@ export function step(m, cart, rand = Math.random) {
     m.glut *= MARKET.glutKeep;
     m.left -= 1;
     m.sold = 0;
+    m.paid = 0;
     m.hist = [...m.hist, price(m)].slice(-MARKET.history);
     return started;
 }
@@ -75,6 +76,15 @@ export const quote = (state) => ({ mult: price(state.market) });
 export function sell(state, amount) {
     state.market.sold += amount;
     return price(state.market);
+}
+
+// XP for a sale. Coins sold within one tick count together (XP is logarithmic, so twenty small sales would
+// otherwise earn far more than one big one): the sale earns what it adds to the tick's total.
+export function sellXpFor(state, coins) {
+    const m = state.market;
+    const before = m.paid ?? 0;
+    m.paid = before + coins;
+    return sellXp(m.paid) - sellXp(before);
 }
 
 // STONKS' PUMP IT: the glut is wiped and the base price jumps by `amount`.

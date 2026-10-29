@@ -45,7 +45,10 @@ by the inverse half, clamped. Bot runs keep every level above a 10% hit rate for
 
 **XP is logarithmic in the stake** (`economy.xpForStake`): `10 * ln(1 + stake / 10)`. Every x10 on the bet adds
 the same ~23 XP, so a 10K bet gives ~72 XP a spin and a 5M VIP bet only ~138: big bets help a little, they never
-inflate levels. Selling gives the XP of `sellXp` (2) spins staking the coins the cart earned.
+inflate levels. **Mining XP is a trickle:** everything sold in one market minute counts as one sale worth
+`sellXp` (0.5) spins staking those coins (`market.sellXpFor`). XP is logarithmic, so per-sale XP let twenty small
+sales earn ~7x one big one and spam-selling in a hot market farmed levels; pooled per minute, splitting earns
+nothing, and a whole minute of selling at the top price is under two spins (~36 XP at LV12, a level is 1,656).
 **XP per level is set in spins:** level L costs `8 * 1.1^(L-1)` GOOD spins at its top non-VIP bet (LV10 ~19,
 LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that drifts with the bet table.
 
@@ -125,6 +128,8 @@ short and soft so they never punish louder than wins reward. Spammable sounds ar
 - Every gear level and every brew costs coins; materials alone can't pay.
 - Difficulty: rising peaks, each chapter opens easier than the last peak, 0 at LV1, 1 at the end.
 - XP: logarithmic (x10 bet = same flat gain); one perfect spin at the top VIP bet is under 1/4 of a level; LV30 under 200 spins.
+- Mining XP: any number of sales in one market minute earns exactly what one sale of their total would; a minute
+  of selling a big cart at the top price is worth under two spins of XP at every level.
 - Something unlocks at every level 2-11.
 - Mine: value always rises; payback never jumps more than x1.6 per level.
 - Chests: shares within tolerance of the table; no dry streak reaches the pity limit.

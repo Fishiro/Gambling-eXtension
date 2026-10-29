@@ -426,3 +426,22 @@ test("item uses: every recipe that needs an item is listed, junk keeps what brew
     luck.scrap(s, "pebble", 10 - 1 - brewNeed("pebble"));
     assert.equal(s.bag.pebble, brewNeed("pebble"), "scrap extra leaves exactly what the brew needs");
 });
+
+test("mining xp: a market minute counts as one sale, and it stays a trickle", () => {
+    const spam = freshState(0);
+    let spamXp = 0;
+    for (let i = 0; i < 20; i++) spamXp += market.sellXpFor(spam, 50);
+    const once = freshState(0);
+    const onceXp = market.sellXpFor(once, 1000);
+    assert.ok(Math.abs(spamXp - onceXp) < 1e-9, `20 small sales ${spamXp} vs one big ${onceXp}`);
+    // A new minute starts a new sale.
+    market.step(spam.market, econ.cartCap(spam), () => 0.5);
+    assert.ok(market.sellXpFor(spam, 1000) > onceXp * 0.99);
+    // A whole minute of selling, a big cart at the market's top price, is worth under two spins of XP (a player
+    // spins about twenty times a minute), so the mine only trickles XP.
+    for (const level of [5, 12, 20, 30]) {
+        const coins = econ.upgradeValue("cart", level) * MARKET.cap;
+        const spin = econ.spinXp(econ.betCap(level), "good");
+        assert.ok(econ.sellXp(coins) < spin * 2, `LV${level}: a minute of selling = ${econ.sellXp(coins).toFixed(1)} XP vs a spin ${spin.toFixed(1)}`);
+    }
+});

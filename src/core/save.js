@@ -50,7 +50,7 @@ export const freshState = (now = Date.now()) => ({
     pity: { epic: 0, legendary: 0 },
     // Ore market: price multiplier, current phase and ticks left in it, start of the current tick,
     // ore sold during it, the glut selling piled up and the drag the price already feels, and recent closes.
-    market: { price: 1, phase: "calm", left: 3, at: now, sold: 0, glut: 0, drag: 0, hist: [] },
+    market: { price: 1, phase: "calm", left: 3, at: now, sold: 0, paid: 0, glut: 0, drag: 0, hist: [] },
     lastSeen: now,
 });
 

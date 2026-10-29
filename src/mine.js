@@ -194,7 +194,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         const coins = Math.round(amount * econ.orePrice(state) * mult * hypeMult());
         state.ore -= amount;
         state.coins += coins;
-        const levels = econ.gainXp(state, econ.sellXp(coins));
+        const levels = econ.gainXp(state, market.sellXpFor(state, coins));
         commit();
         emit("sell", { amount, coins });
         sfx.sell(amount / econ.cartCap(state));
