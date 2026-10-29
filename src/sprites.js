@@ -724,8 +724,8 @@ export function drawSprite(ctx, name, x, y, flip = false) {
 }
 
 // Every in-game icon is drawn this much bigger than the scale its caller asks for (callers think in the
-// original 1x sizes). src/popup.css's type scale matches it.
-export const UI_SCALE = 1.5;
+// original 1x sizes). src/popup.css's pt type scale matches it.
+export const UI_SCALE = 1.125;
 
 export function svgIcon(name, scale = 2) {
     scale *= UI_SCALE;

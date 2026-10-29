@@ -56,7 +56,7 @@ test("the popup and the web page load files that exist", () => {
     assert.ok(existsSync(join(root, "src", entry)), `src/popup.html points at missing ${entry}`);
     for (const [file, base] of [["src/popup.html", "src"], ["index.html", "."]]) {
         const page = readFileSync(join(root, file), "utf8");
-        for (const m of page.matchAll(/(?:src|href)="([^"#:]+)"/g)) assert.ok(existsSync(join(root, base, m[1])), `${file} points at missing ${m[1]}`);
+        for (const m of page.matchAll(/(?:src|href)="([^"#:?]+)/g)) assert.ok(existsSync(join(root, base, m[1])), `${file} points at missing ${m[1]}`);
     }
     const css = readFileSync(join(root, "src", "popup.css"), "utf8");
     for (const m of css.matchAll(/url\("([^"]+)"\)/g)) assert.ok(existsSync(join(root, "src", m[1])), `src/popup.css points at missing ${m[1]}`);

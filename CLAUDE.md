@@ -29,14 +29,14 @@ Root = only what runs the game or what a tool needs there (`manifest.json`, `ind
 - `fx.js`, `sound.js`, `sprites.js`: visuals, sfx, SVG pixel icons. UI text lives in `text.js`.
 - `sound.js`: every sound is synthesized (no files) and plays on a category bus (`BUSES`: ui, slot, mine, loot, world) with its own volume in Settings. A new event gets its own sound in the right bus group; spammable sounds go in `THROTTLE`. `tests/sound.test.js` fails on any `sfx.x` that doesn't exist.
 - `src/keys.js`: every keyboard shortcut. `main.js` binds these codes; the guide, the tour and the web page describe them from this list. Add or change a key here, never only in a hint (`tests/keys.test.js` checks both).
-- `index.html` + `web/`: the web version. It runs `src/popup.html` unchanged in a scaled iframe and fills the side panels from `keys.js` and `TEXT.web`; it listens to the game's `gx:tab-*` events. The extension never loads it.
+- `index.html` + `web/`: the web version. It runs `src/popup.html?web` full-size (the game's own layout is responsive) and fills the side panels from `keys.js` and `TEXT.web`; it listens to the game's `gx:tab-*` events. The extension never loads it.
 - `tools/sim.js`: seeded bot + slot Monte Carlo on top of `src/core`; `tools/animator.html`: standalone sprite tool.
 
 ## Conventions
 
 - 4-space indent, double quotes, ES module imports with `.js` extension.
 - UI text is uppercase pixel style (Silkscreen font).
-- Size: the popup is Chrome's max, 800x600. Text runs on `--fs-0..3` (12/18/24/36px) and every icon goes through `svgIcon`/`svgFit`, which multiply by `sprites.UI_SCALE` (1.5), so call sites keep thinking in the original 1x scales. Use `svgFit(name, box)` wherever icons of different sprite sizes sit side by side.
+- Size: type is in pt (`--fs-0..3` = 7/10/13/20pt) so it never balloons; every icon goes through `svgIcon`/`svgFit`, which multiply by `sprites.UI_SCALE` (1.125), so call sites keep thinking in the original 1x scales. Use `svgFit(name, box)` wherever icons of different sprite sizes sit side by side. The popup is Chrome's max, 800x600, and the page itself never scrolls (panels do). `src/mode.js` adds `html.web` when the page is loaded with `?web` (the web version): then it fills the window and the layout stretches responsively.
 - `#boot` in src/popup.html is the first frame (plain HTML/CSS); main.js lifts it once the game is drawn.
 - Bump `version` in `manifest.json` with every change pushed:
   - `X.0.0` major: refactor / restructure.

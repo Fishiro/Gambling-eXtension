@@ -7,7 +7,7 @@ import { TEXT } from "./text.js";
 import { $ } from "./ui.js";
 
 // "+N" badges that pop out around the HUD counters (coins, diamonds, XP): each gain lands at a random spot
-// near its widget with a random tilt, bursts, then floats off. Gains are read off the state itself, so every
+// near its widget, upright, bursts, then floats off. Gains are read off the state itself, so every
 // source counts without telling anyone. A gain right after another of its kind adds into that badge instead.
 
 const LIFE_MS = 1400;
@@ -56,7 +56,6 @@ function spawner(kind, format) {
         el.classList.toggle("is-big", n >= cfg.big);
         el.style.left = `${Math.round(Math.min(window.innerWidth - 40, Math.max(40, x)))}px`;
         el.style.top = `${Math.round(y)}px`;
-        el.style.setProperty("--tilt", `${Math.round(rand(-14, 14))}deg`);
         layer.append(el);
         [...layer.querySelectorAll(`[data-kind="${kind}"]`)].slice(0, -MAX_ALIVE).forEach((old) => old.remove());
         fx.burst(x, y, { count: n >= cfg.big ? 16 : 8, colors: cfg.colors, speed: [1, n >= cfg.big ? 3.5 : 2.2], life: [12, 24], gravity: 0.05 });

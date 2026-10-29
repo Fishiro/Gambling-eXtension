@@ -1,28 +1,14 @@
 import { HOTKEYS } from "../src/keys.js";
 import { TEXT } from "../src/text.js";
 
-// The web page around the game: scales the 760x580 popup to fit the screen, and fills the side panels with
+// The web page around the game: the game fills the stage (its own layout is responsive), and the side panels show
 // the keys (from keys.js, the same list the game binds) for the tab you are on. Keys light up as you press them.
 
-const GAME_W = 800;
-const GAME_H = 600;
 const TIP_MS = 9000;
 const W = TEXT.web;
 
 const $ = (id) => document.getElementById(id);
 const game = $("game");
-const frame = $("frame");
-const stage = $("stage");
-
-// ---- fit: the biggest scale that shows the whole game in the stage ----
-
-function fit() {
-    const scale = Math.min(stage.clientWidth / GAME_W, stage.clientHeight / GAME_H);
-    frame.style.width = `${GAME_W * scale}px`;
-    frame.style.height = `${GAME_H * scale}px`;
-    game.style.transform = `scale(${scale})`;
-}
-new ResizeObserver(fit).observe(stage);
 
 // ---- side panels ----
 
@@ -134,4 +120,3 @@ window.addEventListener("blur", releaseAll);
 document.querySelectorAll(".rail").forEach((rail) => rail.addEventListener("pointerup", () => game.contentWindow?.focus()));
 
 renderTab("slot");
-fit();

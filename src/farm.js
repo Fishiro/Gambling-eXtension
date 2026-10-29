@@ -3,16 +3,17 @@ import { state, commit } from "./store.js";
 import * as econ from "./core/economy.js";
 import * as items from "./core/items.js";
 import * as farming from "./core/farming.js";
-import { svgIcon } from "./sprites.js";
+import { svgIcon, svgFit } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
 import { emit } from "./events.js";
-import { $, lootHtml, lootLines, patch } from "./ui.js";
+import { $, lootLines, patch } from "./ui.js";
 
 const SEEDS = Object.keys(FARM.crops);
 const clockAt = (ms) => new Date(ms).toTimeString().slice(0, 5);
-const zonePreview = (zone) => lootHtml(Object.fromEntries(zone.loot.map(([id]) => [id, ""])));
+// What a zone can drop, as a row of item icons big enough to tell apart (hover one for its name).
+const zonePreview = (zone) => zone.loot.map(([id]) => `<span class="zone-loot" data-tip="${id}">${svgFit(id, 14)}</span>`).join("");
 
 export function createFarm({ reveal, onLoot, replant }) {
     const el = { panel: $("tab-farm"), trip: $("trip"), garden: $("garden") };
@@ -49,7 +50,7 @@ export function createFarm({ reveal, onLoot, replant }) {
             .map((z) => {
                 const open = farming.isZoneOpen(state, z);
                 return `<button class="zone" data-action="zone" data-id="${z.id}" aria-pressed="${z.id === zoneId}" ${open ? "" : "disabled"}>
-                    ${svgIcon(z.icon, 2)}<span class="zone-main"><b>${z.name}</b><span class="chips">${open ? zonePreview(z) : TEXT.unlockAt(z.level)}</span></span>
+                    ${svgIcon(z.icon, 2)}<span class="zone-main"><b>${z.name}</b><span class="zone-drops">${open ? zonePreview(z) : TEXT.unlockAt(z.level)}</span></span>
                 </button>`;
             })
             .join("");
