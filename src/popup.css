@@ -84,6 +84,8 @@ html.web body {
    window: src/mode.js measures the box and sets --frame-l/t/w/h. */
 html.web body::before,
 html.web body::after {
+    /* Sized by width/height here (not insets), so the ring's 8px border must count inside them. */
+    box-sizing: border-box;
     inset: auto;
     left: var(--frame-l, 0px);
     top: var(--frame-t, 0px);
