@@ -181,8 +181,10 @@ export const TEXT = {
         forge: [
             { target: '[data-tab="bag"]', text: "LEVEL 5: THE FORGE! OPEN YOUR BAG.", wait: "tab-bag" },
             { target: '[data-bag="forge"]', text: "NOW TAP FORGE.", wait: "bag-forge" },
-            { target: "#gear-list", text: "MATERIALS BECOME GEAR. GEAR IS FOREVER AND KEEPS GETTING STRONGER." },
-            { target: "#brew-list", text: "BREWS ARE ONE-USE BOOSTS. DRINK THEM FROM THE ITEMS TAB.", last: true },
+            { target: "#gear-shelf", text: "YOUR GEAR, SORTED BY SET. A WHOLE SET AT 3 STARS LIGHTS A BIG BONUS." },
+            { target: "#anvil", text: "DRAG A PIECE ONTO THE ANVIL (OR CLICK IT), THEN STRIKE. GEAR IS FOREVER." },
+            { target: '[data-bag="brew"]', text: "ONE-USE BOOSTS LIVE IN BREW. TAP IT.", wait: "bag-brew" },
+            { target: "#brew-list", text: "BREW HERE, DRINK HERE. JUNK MAKES SECRET COMBO BREWS.", last: true },
         ],
         pets: [
             { target: "#btn-pet", text: "LEVEL 3: PETS! TAP THE PAW UP HERE.", wait: "bag-pets" },
@@ -257,6 +259,7 @@ export const TEXT = {
     craft: "CRAFT",
     upgrade: "UPGRADE",
     brew: "BREW",
+    drink: "DRINK",
     unlockAt: (lv) => `UNLOCKS AT LV${lv}`,
     tripPlan: (n, zone, back, luck) => `~${n} FINDS FROM ${zone}, ${luck}. BACK AT ${back}.`,
     send: "SEND DIGGS",
@@ -289,6 +292,28 @@ export const TEXT = {
         rightClick: "RIGHT-CLICK ANYWHERE: QUICK TABS + MENU",
     },
     quickMenu: ["RIGHT CLICK", "QUICK TABS + MENU"],
+    confirmSub: "DIAMONDS DON'T COME BACK. SURE?",
+    gemsLeft: (n) => `${n} DIAMONDS LEFT AFTER`,
+    // The forge (forge.js).
+    forge: {
+        anvil: "THE ANVIL",
+        dropHere: "DRAG GEAR HERE",
+        dropHint: "DRAG A PIECE FROM THE SHELF BELOW ONTO THE ANVIL, OR CLICK IT, TO SEE WHAT ITS NEXT LEVEL DOES AND COSTS.",
+        clear: "TAKE IT OFF THE ANVIL",
+        setOn: "ON",
+        risk: (pct, canLose) => `${pct}% TO WORK. ${canLose ? "FAIL: LOSE 1 STAR" : "FAIL: NOTHING LOST BUT THE COST"}`,
+        ascendAsk: (name, star) => `ASCEND ${name} TO STAR ${star}?`,
+        tryIt: "STRIKE",
+        oddsTitle: "STAR ODDS",
+        oddsNote: "A FAILED STAR COSTS THE PRICE AND CRACKS ONE STAR OFF (NEVER BELOW LV5).",
+    },
+    // Diamond buys outside the forge.
+    buySlotAsk: (slot) => `UNLOCK TEAM SLOT ${slot}?`,
+    buySkinAsk: (name) => `BUY ${name}?`,
+    rerollAsk: (name) => `REROLL ${name}?`,
+    rerollNote: "ITS STATS ARE ROLLED AGAIN FROM SCRATCH.",
+    buy: "BUY",
+    reroll: "REROLL",
     // The ABOUT page (about.js).
     about: {
         pitch: "A SLOT MACHINE, AN IDLE MINE AND A FARM FOR YOUR 5-MINUTE BREAKS. THE MINE KEEPS WORKING WHILE YOU DO.",

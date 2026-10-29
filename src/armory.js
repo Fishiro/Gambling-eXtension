@@ -8,6 +8,7 @@ import * as modal from "./modal.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
 import { $, patch } from "./ui.js";
+import { confirmSpend } from "./confirm.js";
 import { emit, on } from "./events.js";
 
 const RARITY_COLOR = { rare: "B", epic: "v", legendary: "y" };
@@ -54,6 +55,17 @@ export function createArmory() {
         patch(el.slots, slotsHtml());
     }
 
+    function rerollNow(relic, button, cost) {
+        if (!items.spend(state, { gems: cost })) return sfx.denied();
+        Object.assign(relic, relics.reroll(relic));
+        commit();
+        const card = button.closest(".relic");
+        const p = fx.centerOf(card?.isConnected ? card : button);
+        fx.burst(p.x, p.y, { count: 24, colors: ["c", "v", "w"], speed: [1.5, 3.5], life: [16, 30] });
+        sfx.reroll();
+        emit("relic-reroll");
+    }
+
     const ACTIONS = {
         equip(relic) {
             if (!relics.equip(state, relic.uid)) return sfx.denied();
@@ -64,14 +76,18 @@ export function createArmory() {
             relics.unequip(state, relic.uid);
             sfx.petUnequip();
         },
+        // Paid in diamonds, so it asks first.
         reroll(relic, button) {
             const cost = relics.rarityDef(relic).reroll;
-            if (!items.spend(state, { gems: cost })) return sfx.denied();
-            Object.assign(relic, relics.reroll(relic));
-            const p = fx.centerOf(button.closest(".relic"));
-            fx.burst(p.x, p.y, { count: 24, colors: ["c", "v", "w"], speed: [1.5, 3.5], life: [16, 30] });
-            sfx.reroll();
-            emit("relic-reroll");
+            if (state.gems < cost) return sfx.denied();
+            confirmSpend({
+                icon: "relic",
+                title: TEXT.rerollAsk(relics.relicName(relic)),
+                notes: [TEXT.rerollNote, ...relic.stats.map(relics.statLine)],
+                cost: { gems: cost },
+                ok: TEXT.reroll,
+                onOk: () => rerollNow(relic, button, cost),
+            });
         },
         salvage(relic) {
             // Salvage is forever, so it asks first.

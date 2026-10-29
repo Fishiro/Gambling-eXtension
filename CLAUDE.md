@@ -28,6 +28,8 @@ Root = only what runs the game or what a tool needs there (`manifest.json`, `ind
 - Feature modules export a `createX(...)` factory returning `{ render, ... }`; `main.js` wires them and runs a once-a-second loop.
 - `fx.js`, `sound.js`, `sprites.js`: visuals, sfx, SVG pixel icons. UI text lives in `text.js`.
 - `sound.js`: every sound is synthesized (no files) and plays on a category bus (`BUSES`: ui, slot, mine, loot, world) with its own volume in Settings. A new event gets its own sound in the right bus group; spammable sounds go in `THROTTLE`. `tests/sound.test.js` fails on any `sfx.x` that doesn't exist.
+- Bag views: `bag.js` owns ITEMS and the tab switching; `forge.js` is the FORGE (an anvil you drag gear onto from a shelf grouped by set, pointer-event drag with click as a fallback, an animated drag demo while empty); `brewery.js` is the BREW view (brew and drink in place).
+- `src/confirm.js`: `confirmSpend` asks before anything that costs diamonds (or risks a star): cost as have/need chips, diamonds left after. Every diamond spend must go through it.
 - `src/about.js`: the menu's ABOUT page (project + developer). Its links live in `LINKS` (the dev's site; `donate` is empty until the Ko-fi page exists, and the button says "coming soon" meanwhile). Every link asks before leaving the game and opens in a new tab.
 - `src/radial.js`: the right-click quick menu (the browser's own context menu is off, except in text fields): a ring of the four tabs around the pointer, the menu in its centre.
 - `src/keys.js`: every keyboard shortcut. `main.js` binds these codes; the guide, the tour and the web page describe them from this list. Add or change a key here, never only in a hint (`tests/keys.test.js` checks both).

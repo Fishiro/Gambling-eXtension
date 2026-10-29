@@ -17,7 +17,7 @@ export const isOpen = (state, id) => !byId[id] || state.level >= byId[id].level;
 // Which feature each dock tab and bag view belongs to.
 const TABS = { farm: "farm", bag: "bag" };
 // Skins open with the bag itself, so they have no entry here.
-const VIEWS = { forge: "forge", pets: "pets", relics: "relics" };
+const VIEWS = { forge: "forge", brew: "forge", pets: "pets", relics: "relics" };
 
 export const tabOpen = (tab) => isOpen(state, TABS[tab]);
 export const viewOpen = (view) => isOpen(state, VIEWS[view]);

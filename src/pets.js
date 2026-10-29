@@ -11,6 +11,7 @@ import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
 import { emit, on } from "./events.js";
 import { $ } from "./ui.js";
+import { confirmSpend } from "./confirm.js";
 
 const byId = Object.fromEntries(PETS.map((p) => [p.id, p]));
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
@@ -154,7 +155,7 @@ export function createPets({ reveal, showFarm }) {
         emit("pet-equip", { id: pet.id });
     }
 
-    // The next locked team slot, paid in diamonds.
+    // The next locked team slot, paid in diamonds (asks first).
     function buySlot(button) {
         const cost = PET_SLOTS[state.pets.slots];
         if (cost === undefined) return;
@@ -162,11 +163,17 @@ export function createPets({ reveal, showFarm }) {
             sfx.denied();
             return fx.shake(button, 2, 200);
         }
+        confirmSpend({ icon: "gem", title: TEXT.buySlotAsk(state.pets.slots + 1), cost: { gems: cost }, ok: TEXT.buy, onOk: () => openSlot(button, cost) });
+    }
+
+    function openSlot(button, cost) {
+        if (state.gems < cost) return sfx.denied();
         state.gems -= cost;
         state.pets.slots += 1;
         commit();
         sfx.slotOpen();
-        const p = fx.centerOf(button);
+        // The team row may have redrawn while the confirm was open.
+        const p = fx.centerOf(button.isConnected ? button : el.button);
         fx.burst(p.x, p.y, { count: 30, colors: ["c", "B", "w"], speed: [1.5, 4], life: [20, 40] });
         fx.float(p.x, p.y - 16, TEXT.slotOpened, { color: "c", life: 80 });
         emit("pet-slot", { slots: state.pets.slots });

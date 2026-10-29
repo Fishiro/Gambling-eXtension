@@ -167,9 +167,11 @@
                     <div id="item-grid" class="item-grid"></div>
                 </div>
                 <div data-bag-view="forge" hidden>
-                    <h3>GEAR</h3>
-                    <div id="gear-list" class="list"></div>
-                    <h3>BREWS</h3>
+                    <!-- The anvil: drag a piece of gear here from the shelf below (forge.js). -->
+                    <div id="anvil" class="anvil"></div>
+                    <div id="gear-shelf" class="shelf"></div>
+                </div>
+                <div data-bag-view="brew" hidden>
                     <div id="brew-list" class="list"></div>
                 </div>
                 <div data-bag-view="pets" hidden>
@@ -186,6 +188,7 @@
                 <div class="seg" role="tablist">
                     <button data-bag="items" role="tab">ITEMS</button>
                     <button data-bag="forge" role="tab">FORGE<b class="dot" data-dot="forge" hidden></b></button>
+                    <button data-bag="brew" role="tab">BREW<b class="dot" data-dot="brew" hidden></b></button>
                     <button data-bag="pets" role="tab">PETS</button>
                     <button data-bag="skins" role="tab">SKINS</button>
                     <button data-bag="relics" role="tab">RELICS</button>
@@ -193,8 +196,9 @@
                 <div data-bag-view="items">
                     <div id="item-detail" class="card item-detail"></div>
                 </div>
-                <p class="hint" data-bag-view="forge" hidden>GEAR IS FOREVER. PAST LV5 IT ASCENDS UP TO 5 STARS.</p>
-                <div id="set-list" class="list" data-bag-view="forge" hidden></div>
+                <p class="hint" data-bag-view="forge" hidden>GEAR IS FOREVER. PAST LV5 IT ASCENDS UP TO 5 STARS. A FULL SET AT 3 STARS LIGHTS ITS BONUS.</p>
+                <div id="forge-odds" class="card forge-odds" data-bag-view="forge" hidden></div>
+                <p class="hint" data-bag-view="brew" hidden>BREWS ARE ONE-USE BOOSTS. BREW THEM HERE, DRINK THEM HERE. COMBO BREWS ARE MADE FROM JUNK.</p>
                 <div id="relic-slots" class="relic-slots" data-bag-view="relics" hidden></div>
                 <p class="hint" data-bag-view="skins" hidden>LOOKS ONLY, NO STATS. PAID IN DIAMONDS.</p>
                 <p class="hint" data-bag-view="pets" hidden>UP TO 3 PETS ON YOUR TEAM. <kbd>Q</kbd> = SKILL.</p>

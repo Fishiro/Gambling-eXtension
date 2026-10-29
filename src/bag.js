@@ -1,4 +1,4 @@
-import { ITEMS, GEAR, GEAR_MAX, GEAR_STARS, GEAR_SETS, SET_STARS, BREWS } from "./core/config.js";
+import { ITEMS } from "./core/config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./core/economy.js";
 import * as luck from "./core/luck.js";
@@ -8,18 +8,11 @@ import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
 import { emit, on } from "./events.js";
-import { $, costHtml, patch } from "./ui.js";
+import { $, patch } from "./ui.js";
+import { createForge } from "./forge.js";
+import { createBrewery, learned } from "./brewery.js";
 
 const IDS = Object.keys(ITEMS);
-const statText = (gear, level) => {
-    const v = items.gearValue(gear, level);
-    return gear.pct ? `+${Math.round(v * 100)}%` : `+${econ.formatNumber(v)}`;
-};
-// LV1-LV5, then pixel stars (gold = earned, outline = to go) once the piece ascends.
-const levelHtml = (lv) =>
-    lv > GEAR_MAX ? `${svgIcon("pstar", 2).repeat(lv - GEAR_MAX)}${svgIcon("pstar-off", 2).repeat(GEAR_MAX + GEAR_STARS - lv)}` : `LV${lv}`;
-const levelText = (lv) => (lv > GEAR_MAX ? `STAR ${lv - GEAR_MAX}` : `LV${lv}`);
-
 export function createBag() {
     const el = {
         panel: $("tab-bag"),
@@ -27,11 +20,12 @@ export function createBag() {
         views: document.querySelectorAll("[data-bag-view]"),
         detail: $("item-detail"),
         grid: $("item-grid"),
-        gear: $("gear-list"),
-        brews: $("brew-list"),
         forgeDot: document.querySelector('[data-dot="forge"]'),
-        sets: $("set-list"),
+        brewDot: document.querySelector('[data-dot="brew"]'),
     };
+    // FORGE (the anvil) and BREW live in their own modules; the bag switches between them and ITEMS.
+    const forge = createForge();
+    const brewery = createBrewery();
     let view = "items";
     let selected = null;
     const fresh = new Set();
@@ -86,7 +80,7 @@ export function createBag() {
             const secret = u.brew && !learned(u.brew);
             const icon = secret ? "lock" : u.icon;
             const name = secret ? TEXT.secretBrew : u.name;
-            const where = u.kind === "plant" ? "" : `data-action="forge"`;
+            const where = u.kind === "plant" ? "" : `data-action="${u.kind === "brew" ? "brew" : "forge"}"`;
             return `<button class="use-chip" ${where} title="${name}">${svgIcon(icon, 2)}<span>${name}</span><em>x${u.n}${u.kind === "star" ? "+" : ""}</em></button>`;
         });
         return `<div class="detail-uses"><small class="detail-label">${TEXT.usedIn}</small><div class="use-chips">${chips.join("")}</div></div>`;
@@ -113,114 +107,21 @@ export function createBag() {
             </div>`;
     }
 
-    function gearHtml(gear) {
-        const lv = items.gearLevel(state, gear.id);
-        const maxed = items.isMaxed(state, gear);
-        const cost = items.gearCost(gear, lv);
-        // A star attempt can fail, so its button says the odds.
-        const label = lv >= GEAR_MAX ? TEXT.ascendChance(Math.round(items.upgradeChance(state, gear) * 100)) : lv ? TEXT.upgrade : TEXT.craft;
-        const button = maxed
-            ? `<button disabled>${TEXT.max}</button>`
-            : `<button class="primary-sm" data-action="upgrade" data-id="${gear.id}" ${items.canAfford(state, cost) ? "" : "disabled"}>${label}</button>`;
-        return `<div class="row" data-ready="${!maxed && items.canAfford(state, cost)}" data-stars="${lv > GEAR_MAX}">
-            <span class="row-icon">${svgFit(gear.icon, 16)}</span>
-            <div class="row-main">
-                <b>${gear.name}</b>
-                <small class="stat-name">${gear.label}</small>
-                <small><em class="lv">${levelHtml(lv)}</em>${statText(gear, lv)}${maxed ? "" : `${svgIcon("i-next", 1)}${statText(gear, lv + 1)}`}</small>
-                ${maxed ? "" : `<span class="chips">${costHtml(state, cost)}</span>`}
-            </div>
-            ${button}
-        </div>`;
-    }
-
-    // A combo brew stays a secret until every ingredient has been in the bag at least once.
-    const learned = (brew) => !brew.combo || Object.keys(brew.cost).every((id) => id in state.bag);
-
-    function brewHtml(brew, i) {
-        const item = items.item(brew.id);
-        const heading = brew.combo && !BREWS[i - 1]?.combo ? `<h5 class="list-sub">${TEXT.comboBrews}</h5>` : "";
-        if (!learned(brew)) {
-            return `${heading}<div class="row" data-secret>
-            <span class="row-icon">${svgIcon("lock", 2)}</span>
-            <div class="row-main">
-                <b>${TEXT.secretBrew}</b>
-                <small>${TEXT.secretBrewHint}</small>
-                <span class="chips">${costHtml(state, items.brewCost(brew))}</span>
-            </div>
-        </div>`;
-        }
-        return `${heading}<div class="row">
-            <span class="row-icon">${svgIcon(brew.id, 2)}</span>
-            <div class="row-main">
-                <b>${item.name} <em>x${items.count(state, brew.id)}</em></b>
-                <small>${item.effect}</small>
-                <span class="chips">${costHtml(state, items.brewCost(brew))}</span>
-            </div>
-            <button class="primary-sm" data-action="brew" data-id="${brew.id}" ${items.canAfford(state, items.brewCost(brew)) ? "" : "disabled"}>${TEXT.brew}</button>
-        </div>`;
-    }
-
-    // A set lights up once every piece in it reaches SET_STARS stars.
-    function setHtml(set) {
-        const on = items.setActive(state, set);
-        const pieces = set.gear.map((id) => {
-            const g = GEAR.find((x) => x.id === id);
-            return `<span class="chip" data-short="${items.gearStars(state, id) < SET_STARS}">${svgFit(g.icon, 8)}${items.gearStars(state, id)}${svgFit("pstar", 8)}</span>`;
-        });
-        return `<div class="set-card" data-on="${on}">
-            <b>${set.name}</b>
-            <small>${TEXT.setBonus(Math.round(set.per * 100), set.label, `<span class="stars">${SET_STARS}${svgIcon("pstar", 1)}+</span>`)}</small>
-            <span class="chips">${pieces.join("")}</span>
-        </div>`;
-    }
-
-    const anyUpgrade = () => GEAR.some((g) => items.canUpgrade(state, g));
+    const anyUpgrade = () => forge.anyReady();
 
     function render() {
         el.forgeDot.hidden = !anyUpgrade();
+        el.brewDot.hidden = !brewery.anyReady();
         if (el.panel.hidden) return;
         if (view === "items") {
             patch(el.grid, IDS.map(tileHtml).join(""));
             patch(el.detail, detailHtml());
         }
-        if (view === "forge") {
-            patch(el.gear, GEAR.map(gearHtml).join(""));
-            patch(el.sets, GEAR_SETS.map(setHtml).join(""));
-            patch(el.brews, BREWS.map(brewHtml).join(""));
-        }
+        if (view === "forge") forge.render();
+        if (view === "brew") brewery.render();
     }
 
     const ACTIONS = {
-        upgrade(id, button) {
-            const gear = GEAR.find((g) => g.id === id);
-            econ.settleOre(state);
-            const result = items.upgrade(state, gear);
-            if (!result) return deny(button);
-            commit();
-            if (result !== "up") {
-                const row = button.closest(".row") ?? button;
-                (result === "crack" ? sfx.crack : sfx.fizzle)();
-                fx.shake(row, result === "crack" ? 5 : 3, 350);
-                const p = fx.centerOf(row);
-                fx.burst(p.x, p.y, { count: result === "crack" ? 24 : 10, colors: ["r", "R", "S"], speed: [1.5, 4], life: [16, 30] });
-                fx.float(p.x, p.y - 16, result === "crack" ? TEXT.ascendCrack : TEXT.ascendFail, { color: "R", life: 80 });
-                emit("ascend-fail", { id, lost: result === "crack" });
-                return;
-            }
-            (items.gearLevel(state, id) > GEAR_MAX ? sfx.ascend : sfx.anvil)();
-            celebrate(button, `${gear.name} ${levelText(items.gearLevel(state, id))}`);
-            emit("craft", { id, level: items.gearLevel(state, id) });
-        },
-        brew(id, button) {
-            const recipe = BREWS.find((b) => b.id === id);
-            if (!items.spend(state, items.brewCost(recipe))) return deny(button);
-            items.add(state, id);
-            commit();
-            sfx.brew();
-            celebrate(button, `+1 ${items.item(id).name}`);
-            emit("brew", { id });
-        },
         scrap(id, button) {
             const coins = luck.scrap(state, id, button.dataset.n ? Number(button.dataset.n) : Infinity);
             if (!coins) return deny(button);
@@ -230,6 +131,7 @@ export function createBag() {
             emit("scrap", { id, coins });
         },
         forge: () => show("forge"),
+        brew: () => show("brew"),
         use(id, button) {
             if (!items.spend(state, { [id]: 1 })) return deny(button);
             const { lines } = luck.applyReward(state, items.item(id).use);
@@ -254,8 +156,8 @@ export function createBag() {
     }
 
     el.tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.bag)));
-    // Pets own their view; the bag only answers clicks in items and forge.
-    el.views.forEach((v) => ["items", "forge"].includes(v.dataset.bagView) && v.addEventListener("click", onClick));
+    // Pets, forge and brew handle their own clicks; the bag answers the items view.
+    el.views.forEach((v) => v.dataset.bagView === "items" && v.addEventListener("click", onClick));
 
     function onClick(e) {
         const tile = e.target.closest("[data-item]");

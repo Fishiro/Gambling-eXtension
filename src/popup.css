@@ -142,6 +142,242 @@ body {
         "stage dock";
     height: 100%;
 }
+/* ---- the forge (forge.js): the anvil on top, the gear shelf below ---- */
+.anvil {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--s4);
+    margin: var(--b) var(--b) var(--s4);
+    padding: var(--s3);
+    background: var(--panel);
+    box-shadow:
+        0 calc(var(--b) * -1) 0 0 var(--line),
+        0 var(--b) 0 0 var(--line),
+        calc(var(--b) * -1) 0 0 0 var(--line),
+        var(--b) 0 0 0 var(--line);
+}
+/* The drop slot: dashed while empty, lit while a dragged piece hovers it. */
+.anvil-slot {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s1);
+    width: 96px;
+    height: 96px;
+    color: var(--muted);
+    background: var(--ink);
+    outline: 2px dashed var(--line-hi);
+    outline-offset: -6px;
+    overflow: hidden;
+}
+.anvil-slot small {
+    font-size: var(--fs-0);
+    text-align: center;
+}
+.anvil[data-dragging] .anvil-slot {
+    outline-color: var(--gold);
+}
+.anvil[data-hover] .anvil-slot {
+    outline: 2px solid var(--gold);
+    background: #2c2b3a;
+}
+.anvil-slot.is-full {
+    outline: 2px solid var(--gold-dk);
+}
+.anvil-clear {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+}
+.anvil-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+.anvil-info b {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s1) var(--s2);
+    font-size: var(--fs-2);
+}
+/* Star rows (on the anvil, in the odds card): icons are blocks by default, so lay them in a line. */
+.anvil-info .lv,
+.forge-odds .odds-rows span {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: var(--fs-1);
+}
+.anvil-info .hint {
+    margin: 0;
+}
+.anvil-stat {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--green);
+}
+.anvil-risk {
+    color: var(--orange);
+}
+.anvil-strike {
+    justify-content: center;
+    gap: var(--s2);
+    margin: var(--s2) var(--b) 0;
+}
+/* The drag demo while the anvil is empty: a pointer carries a piece up from the shelf into the slot, on a loop. */
+.anvil-demo {
+    position: relative;
+    display: inline-flex;
+    animation: anvil-demo 2.4s steps(24) infinite;
+}
+.anvil-cursor {
+    position: absolute;
+    left: 60%;
+    top: 55%;
+}
+@keyframes anvil-demo {
+    0% {
+        transform: translate(-26px, 52px);
+        opacity: 0;
+    }
+    15% {
+        transform: translate(-26px, 52px);
+        opacity: 1;
+    }
+    65% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    85% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(0, 0);
+        opacity: 0;
+    }
+}
+.shelf {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+}
+.shelf-set {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    padding: var(--s2) var(--s3) var(--s3);
+    background: var(--panel);
+    box-shadow: 0 0 0 2px var(--line);
+}
+.shelf-set[data-on="true"] {
+    box-shadow: 0 0 0 2px var(--gold);
+}
+.shelf-set header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--s2);
+}
+.shelf-set header small {
+    grid-column: 1;
+    color: var(--muted);
+}
+.shelf-set header em {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-style: normal;
+    color: var(--gold);
+}
+.shelf-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--b) * 2 + 4px);
+    margin: var(--b);
+}
+/* A piece on the shelf: drag it to the anvil (or click it). Green when its next level is affordable. */
+.gear-tile {
+    flex-direction: column;
+    gap: 2px;
+    width: 58px;
+    height: 54px;
+    padding: 4px 2px;
+    cursor: grab;
+    touch-action: none;
+}
+.gear-tile small {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: var(--fs-0);
+    color: var(--muted);
+}
+.gear-tile[data-ready="true"] {
+    box-shadow:
+        inset 0 calc(var(--b) * -1) 0 0 rgba(0, 0, 0, 0.35),
+        0 calc(var(--b) * -1) 0 0 var(--green-dk),
+        0 var(--b) 0 0 var(--green-dk),
+        calc(var(--b) * -1) 0 0 0 var(--green-dk),
+        var(--b) 0 0 0 var(--green-dk);
+}
+.gear-tile[aria-pressed="true"] {
+    background: var(--line-hi);
+}
+.gear-tile.is-lifted {
+    opacity: 0.35;
+}
+/* The piece following the pointer while it is dragged. */
+.drag-ghost {
+    position: fixed;
+    z-index: 74;
+    display: inline-flex;
+    padding: 6px;
+    background: var(--panel);
+    box-shadow: 0 0 0 2px var(--gold);
+    pointer-events: none;
+    translate: -50% -50%;
+}
+.forge-odds {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+}
+.forge-odds .odds-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.forge-odds .odds-rows div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.forge-odds small {
+    color: var(--muted);
+}
+/* BREW rows: BREW and DRINK stacked on the right. */
+.brew-actions {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--b) * 2 + 2px);
+    margin: var(--b);
+}
+.brew-actions button {
+    min-width: 72px;
+}
+.confirm-left {
+    color: var(--muted);
+}
+
 /* ---- the menu's ABOUT page (about.js) ---- */
 .about {
     display: flex;

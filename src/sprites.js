@@ -686,6 +686,8 @@ const SPRITES = {
     "i-hammer": ["#####..", "#####..", "#####..", "..#....", "..#....", "..#....", "..#...."],
     "i-trophy": ["#######", "#.###.#", "#.###.#", ".#####.", "..###..", "...#...", "..###..", ".#####."],
     "i-paw": [".#.#.", "#...#", ".###.", "#####", ".###."],
+    // A pixel mouse pointer, for the forge's drag-and-drop demo.
+    cursor: ["k.......", "kk......", "kwk.....", "kwwk....", "kwwwk...", "kwwwwk..", "kwwwwwk.", "kwwkkkk.", "kwk.....", "kk......"],
     // Ko-fi's mug with a heart, for the support button on the ABOUT page.
     kofi: ["kkkkkkkk..", "kwwwwwwkkk", "kwrrwrrk.k", "kwrrrrrk.k", "kwwrrrwkkk", "kwwwrwwk..", ".kwwwwk...", "..kkkk...."],
     "i-keys": ["#######", "#.#.#.#", "#######", "#.....#", "#######"],

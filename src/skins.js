@@ -5,6 +5,7 @@ import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
 import { $, patch } from "./ui.js";
+import { confirmSpend } from "./confirm.js";
 import { emit, on } from "./events.js";
 
 const owns = (id) => state.skins.owned.includes(id);
@@ -38,18 +39,11 @@ export function createSkins() {
     }
 
     const ACTIONS = {
+        // Paid in diamonds, so it asks first (a free skin just unlocks).
         buy(skin, button) {
             if (state.gems < skin.price || !unlocked(skin)) return sfx.denied();
-            const p = fx.centerOf(button);
-            state.gems -= skin.price;
-            state.skins.owned.push(skin.id);
-            state.skins.active = skin.id;
-            commit();
-            sfx.skinBuy();
-            fx.confetti(2);
-            fx.burst(p.x, p.y, { count: 30, colors: ["c", "w", "v"], speed: [1.5, 4], life: [20, 40] });
-            fx.float(p.x, p.y - 20, TEXT.skinNew(skin.name), { color: "c", life: 80 });
-            emit("skin-buy", { id: skin.id });
+            if (!skin.price) return claim(skin, button);
+            confirmSpend({ icon: skin.icon, title: TEXT.buySkinAsk(skin.name), cost: { gems: skin.price }, ok: TEXT.buy, onOk: () => claim(skin, button) });
         },
         equip(skin) {
             state.skins.active = skin.id;
@@ -57,6 +51,21 @@ export function createSkins() {
             sfx.upgrade();
         },
     };
+
+    function claim(skin, button) {
+        if (state.gems < skin.price) return sfx.denied();
+        // The list may have redrawn while the confirm was open.
+        const p = fx.centerOf(button.isConnected ? button : list);
+        state.gems -= skin.price;
+        state.skins.owned.push(skin.id);
+        state.skins.active = skin.id;
+        commit();
+        sfx.skinBuy();
+        fx.confetti(2);
+        fx.burst(p.x, p.y, { count: 30, colors: ["c", "w", "v"], speed: [1.5, 4], life: [20, 40] });
+        fx.float(p.x, p.y - 20, TEXT.skinNew(skin.name), { color: "c", life: 80 });
+        emit("skin-buy", { id: skin.id });
+    }
 
     list.addEventListener("click", (e) => {
         const button = e.target.closest("[data-skin]");
