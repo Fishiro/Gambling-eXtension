@@ -36,7 +36,7 @@ Root = only what runs the game or what a tool needs there (`manifest.json`, `ind
 
 - 4-space indent, double quotes, ES module imports with `.js` extension.
 - UI text is uppercase pixel style (Silkscreen font).
-- Size: type is in pt (`--fs-0..3` = 7/10/13/20pt) so it never balloons; every icon goes through `svgIcon`/`svgFit`, which multiply by `sprites.UI_SCALE` (1.125), so call sites keep thinking in the original 1x scales. Use `svgFit(name, box)` wherever icons of different sprite sizes sit side by side. The popup is Chrome's max, 800x600, and the page itself never scrolls (panels do). `src/mode.js` adds `html.web` when the page is loaded with `?web` (the web version): then it fills the window and the layout stretches responsively.
+- Size: type is in pt (`--fs-0..3` = 7/10/13/20pt) so it never balloons; every icon goes through `svgIcon`/`svgFit`, which multiply by `sprites.UI_SCALE` (1.125), so call sites keep thinking in the original 1x scales. Use `svgFit(name, box)` wherever icons of different sprite sizes sit side by side. The popup is 780x580 (20px under Chrome's 800x600 limit, so display scaling never adds a scrollbar), and the page itself never scrolls (panels do). `src/mode.js` adds `html.web` when the page is loaded with `?web` (the web version): then it fills the window and the layout stretches responsively.
 - `#boot` in src/popup.html is the first frame (plain HTML/CSS); main.js lifts it once the game is drawn.
 - Bump `version` in `manifest.json` with every change pushed:
   - `X.0.0` major: refactor / restructure.

@@ -34,13 +34,15 @@
     --s4: 18px;
     --s5: 28px;
     /* Type in pt so it never balloons or breaks a layout; icons run 1.125x their sprite scale (sprites.UI_SCALE).
-       The popup uses Chrome's full 800x600; the web version fills the screen (html.web below). */
+       The web version fills the screen instead (html.web below). */
     --fs-0: 7pt;
     --fs-1: 10pt;
     --fs-2: 13pt;
     --fs-3: 20pt;
-    --width: 800px;
-    --height: 600px;
+    /* 20px under Chrome's 800x600 popup limit: at Windows display scaling (125%, 150%...) the popup's viewport
+       can round a pixel or two short of the limit, and a page that fills it exactly then scrolls a little. */
+    --width: 780px;
+    --height: 580px;
     --frame: 12px;
     --side: 330px;
     --inset: calc(var(--frame) + 6px);
@@ -56,8 +58,10 @@ body {
     margin: 0;
 }
 /* The page itself never scrolls: panels inside it do. */
-html {
+html,
+body {
     overflow: hidden;
+    overscroll-behavior: none;
 }
 /* The web version (index.html loads this page with ?web): the game fills the window instead of 800x600, the side
    column grows with it and the stage content stays centred at a readable width. */
@@ -66,7 +70,7 @@ html.web {
     --machine: 600px;
 }
 html.web body {
-    width: 100vw;
+    width: 100%;
     height: 100vh;
 }
 html.web .stage {
