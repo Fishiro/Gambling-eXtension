@@ -130,7 +130,7 @@ function guideHtml() {
             `${flow(node(icon("ore"), "SELL"), node(market([1, 1.2, 1.5, 1.3, 0.8, 0.6, 0.9, 1.1]), "PRICE / MIN"), node(icon("coin"), "ORE x PRICE"))}
             ${tiles(MARKET.phases.map((p) => [`<span class="g-dot" style="--c:${PALETTE[p.color]}"></span>`, color(p.color, p.name), p.spike ? `+${pct(p.spike[0])}-${pct(p.spike[1])}!` : p.drift ? `${p.drift > 0 ? "+" : ""}${pct(p.drift)} / MIN` : "STEADY"]), 3)}
             <p>THE PRICE MOVES EVERY ${MARKET.tickSeconds}S AND ALWAYS DRIFTS BACK TO x1.</p>
-            <p>SELL UP TO ${pct(MARKET.demandUpTo)} OF A CART A MINUTE: +${pct(MARKET.demandBump)} NEXT MINUTE. SELL MORE AND THE PRICE SINKS AS YOU SELL, FASTER EACH CART, ALL THE WAY DOWN TO PENNIES.</p>`,
+            <p>WHAT YOU SELL PAYS THIS MINUTE'S PRICE. UP TO ${pct(MARKET.demandUpTo)} OF A CART: +${pct(MARKET.demandBump)} NEXT MINUTE. OVER ${MARKET.freeCarts} CART A MINUTE: THE PRICE SLIDES DOWN OVER THE NEXT MINUTES. KEEP DUMPING AND IT HITS PENNIES.</p>`,
         ),
         section(
             "flame",
@@ -177,6 +177,10 @@ function guideHtml() {
             "i-farm",
             "FARM",
             `${tiles(FARM.zones.map((z) => [icon(z.icon), z.name, `LV${z.level}`]), 4)}
+            ${tiles(FARM.trips.map((t) => [icon("i-clock"), t.label, `${Math.round(t.luck * 100)}% LUCK`]), 4)}
+            <p>LONGER TRIPS ARE LUCKIER: RARE, EPIC AND LEGENDARY FINDS SHOW UP MORE.</p>
+            ${tiles(FARM.party.map((m, n) => [n ? PETS.slice(0, n).map(() => icon("i-paw", 2)).join("") : icon("miner", 2), n ? `${n} PET${n > 1 ? "S" : ""}` : "DIGGS ALONE", `x${m} FINDS`]), 4)}
+            <p>PETS ON A TRIP LEAVE YOUR TEAM UNTIL YOU COLLECT. CHEAP BUDDIES ARE PERFECT FOR THIS.</p>
             ${flow(node(icon("seed"), "PLANT"), node(icon("sprout"), `${FARM.crops.seed.minutes} MIN`), node(icon("herb"), "HARVEST"))}`,
         ),
         section(
@@ -304,15 +308,15 @@ function itemSources(id) {
 
 function marketOddsHtml() {
     const total = totalWeight(MARKET.phases);
-    const keeps = (n) => Math.exp(-(MARKET.dump * Math.max(0, n - MARKET.demandUpTo) ** MARKET.dumpCurve));
-    const carts = [MARKET.demandUpTo, 1, 2, 3, 5, 9].map((n) => [icon("i-cart", 2), `${n} CART${n === 1 ? "" : "S"} IN ONE MINUTE`, n <= MARKET.demandUpTo ? `+${MARKET.demandBump} NEXT MIN` : `PRICE x${keeps(n) < 0.01 ? keeps(n).toFixed(4) : keeps(n).toFixed(2)}`, ""]);
+    const glut = (n) => MARKET.dump * Math.max(0, n - MARKET.freeCarts) ** MARKET.dumpCurve;
+    const carts = [MARKET.demandUpTo, MARKET.freeCarts, 2, 3, 5, 9].map((n) => [icon("i-cart", 2), `${n} CART${n === 1 ? "" : "S"} IN ONE MINUTE`, n <= MARKET.demandUpTo ? `+${MARKET.demandBump} NEXT MIN` : n <= MARKET.freeCarts ? "NO GLUT" : `+${glut(n).toFixed(2)} GLUT`, ""]);
     return section(
         "coin",
         "MARKET",
         `<p>A NEW MOOD IS PICKED WHEN THE LAST ONE ENDS. EACH MINUTE: PRICE += MOOD + NOISE, THEN PULLED BACK TOWARD x1. THE MOOD ALONE KEEPS IT BETWEEN x${MARKET.floor} AND x${MARKET.cap}.</p>
         ${table(MARKET.phases.map((p) => [color(p.color, p.name), rate(p.weight / total), `${p.ticks[0] === p.ticks[1] ? p.ticks[0] : p.ticks.join("-")} MIN`, p.spike ? `JUMPS +${pct(p.spike[0])}-${pct(p.spike[1])}, PULL ${pct(p.revert)}` : `${p.drift >= 0 ? "+" : ""}${pct(p.drift)} / MIN, PULL ${pct(p.revert)}`]))}
         ${table(carts)}
-        <p>GLUT: SELLING PAST ${MARKET.demandUpTo} CART IN A MINUTE ADDS ${MARKET.dump} x EXTRA CARTS^${MARKET.dumpCurve}. YOU GET PRICE x e^-GLUT, SO DUMPS PAY PENNIES. EACH MINUTE ${pct(1 - MARKET.glutKeep)} OF THE GLUT CLEARS.</p>`,
+        <p>GLUT: SELLING PAST ${MARKET.freeCarts} CART IN A MINUTE ADDS ${MARKET.dump} x EXTRA CARTS^${MARKET.dumpCurve}. THE PRICE FEELS IT SLOWLY: EACH MINUTE IT TAKES ${pct(MARKET.dragRate)} OF THE WAY TO x e^-GLUT, AND ${pct(1 - MARKET.glutKeep)} OF THE GLUT CLEARS. ${pct(MARKET.jolt.chance)} OF MINUTES ALSO JOLT UP OR DOWN BY UP TO ${pct(MARKET.jolt.size)}.</p>`,
     );
 }
 

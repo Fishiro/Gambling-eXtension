@@ -84,7 +84,7 @@ const LIST = [
     ["farmville", "FARMVILLE VETERAN", "HARVEST 100 TIMES", (s, f) => f.harvests >= 100],
     ["wander", "WANDERLUST", "FINISH AN EXPEDITION", (s, f) => f.trips >= 1],
     ["tourist", "TOURIST", "FINISH A TRIP IN EVERY ZONE", (s, f) => FARM.zones.every((z) => f[`trip_${z.id}`])],
-    ["abandon", "ABANDONMENT ISSUES", "SEND DIGGS AWAY FOR 8 HOURS", (s, f) => f.trip8h >= 1],
+    ["abandon", "ABANDONMENT ISSUES", "SEND DIGGS ON THE LONGEST TRIP (4 HOURS)", (s, f) => f.trip8h >= 1],
     ["helicopter", "HELICOPTER PARENT", "CALL DIGGS BACK EARLY 5 TIMES", (s, f) => f.recalls >= 5],
     ["nap", "DIGGS NAPPED", "COME BACK FROM A TRIP WITH NOTHING", (s, f) => f.naps >= 1, true],
     ["hoarder", "HOARDER", "HOLD 500 ITEMS AT ONCE", (s) => Object.values(s.bag).reduce((a, n) => a + n, 0) >= 500],
@@ -420,7 +420,7 @@ export function createAchievements() {
         if (!found) f().naps = 1;
         if (early) return bump("recalls");
         f()[`trip_${zone}`] = 1;
-        if (minutes >= 480) f().trip8h = 1;
+        if (minutes >= 240) f().trip8h = 1;
         bump("trips");
     });
 

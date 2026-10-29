@@ -9,9 +9,11 @@ import { TEXT } from "./text.js";
 import { $ } from "./ui.js";
 import * as modal from "./modal.js";
 import { emit } from "./events.js";
+import { toast } from "./toast.js";
 
 const ROULETTE = [45, 45, 50, 55, 60, 70, 85, 100, 120, 150, 190, 240, 300];
-const ROULETTE_ALL = [40, 40, 45, 50, 60, 75, 95, 130, 180];
+// Rewards listed in the OPEN ALL toast before "+N MORE".
+const TOAST_LINES = 4;
 const linesHtml = (lines) => lines.map((l) => `<div>${svgIcon(l.icon, 2)}${l.text}</div>`).join("");
 
 export function createChests({ onLevelUp, onOpened }) {
@@ -167,17 +169,13 @@ export function createChests({ onLevelUp, onOpened }) {
         return count;
     }
 
-    // One roulette for the whole pile; the reveal shows the best rarity, a tally and summed rewards.
-    async function openAll() {
+    // OPEN ALL never blocks play: the whole stash opens at once and the tally lands in a toast, so mining
+    // and spinning carry on underneath. Rewards come from the same claim() as a single chest.
+    function openAll() {
         const count = state.chests.length;
-        if (opening || !el.loot.hidden || count < 2) return;
-        opening = true;
+        if (opening || count < 2) return;
         const rarities = state.chests.map((boost) => luck.rollRarity(boost));
         const best = rarities.reduce((a, b) => (luck.rarityIndex(b) > luck.rarityIndex(a) ? b : a));
-        showClosed();
-        el.chest.innerHTML = svgIcon("chest", 7) + `<b class="loot-count">x${count}</b>`;
-        await spinRoulette(ROULETTE_ALL, luck.rarityIndex(best));
-
         const lines = [];
         const levels = [];
         for (const rarity of rarities) {
@@ -186,17 +184,21 @@ export function createChests({ onLevelUp, onOpened }) {
             levels.push(...got.levels);
         }
         commit();
-        paint(best);
-        el.rarity.textContent = TEXT.openedAll(count);
+        const rank = luck.rarityIndex(best);
         const tally = LUCK.rarities
             .map((r) => [r, rarities.filter((x) => x === r).length])
             .filter(([, n]) => n)
             .map(([r, n]) => `<span style="color:${PALETTE[r.color]}">${n} ${r.name}</span>`)
-            .join("");
-        showRevealed(best, `<div class="loot-tally">${tally}</div>${linesHtml(luck.mergeLines(lines))}`);
-        el.chest.innerHTML += `<b class="loot-count">x${count}</b>`;
-        pendingLevels = levels;
-        opening = false;
+            .join(" ");
+        const merged = luck.mergeLines(lines);
+        const shown = merged.slice(0, TOAST_LINES).map((l) => l.text);
+        if (merged.length > TOAST_LINES) shown.push(TEXT.moreLines(merged.length - TOAST_LINES));
+        toast({ icon: "chest-open", tag: TEXT.openedAll(count), title: tally, text: shown.join(" · "), color: best.color, ms: 4500 });
+        sfx.reveal(rank);
+        const p = fx.centerOf(el.button);
+        fx.burst(p.x, p.y, { count: 20 + rank * 15, colors: [best.color, "w", "y"], speed: [1.5, 3 + rank], life: [20, 40] });
+        if (rank >= 1) fx.coinShower(p.x, p.y, 4 + rank * 4);
+        if (levels.length) onLevelUp(levels);
     }
 
     function cosmic(win) {

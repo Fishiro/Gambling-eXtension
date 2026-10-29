@@ -1,4 +1,4 @@
-import { FARM } from "./config.js";
+import { FARM, PETS } from "./config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./economy.js";
 import * as items from "./items.js";
@@ -19,6 +19,27 @@ export function createFarm({ reveal, onLoot, replant }) {
     let zoneId = FARM.zones[0].id;
     let tripIndex = 1;
     let recallArmed = 0;
+    // Pets picked to ride along on the next trip (at most FARM.party.length - 1).
+    let party = [];
+    const seats = FARM.party.length - 1;
+
+    // Seats for the pets riding along, then every owned pet to pick from. Team pets leave the team when sent.
+    function partyHtml() {
+        party = party.filter((id) => state.pets.owned.includes(id));
+        const seatHtml = Array.from({ length: seats }, (_, i) =>
+            party[i]
+                ? `<button class="party-seat is-on" data-action="unseat" data-id="${party[i]}" title="${TEXT.partyRemove}">${svgIcon(party[i], 2)}</button>`
+                : `<span class="party-seat">+</span>`,
+        ).join("");
+        const pool = PETS.filter((p) => state.pets.owned.includes(p.id) && !party.includes(p.id))
+            .map((p) => `<button class="party-pet" data-action="seat" data-id="${p.id}" ${state.pets.team.includes(p.id) ? `data-team="" title="${TEXT.partyTeam}"` : `title="${p.name}"`} ${party.length >= seats ? "disabled" : ""}>${svgIcon(p.id, 2)}</button>`)
+            .join("");
+        return `<div class="party">
+                <div class="party-head"><b>${TEXT.partyTitle}</b><small data-tier="${party.length}">${TEXT.partyTier[party.length]}</small></div>
+                <div class="party-seats">${seatHtml}</div>
+                ${pool ? `<div class="party-pool">${pool}</div>` : `<p class="hint">${TEXT.partyNone}</p>`}
+            </div>`;
+    }
 
     function pickerHtml() {
         const zone = farming.zoneById(zoneId);
@@ -32,23 +53,26 @@ export function createFarm({ reveal, onLoot, replant }) {
             })
             .join("");
         const times = FARM.trips
-            .map((t, i) => `<button data-action="time" data-id="${i}" class="${i === tripIndex ? "is-active" : ""}">${t.label}</button>`)
+            .map((t, i) => `<button data-action="time" data-id="${i}" class="trip-time ${i === tripIndex ? "is-active" : ""}">${t.label}<small>${TEXT.luckPct(t.luck)}</small></button>`)
             .join("");
         const back = clockAt(Date.now() + plan.minutes * 60000);
         return `<div class="zones">${zones}</div>
             <div class="seg">${times}</div>
-            <p class="hint">${TEXT.tripPlan(farming.tripRolls(state, plan), zone.name, back)}</p>
-            <button class="primary" data-action="send" data-fx="G,y,w">${TEXT.send}</button>`;
+            ${partyHtml()}
+            <p class="hint">${TEXT.tripPlan(farming.tripRolls(state, plan, party.length), zone.name, back, TEXT.luckPct(plan.luck))}</p>
+            <button class="primary" data-action="send" data-fx="G,y,w">${TEXT.sendWith(party.length)}</button>`;
     }
 
     function runningHtml(status) {
         const action = status.done
             ? `<button class="primary" data-action="collect" data-fx="y,G,w">${TEXT.collect}</button>`
-            : `<button data-action="recall">${recallArmed ? TEXT.recallSure(farming.tripRolls(state, status.plan, status.progress)) : TEXT.recall}</button>`;
+            : `<button data-action="recall">${recallArmed ? TEXT.recallSure(farming.tripRolls(state, status.plan, status.pets.length, status.progress)) : TEXT.recall}</button>`;
+        const crew = status.pets.map((id) => svgIcon(id, 2)).join("");
         return `<div class="trip-run" data-done="${status.done}">
                 <span class="trip-art">${svgIcon(status.zone.icon, 4)}</span>
                 <div class="row-main">
-                    <b>${status.zone.name} <em>${status.plan.label}</em></b>
+                    <b>${status.zone.name} <em>${status.plan.label} · ${TEXT.luckPct(status.plan.luck ?? 1)}</em></b>
+                    ${crew ? `<span class="trip-crew">${svgIcon("miner", 1)}${crew}</span>` : ""}
                     <div class="bar"><div class="fill" data-live="trip"></div></div>
                     <small data-live="trip-left"></small>
                 </div>
@@ -77,7 +101,7 @@ export function createFarm({ reveal, onLoot, replant }) {
         const all = farming.readyPlots(state) > 1 ? `<button class="primary harvest-all" data-action="harvestAll">${TEXT.harvestAll}</button>` : "";
         // One "no seeds" hint for the whole garden instead of one per empty plot.
         const noSeeds = state.garden.includes(null) && !SEEDS.some((id) => items.count(state, id) > 0);
-        return `<div class="plots">${plots}</div>${all}${noSeeds ? `<p class="hint">${TEXT.noSeeds}</p>` : ""}`;
+        return `<div class="plots">${plots}</div>${all}${noSeeds ? `<p class="garden-empty">${svgIcon("seed", 2)}<span>${TEXT.noSeeds}</span></p>` : ""}`;
     }
 
     // Progress bars and countdowns change every second; everything else only when its markup does.
@@ -138,18 +162,31 @@ export function createFarm({ reveal, onLoot, replant }) {
             tripIndex = Number(id);
             render();
         },
+        seat(id) {
+            if (party.length >= seats || party.includes(id)) return;
+            party = [...party, id];
+            sfx.click();
+            render();
+        },
+        unseat(id) {
+            party = party.filter((p) => p !== id);
+            sfx.click();
+            render();
+        },
         send(_, button) {
-            if (!farming.startTrip(state, zoneId, tripIndex)) return deny(button);
+            if (!farming.startTrip(state, zoneId, tripIndex, party)) return deny(button);
+            const pets = party.length;
+            party = [];
             commit();
             sfx.upgrade();
-            emit("trip-start", { zone: zoneId });
+            emit("trip-start", { zone: zoneId, pets });
         },
         collect() {
             const { trip } = state;
             const result = farming.collectTrip(state);
             commit();
             announce(result.loot, result.zone.icon, result.early ? TEXT.backEarly : TEXT.diggsBack);
-            emit("trip", { zone: trip.zone, minutes: FARM.trips[trip.trip].minutes, early: result.early, found: Object.keys(result.loot).length });
+            emit("trip", { zone: trip.zone, minutes: farming.tripStatus({ trip }, trip.at)?.plan.minutes ?? 0, early: result.early, found: Object.keys(result.loot).length, pets: result.pets.length });
         },
         recall() {
             if (!recallArmed) {

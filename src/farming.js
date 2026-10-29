@@ -1,4 +1,4 @@
-import { FARM } from "./config.js";
+import { FARM, ITEMS, LUCK } from "./config.js";
 import * as items from "./items.js";
 import { pickWeighted } from "./luck.js";
 
@@ -24,36 +24,52 @@ export const zoneById = (id) => FARM.zones.find((z) => z.id === id);
 
 export const isZoneOpen = (state, zone) => state.level >= zone.level;
 
-export function startTrip(state, zoneId, tripIndex, now = Date.now()) {
+// The trip length a stored trip runs on (older saves may point past the current list).
+const planOf = (t) => FARM.trips[Math.min(t.trip, FARM.trips.length - 1)];
+
+// Pets out with DIGGS. They leave the team for the trip and can't be equipped until it is collected.
+export const tripPets = (state) => state.trip?.pets ?? [];
+export const isAway = (state, id) => tripPets(state).includes(id);
+export const partyMult = (pets) => FARM.party[Math.min(pets, FARM.party.length - 1)];
+
+export function startTrip(state, zoneId, tripIndex, pets = [], now = Date.now()) {
     if (state.trip || !isZoneOpen(state, zoneById(zoneId))) return false;
-    state.trip = { zone: zoneId, trip: tripIndex, at: now, seed: newSeed() };
+    const party = [...new Set(pets)].filter((id) => state.pets.owned.includes(id)).slice(0, FARM.party.length - 1);
+    state.pets.team = state.pets.team.filter((id) => !party.includes(id));
+    if (party.includes("spinny")) state.auto = false;
+    state.trip = { zone: zoneId, trip: tripIndex, at: now, seed: newSeed(), pets: party };
     return true;
 }
 
 export function tripStatus(state, now = Date.now()) {
     const t = state.trip;
     if (!t) return null;
-    const plan = FARM.trips[t.trip];
+    const plan = planOf(t);
     const total = plan.minutes * MIN;
     const elapsed = Math.max(0, now - t.at);
-    return { zone: zoneById(t.zone), plan, progress: Math.min(1, elapsed / total), left: Math.max(0, total - elapsed) / 1000, done: elapsed >= total };
+    return { zone: zoneById(t.zone), plan, pets: t.pets ?? [], progress: Math.min(1, elapsed / total), left: Math.max(0, total - elapsed) / 1000, done: elapsed >= total };
 }
 
-export const tripRolls = (state, plan, progress = 1) => Math.floor(plan.rolls * progress * (1 + items.bonus(state, "loot")));
+export const tripRolls = (state, plan, pets = 0, progress = 1) => Math.floor(plan.rolls * partyMult(pets) * progress * (1 + items.bonus(state, "loot")));
+
+// A zone's loot table bent by luck: rarer finds weigh luck^(rank * luckCurve) times more.
+const RANK = Object.fromEntries(LUCK.rarities.map((r, i) => [r.id, i]));
+export const luckyLoot = (zone, luck) => zone.loot.map(([id, w]) => [id, w * luck ** (RANK[ITEMS[id].rarity] * FARM.luckCurve)]);
 
 // Collect a finished trip, or recall early and keep the share already found.
 export function collectTrip(state, now = Date.now()) {
     const status = tripStatus(state, now);
     if (!status) return null;
     const rand = seeded(state.trip.seed);
+    const table = luckyLoot(status.zone, status.plan.luck ?? 1);
     const loot = {};
-    for (let i = 0; i < tripRolls(state, status.plan, status.progress); i++) {
-        const [id] = pickWeighted(status.zone.loot, ([, w]) => w, rand);
+    for (let i = 0; i < tripRolls(state, status.plan, status.pets.length, status.progress); i++) {
+        const [id] = pickWeighted(table, ([, w]) => w, rand);
         loot[id] = (loot[id] ?? 0) + 1;
     }
     items.addAll(state, loot);
     state.trip = null;
-    return { zone: status.zone, loot, early: !status.done };
+    return { zone: status.zone, loot, pets: status.pets, early: !status.done };
 }
 
 const growMs = (state, seedId) => FARM.crops[seedId].minutes * MIN * Math.max(0.2, 1 - items.bonus(state, "grow"));

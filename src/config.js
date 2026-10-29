@@ -67,19 +67,24 @@ export const MINE = {
     },
 };
 
-// The ore market: a base price that moves once a tick. A phase pushes it (drift + noise) while `revert`
-// pulls it back toward x1; a `spike` phase jumps it up by that much when it starts.
-// Glut is its own formula: selling past demandUpTo of a cart in one tick adds dump * extraCarts^dumpCurve,
-// and the price paid is base * e^-glut, so a dump sinks toward nothing (no floor). Each tick keeps glutKeep
-// of the glut. A light sell (up to demandUpTo of a cart) nudges the next tick up instead.
+// The ore market. The price only changes once a tick (a minute): everything sold during a tick pays that
+// tick's price. At the close, a phase pushes the base (drift + noise), `revert` pulls it back toward x1,
+// a `jolt` sometimes kicks it up or down hard, and a `spike` phase jumps it when it starts.
+// Selling past freeCarts in one tick adds glut (dump * extraCarts^dumpCurve). Glut doesn't hit at once:
+// `drag` closes dragRate of the gap to the glut each tick, and the price paid is base * e^-drag, so a dump
+// slides the price down over the next minutes, and steady dumping sinks it to pennies. Each tick keeps
+// glutKeep of the glut. A light sell (up to demandUpTo of a cart) nudges the next tick up.
 export const MARKET = {
     tickSeconds: 60,
     history: 30,
     floor: 0.25,
     cap: 3.5,
-    dump: 0.25,
-    dumpCurve: 1.6,
-    glutKeep: 0.5,
+    dump: 0.2,
+    dumpCurve: 1.5,
+    freeCarts: 1,
+    glutKeep: 0.65,
+    dragRate: 0.25,
+    jolt: { chance: 0.15, size: 0.35 },
     demandUpTo: 0.5,
     demandBump: 0.03,
     catchUpTicks: 240,
@@ -149,6 +154,7 @@ const MIN = 60 * 1000;
 // ~10-20 min of play when pets open (LV3), playstyle pets ~30-60 min at mid levels, legends are hours-long goals.
 export const PET_SLOTS = [0, 15, 40];
 export const PET_ROLES = {
+    buddy: { name: "BUDDY", color: "O", desc: "WEAK, BUT CARRIES LOOT ON TRIPS" },
     helper: { name: "HELPER", color: "c", desc: "DOES THE CHORES" },
     slot: { name: "SLOT", color: "y", desc: "BETTER SPINS" },
     mine: { name: "MINE", color: "l", desc: "DIG AND SELL" },
@@ -156,6 +162,71 @@ export const PET_ROLES = {
     legend: { name: "LEGEND", color: "v", desc: "THE BIG GOALS" },
 };
 export const PETS = [
+    // Buddies: cheap, weak or useless on the team. Their real job is riding along on expeditions.
+    {
+        id: "worker",
+        role: "buddy",
+        name: "WORKER",
+        kind: "INTERN",
+        price: 500,
+        skill: "NONE",
+        auto: true,
+        cooldown: 0,
+        desc: "DOES NOTHING. NO SKILL, NO BONUS, NO THOUGHTS. HE CAN STILL CARRY LOOT ON AN EXPEDITION.",
+        lines: ["...", "IS IT 5 YET?", "I'M ON BREAK", "NOT MY JOB", "UNPAID, UNBOTHERED"],
+    },
+    {
+        id: "pebble",
+        role: "buddy",
+        name: "LIL PEBBLE",
+        kind: "SMALLER ROCK",
+        price: 800,
+        skill: "SIT THERE",
+        auto: true,
+        cooldown: 0,
+        passive: { stat: "drill", per: 0.05, label: "DRILL SPEED" },
+        desc: "DWAYNE'S LITTLE COUSIN. IT SITS THERE. THE DRILL FEELS SLIGHTLY INSPIRED.",
+        lines: ["...", "PEBBLE.", "I AM ALSO A ROCK", "SMOL ROCK ENERGY", "ROCK JR."],
+    },
+    {
+        id: "socky",
+        role: "buddy",
+        name: "SOCKY",
+        kind: "LONELY SOCK",
+        price: 1_200,
+        skill: "SNIFF AROUND",
+        auto: true,
+        cooldown: 0,
+        passive: { stat: "loot", per: 0.1, label: "TRIP FINDS" },
+        desc: "LOST ITS PAIR IN THE DRYER. NOW IT SNIFFS OUT A FEW EXTRA TRIP FINDS.",
+        lines: ["WHERE IS MY PAIR", "*SNIFF*", "I SMELL LOOT", "DRYER TOOK HIM", "LEFT FOOT ONLY"],
+    },
+    {
+        id: "ducky",
+        role: "buddy",
+        name: "DUCKY",
+        kind: "RUBBER DUCK",
+        price: 2_000,
+        skill: "QUACK",
+        auto: true,
+        cooldown: 0,
+        passive: { stat: "zone", per: 0.03, label: "TIMING ZONE" },
+        desc: "SQUEAKS WHEN YOU SPIN. THE TIMING ZONE GETS A TINY BIT WIDER, PROBABLY.",
+        lines: ["QUACK", "*SQUEAK*", "QUACK QUACK", "I FLOAT", "DEBUG ME"],
+    },
+    {
+        id: "snail",
+        role: "buddy",
+        name: "TURBO",
+        kind: "SNAIL",
+        price: 2_500,
+        skill: "ZOOM",
+        auto: true,
+        cooldown: 0,
+        passive: { stat: "grow", per: 0.05, label: "GROW SPEED" },
+        desc: "THE FASTEST SNAIL ALIVE. STILL A SNAIL. CROPS GROW A LITTLE FASTER OUT OF PITY.",
+        lines: ["ZOOM", "...ZOOM", "I AM SPEED", "GOTTA GO SLOW", "SPEEDRUN ANY%"],
+    },
     {
         id: "spinny",
         role: "helper",
@@ -586,12 +657,17 @@ export const BUFF_CHIPS = [
 
 // Expeditions and the garden run on timestamps: results are rolled from a stored seed when you collect.
 export const FARM = {
+    // `luck` tilts each find toward rarer loot: a find's weight is multiplied by luck^(rarityRank * luckCurve),
+    // rank 0 common .. 3 legendary. x1 at 10 minutes is the zone's own odds; 4 hours is the luckiest trip.
     trips: [
-        { minutes: 15, label: "15M", rolls: 3 },
-        { minutes: 60, label: "1H", rolls: 10 },
-        { minutes: 240, label: "4H", rolls: 32 },
-        { minutes: 480, label: "8H", rolls: 56 },
+        { minutes: 10, label: "10M", rolls: 2, luck: 1 },
+        { minutes: 30, label: "30M", rolls: 5, luck: 1.8 },
+        { minutes: 60, label: "1H", rolls: 9, luck: 2.6 },
+        { minutes: 240, label: "4H", rolls: 30, luck: 5 },
     ],
+    luckCurve: 0.5,
+    // Pets riding along: index = pets sent (0 = DIGGS alone), value = finds multiplier.
+    party: [1, 1.5, 2.2, 3.2],
     zones: [
         { id: "forest", name: "FOREST", level: 1, icon: "wood", loot: [["wood", 50], ["herb", 35], ["seed", 12], ["goldseed", 1], ["pinecone", 6], ["peel", 4], ["sock", 3], ["cheese", 2]] },
         { id: "cave", name: "DEEP CAVE", level: 3, icon: "glowcap", loot: [["stone", 40], ["iron", 30], ["glowcap", 22], ["crystal", 6], ["boot", 3], ["seashell", 2], ["fossil", 2]] },

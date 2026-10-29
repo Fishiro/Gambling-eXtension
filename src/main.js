@@ -53,7 +53,7 @@ const slotTab = document.querySelector('[data-tab="slot"]');
 const history = createHistory();
 const achievements = createAchievements();
 const bag = createBag();
-const pets = createPets({ reveal: () => openBag("pets") });
+const pets = createPets({ reveal: () => openBag("pets"), showFarm: () => setTab("farm") });
 const buffs = createBuffs();
 const chests = createChests({ onLevelUp: celebrateLevel, onOpened: history.record });
 createSkins();
@@ -414,11 +414,14 @@ document.addEventListener("keydown", (e) => {
         return;
     }
     if (chests.isOpen()) {
-        if (["Space", "Enter", "Escape", "KeyO"].includes(e.code)) {
-            e.preventDefault();
-            if (!e.repeat) chests.close() || chests.skip();
+        const reveal = ["Space", "Enter", "Escape", "KeyO"].includes(e.code);
+        if (reveal || !KEYS[e.code]) {
+            if (reveal) e.preventDefault();
+            if (reveal && !e.repeat) chests.close() || chests.skip();
+            return;
         }
-        return;
+        // Spam keys (mining, selling, tabs...) close the reveal, or hurry its roulette, and still do their job.
+        chests.close() || chests.skip();
     }
     if (history.isOpen()) {
         if (["Escape", "KeyY"].includes(e.code)) history.close();

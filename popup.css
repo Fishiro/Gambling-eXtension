@@ -3020,3 +3020,111 @@ body.is-calm::after {
         transform: scaleX(0);
     }
 }
+
+/* ---- expedition party: seats for pets riding along, then the owned pets to pick from (farm.js) ---- */
+.party {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: var(--s2);
+}
+.party-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s2);
+}
+.party-head b {
+    color: var(--gold);
+}
+.party-head small {
+    margin-left: auto;
+    color: var(--muted);
+}
+.party-head small[data-tier="1"] {
+    color: var(--green);
+}
+.party-head small[data-tier="2"] {
+    color: var(--gold);
+}
+.party-head small[data-tier="3"] {
+    color: var(--orange);
+    animation: blink 0.6s steps(2) infinite;
+}
+.party-seats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+.party-seat {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    color: var(--line-hi);
+    background: var(--bg);
+    outline: 2px dashed var(--line-hi);
+    outline-offset: -4px;
+}
+.party-seat.is-on {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--gold);
+}
+.party-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.party-pet {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    padding: 0 0 3px;
+}
+.party-pet[data-team]::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 6px;
+    height: 6px;
+    background: var(--cyan);
+    box-shadow: 0 0 0 2px var(--ink);
+}
+.trip-time {
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.1;
+}
+.trip-time small {
+    font-size: 8px;
+    color: var(--muted);
+}
+.trip-time.is-active small {
+    color: inherit;
+}
+.trip-crew {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+/* "No seeds" sits in its own box below the plots instead of hugging them. */
+.garden-empty {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    margin: var(--s3) 0 0;
+    padding: var(--s2) var(--s3);
+    color: var(--muted);
+    background: var(--bg);
+    outline: 2px dashed var(--line-hi);
+    outline-offset: -2px;
+}
+.pet-card[data-state="away"] {
+    box-shadow: 0 0 0 2px var(--green-dk);
+}
+.pet-card[data-state="away"] .pet-art {
+    opacity: 0.55;
+}
+.pet-card[data-state="away"] .pet-cd {
+    color: var(--green);
+}

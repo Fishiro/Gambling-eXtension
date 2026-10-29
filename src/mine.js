@@ -251,7 +251,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         el.eta.textContent = full ? TEXT.cartFull : TEXT.fullIn(econ.formatClock((cap - now) / (econ.orePerSecond(state) * boost)));
         el.eta.toggleAttribute("data-full", full);
         el.sellLabel.textContent = ore ? TEXT.sell(econ.formatNumber(ore)) : TEXT.cartEmpty;
-        el.sellGain.innerHTML = ore ? `+${svgIcon("coin", 2)}${econ.formatNumber(Math.round(ore * econ.orePrice(state) * market.quote(state, ore).mult))}` : "";
+        el.sellGain.innerHTML = ore ? `+${svgIcon("coin", 2)}${econ.formatNumber(Math.round(ore * econ.orePrice(state) * market.quote(state).mult))}` : "";
         el.sell.disabled = !ore;
         el.sell.toggleAttribute("data-ready", ore >= cap * 0.5);
 
