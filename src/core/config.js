@@ -52,25 +52,28 @@ export const UNLOCKS = [
     { id: "relics", level: 10, name: "RELICS" },
 ];
 
-// XP to the next level grows by xpGrowth while each level still opens a bigger bet, then by the gentler
-// xpTailGrowth from xpTailFrom on (the bet stops growing there, so the steep curve would become a wall).
+// XP is logarithmic in the stake: xpForStake(x) = xpScale * ln(1 + x / xpUnit). Ten times the bet is only
+// ~+2.3 x xpScale more XP, so big bets help a little instead of inflating levels.
+// A level costs spinsBase * spinsGrowth^(level - 1) GOOD spins at that level's top (non-VIP) bet, so the pace is
+// set in spins, the thing a player actually feels, and stays the same whatever the bet table looks like.
+// Selling a cart is worth sellXp spins' worth of the coins it brought.
 export const LEVELS = {
-    xpBase: 50,
-    xpGrowth: 1.8,
-    xpTailFrom: 12,
-    xpTailGrowth: 1.25,
+    xpScale: 10,
+    xpUnit: 10,
+    spinsBase: 8,
+    spinsGrowth: 1.1,
+    sellXp: 2,
     coinRewardPerLevel: 25,
     firstMaxBetIndex: 3,
 };
 
 // Overheat: each tap adds 1 heat, `rest` heat cools off per second. Past `free` heat each tap loses 1/span
 // of its yield, down to `floor`. Steady tapping (~rest taps/s) never overheats; frantic spam does.
-// XP: per ore sold, times the market price, so a dump at x0.25 also earns a quarter of the XP.
+// XP for selling comes from the coins it brought (see LEVELS.sellXp), so a dump at a bad price earns less.
 // Upgrades: value = (base + step * lv) * compound^lv, cost = cost * growth^lv. Value compounds too, so the
 // payback time of each level grows slowly (growth / compound per level) instead of hitting a wall.
 export const MINE = {
     orePrice: 1,
-    xpPerOre: 0.1,
     overheat: { rest: 4, free: 6, span: 18, floor: 0.25 },
     luckyChance: 0.06,
     luckyMult: 5,

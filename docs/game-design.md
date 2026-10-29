@@ -43,7 +43,11 @@ a new feature arrives), and every peak is higher than the one before. Difficulty
 **DDA on top**, kept small on purpose (Hamlet's warning): recent skill shifts width by about -14%..+21% and speed
 by the inverse half, clamped. Bot runs keep every level above a 10% hit rate for a casual player.
 
-**XP:** x1.8 per level while levels still open bigger bets (to LV12), then x1.25. LV30 is ~170 max bets.
+**XP is logarithmic in the stake** (`economy.xpForStake`): `10 * ln(1 + stake / 10)`. Every x10 on the bet adds
+the same ~23 XP, so a 10K bet gives ~72 XP a spin and a 5M VIP bet only ~138: big bets help a little, they never
+inflate levels. Selling gives the XP of `sellXp` (2) spins staking the coins the cart earned.
+**XP per level is set in spins:** level L costs `8 * 1.1^(L-1)` GOOD spins at its top non-VIP bet (LV10 ~19,
+LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that drifts with the bet table.
 
 ## 5. Chapter cards
 
@@ -76,6 +80,8 @@ by the inverse half, clamped. Bot runs keep every level above a 10% hit rate for
 ## 8. Rejected alternatives (do not re-propose)
 
 - **Hard cap per stat:** dead upgrades at the cap feel bad; soft cap keeps every purchase worth a little.
+- **Linear XP (XP = bet) with a steeper level curve:** a few huge bets still skip levels and the curve has to
+  chase the bet table; log XP fixes the cause.
 - **Nerfing the timing grades:** the meter is the game's identity; skill must stay the best multiplier.
 - **Linear mine upgrades with cheaper costs:** still a wall, just later. Compounding fixes the shape.
 - **Easy/Normal/Hard picker:** players choose before knowing the game; the sawtooth + small DDA do it in-structure.
@@ -86,7 +92,7 @@ by the inverse half, clamped. Bot runs keep every level above a 10% hit rate for
 
 - Base slot return in x0.78..x0.95; skilled > x1.2; max build < x1.35 with no skill, < x2.3 flawless.
 - Difficulty: rising peaks, each chapter opens easier than the last peak, 0 at LV1, 1 at the end.
-- XP: ratio per level never above xpGrowth; LV30 under 300 max bets.
+- XP: logarithmic (x10 bet = same flat gain); one perfect spin at the top VIP bet is under 1/4 of a level; LV30 under 200 spins.
 - Something unlocks at every level 2-11.
 - Mine: value always rises; payback never jumps more than x1.6 per level.
 - Chests: shares within tolerance of the table; no dry streak reaches the pity limit.

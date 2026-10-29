@@ -124,7 +124,7 @@ function guideHtml() {
             <p>EVERY UPGRADE LEVEL ADDS A STEP AND GROWS THE WHOLE VALUE BY ${pct(u.pick.compound - 1)}, SO BIG LEVELS STAY WORTH BUYING.</p>
             <p>THE DRILL KEEPS DIGGING WHILE THE POPUP IS CLOSED.</p>
             <p>SPAM FASTER THAN ~${MINE.overheat.rest} TAPS A SECOND AND THE PICK OVERHEATS: EACH TAP DIGS LESS, DOWN TO ${pct(MINE.overheat.floor)}. EASE OFF A SECOND AND IT COOLS.</p>
-            <p>SELLING GIVES ${MINE.xpPerOre} XP PER ORE x THE MARKET PRICE.</p>`,
+            <p>SELLING GIVES XP LIKE ${LEVELS.sellXp} SPINS BETTING WHAT THE CART EARNED. BIGGER STAKES GIVE MORE XP, BUT LESS AND LESS PER COIN.</p>`,
         ),
         section(
             "coin",

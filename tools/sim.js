@@ -131,7 +131,7 @@ export function playSession({ player = PLAYERS.casual, minutes = 240, seed = 1 }
                 const g = (gradesByLevel[state.level] ??= { perfect: 0, good: 0, miss: 0 });
                 g[grade]++;
                 spinsAt[state.level] = (spinsAt[state.level] ?? 0) + 1;
-                levelUp(econ.gainXp(state, bet * TIMING.grades[grade].xp));
+                levelUp(econ.gainXp(state, econ.spinXp(bet, grade)));
                 if (bet && rand() < LUCK.chestPerSpin) {
                     const before = state.coins;
                     levelUp(openChest(state, 0, rand).levels);
@@ -155,7 +155,7 @@ export function playSession({ player = PLAYERS.casual, minutes = 240, seed = 1 }
                 state.ore -= amount;
                 state.coins += coins;
                 income.mine += coins;
-                levelUp(econ.gainXp(state, amount * mult * MINE.xpPerOre));
+                levelUp(econ.gainXp(state, econ.sellXp(coins)));
             }
             shop(state);
         }

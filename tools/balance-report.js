@@ -21,12 +21,16 @@ for (let lv = 1; lv <= 30; lv++) {
     console.log(`${pad(lv, 3)}  ${econ.difficulty(lv).toFixed(2)}  ${spec.width.toFixed(3)}  ${spec.speed.toFixed(2)}  ${bar(econ.difficulty(lv))}`);
 }
 
-h("XP CURVE (spins at the level's max bet, GOOD timing)");
-console.log(" LV   xp to next   max bet   spins");
+h("XP PER SPIN (logarithmic in the bet, GOOD timing)");
+for (const bet of [1, 5, 100, 1000, 10_000, 100_000, 5_000_000]) console.log(`bet ${pad(fmt(bet), 6)}  ${pad(econ.spinXp(bet, "good").toFixed(1), 6)} xp`);
+
+h("XP CURVE (spins at the level's max bet / at a 10x smaller bet, GOOD timing)");
+console.log(" LV   xp to next   max bet   spins   at bet/10");
 for (const lv of [1, 3, 5, 8, 10, 11, 12, 15, 20, 25, 30, 40]) {
     const bet = BET_STEPS[econ.maxBet({ level: lv, burned: 0 })];
-    const spins = econ.xpToNext(lv) / (bet * TIMING.grades.good.xp);
-    console.log(`${pad(lv, 3)}  ${pad(fmt(econ.xpToNext(lv)), 11)}  ${pad(fmt(bet), 8)}  ${pad(spins.toFixed(1), 7)}`);
+    const need = econ.xpToNext(lv);
+    const at = (b) => (need / econ.spinXp(b, "good")).toFixed(1);
+    console.log(`${pad(lv, 3)}  ${pad(fmt(need), 11)}  ${pad(fmt(bet), 8)}  ${pad(at(bet), 6)}  ${pad(at(Math.max(1, bet / 10)), 9)}`);
 }
 
 h("SLOT RETURN (win / bet, long run)");

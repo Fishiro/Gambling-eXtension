@@ -1,3 +1,4 @@
+import { xpToNext } from "./economy.js";
 import { START, FARM, TIMING, BET_STEPS, RELICS, LUCK, PETS, SKINS, ITEMS, GEAR, GEAR_MAX, GEAR_STARS } from "./config.js";
 
 // The save format. Pure: no localStorage here (store.js owns that), so it can be tested in Node.
@@ -5,7 +6,7 @@ import { START, FARM, TIMING, BET_STEPS, RELICS, LUCK, PETS, SKINS, ITEMS, GEAR,
 // a time, then sanitize() forces every field into a shape and range the game can trust. Both run on load and
 // on import, so a hand-edited or broken backup can never crash the game or hand out impossible values.
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export const freshState = (now = Date.now()) => ({
     version: SAVE_VERSION,
@@ -72,6 +73,14 @@ const MIGRATIONS = {
         if (Array.isArray(save.unlocked) && save.unlocked.includes("endgame")) {
             save.unlocked = [...save.unlocked.filter((id) => id !== "endgame"), "vault", "relics"];
         }
+    },
+    // v2 -> v3: XP became logarithmic in the stake, on a much smaller scale. Keep the share of the current level
+    // already earned. The old curve is frozen here on purpose: it must stay what v2 saves were written with.
+    2(save) {
+        const level = Number.isFinite(save.level) ? Math.max(1, Math.floor(save.level)) : 1;
+        const oldNeed = Math.round(50 * 1.8 ** (Math.min(level, 12) - 1) * 1.25 ** Math.max(0, level - 12));
+        const share = Math.min(0.99, Math.max(0, (save.xp ?? 0) / oldNeed));
+        save.xp = Math.floor(share * xpToNext(level));
     },
 };
 

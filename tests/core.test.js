@@ -68,13 +68,28 @@ test("meter: adaptive nudge stays inside its clamps", () => {
     assert.ok(econ.meterSpec(15, 0, 0, always(0.5)).width > econ.meterSpec(15, 1, 0, always(0.5)).width);
 });
 
-test("xp curve: always rising, never steeper than xpGrowth, no wall after the bet cap", () => {
+test("xp is logarithmic: each x10 on the bet adds the same flat amount", () => {
+    const step = (b) => econ.xpForStake(b * 10) - econ.xpForStake(b);
+    for (const bet of [1_000, 10_000, 1_000_000]) assert.ok(Math.abs(step(bet) - LEVELS.xpScale * Math.LN10) < 0.5, `x10 from ${bet}`);
+    assert.ok(econ.spinXp(5_000_000, "good") / econ.spinXp(10_000, "good") < 2, "500x the bet must not give 500x the XP");
+    assert.equal(econ.spinXp(0, "perfect"), 0);
+});
+
+test("xp curve: always rising, no level in a handful of spins, no wall", () => {
     for (let lv = 1; lv < 60; lv++) {
         const ratio = econ.xpToNext(lv + 1) / econ.xpToNext(lv);
-        assert.ok(ratio > 1 && ratio <= LEVELS.xpGrowth + 0.01, `LV${lv}`); // + rounding
+        assert.ok(ratio > 1 && ratio < 2, `LV${lv} ratio ${ratio.toFixed(2)}`);
+        // Even a perfect spin at the biggest bet this level allows (top VIP) is a small slice of a level.
+        const topBet = BET_STEPS[econ.maxBet({ level: lv, burned: Infinity })];
+        assert.ok(econ.spinXp(topBet, "perfect") < econ.xpToNext(lv) / 4, `LV${lv}: one max bet is too much XP`);
     }
     const capBet = BET_STEPS[econ.maxBet({ level: 30, burned: 0 })];
-    assert.ok(econ.xpToNext(30) / capBet < 300, "LV30 should take a few hundred max bets, not thousands");
+    assert.ok(econ.xpToNext(30) / econ.spinXp(capBet, "good") < 200, "LV30 should take a couple hundred spins, not thousands");
+});
+
+test("save: v2 xp keeps the share of the level already earned", () => {
+    const s = restore({ version: 2, coins: 10, level: 12, xp: 32_131 / 2 });
+    assert.ok(Math.abs(s.xp / econ.xpToNext(12) - 0.5) < 0.01);
 });
 
 test("unlocks: something new at every level from 2 to 11", () => {

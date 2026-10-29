@@ -251,7 +251,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         const gems = bet ? (GEMS.tiers[tier] ?? 0) : 0;
         state.gems += gems;
         state.stats.bestWin = Math.max(state.stats.bestWin, win);
-        const levels = econ.gainXp(state, bet * TIMING.grades[grade].xp);
+        const levels = econ.gainXp(state, econ.spinXp(bet, grade));
         const drops = bet ? [...(win ? items.rollDrops(state, "win") : []), ...(outcome.stars ? items.rollDrops(state, "star") : [])] : [];
         phase = "idle";
         reels.glow(null);

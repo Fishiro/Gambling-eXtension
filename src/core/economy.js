@@ -155,11 +155,17 @@ export function gradeAt(spec, p) {
     return "miss";
 }
 
+// Logarithmic XP: the first coins of a stake count most, every extra x10 adds the same flat amount.
+export const xpForStake = (amount) => (amount > 0 ? LEVELS.xpScale * Math.log1p(amount / LEVELS.xpUnit) : 0);
+
+export const spinXp = (bet, grade) => xpForStake(bet) * TIMING.grades[grade].xp;
+
+export const sellXp = (coins) => xpForStake(coins) * LEVELS.sellXp;
+
+// A level costs a growing number of GOOD spins at that level's top non-VIP bet.
 export function xpToNext(level) {
-    const { xpBase, xpGrowth, xpTailFrom, xpTailGrowth } = LEVELS;
-    const steep = Math.min(level, xpTailFrom) - 1;
-    const tail = Math.max(0, level - xpTailFrom);
-    return Math.round(xpBase * xpGrowth ** steep * xpTailGrowth ** tail);
+    const spins = LEVELS.spinsBase * LEVELS.spinsGrowth ** (level - 1);
+    return Math.round(spins * spinXp(BET_STEPS[maxBetIndex(level)], "good"));
 }
 
 // Level opens bet steps up to 10,000; past that each VIP tier opens one more.
