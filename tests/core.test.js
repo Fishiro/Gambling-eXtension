@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TIMING, LEVELS, MINE, LUCK, BET_STEPS, STAT_CAPS, FARM, MARKET } from "../src/core/config.js";
+import { TIMING, LEVELS, MINE, LUCK, BET, STAT_CAPS, FARM, MARKET, SYMBOLS, PET_REEL } from "../src/core/config.js";
+import { recordGroups } from "../src/core/records.js";
 import * as econ from "../src/core/economy.js";
 import * as luck from "../src/core/luck.js";
 import * as farming from "../src/core/farming.js";
@@ -8,6 +9,7 @@ import * as market from "../src/core/market.js";
 import { softcap, bonus } from "../src/core/items.js";
 import { freshState, restore, SAVE_VERSION } from "../src/core/save.js";
 import { withClock } from "../tools/sim.js";
+import { seeded } from "../src/core/farming.js";
 
 const always = (x) => () => x;
 
@@ -80,10 +82,10 @@ test("xp curve: always rising, no level in a handful of spins, no wall", () => {
         const ratio = econ.xpToNext(lv + 1) / econ.xpToNext(lv);
         assert.ok(ratio > 1 && ratio < 2, `LV${lv} ratio ${ratio.toFixed(2)}`);
         // Even a perfect spin at the biggest bet this level allows (top VIP) is a small slice of a level.
-        const topBet = BET_STEPS[econ.maxBet({ level: lv, burned: Infinity })];
+        const topBet = econ.betCap(lv);
         assert.ok(econ.spinXp(topBet, "perfect") < econ.xpToNext(lv) / 4, `LV${lv}: one max bet is too much XP`);
     }
-    const capBet = BET_STEPS[econ.maxBet({ level: 30, burned: 0 })];
+    const capBet = econ.betCap(30);
     assert.ok(econ.xpToNext(30) / econ.spinXp(capBet, "good") < 200, "LV30 should take a couple hundred spins, not thousands");
 });
 
@@ -204,7 +206,7 @@ test("save: broken or hostile data is rejected or forced into range", () => {
     const s = restore({
         coins: -5,
         level: 0.5,
-        betIndex: 999,
+        bet: 5e9,
         heat: 40,
         skill: 7,
         gems: NaN,
@@ -219,7 +221,7 @@ test("save: broken or hostile data is rejected or forced into range", () => {
     }, 5000);
     assert.equal(s.coins, 0);
     assert.equal(s.level, 1);
-    assert.equal(s.betIndex, BET_STEPS.length - 1);
+    assert.equal(s.bet, econ.betCap(1));
     assert.equal(s.heat, TIMING.heatMax);
     assert.equal(s.skill, 1);
     assert.equal(s.gems, 0);
@@ -234,4 +236,81 @@ test("save: broken or hostile data is rejected or forced into range", () => {
     assert.deepEqual(s.upgrades, { pick: 0, drill: 0, cart: 0 });
     assert.equal(s.market.price, 1);
     assert.equal(s.mineAt, 5000);
+});
+
+test("bet: the cap doubles by level up to 1M and nothing raises it further", () => {
+    assert.equal(econ.betCap(1), BET.first);
+    for (let lv = 2; lv <= 80; lv++) assert.ok(econ.betCap(lv) >= econ.betCap(lv - 1) && econ.betCap(lv) <= BET.max);
+    assert.equal(econ.betCap(19), BET.max);
+    const vip = { level: 50, burned: 1e15 };
+    assert.equal(econ.maxBet(vip), BET.max);
+    assert.equal(econ.clampBet(vip, 5e9), BET.max);
+});
+
+test("bet: typed amounts parse, clamp and step", () => {
+    assert.equal(econ.parseBet("2,500"), 2500);
+    assert.equal(econ.parseBet("2.5k"), 2500);
+    assert.equal(econ.parseBet(" 1M "), 1_000_000);
+    assert.ok(Number.isNaN(econ.parseBet("lots")));
+    assert.ok(Number.isNaN(econ.parseBet("-5")));
+    const s = { level: 9 }; // cap 1,300
+    assert.equal(econ.clampBet(s, 777), 777);
+    assert.equal(econ.clampBet(s, 9999), 1300);
+    assert.equal(econ.stepBet(s, 777, 1), 1000);
+    assert.equal(econ.stepBet(s, 1000, 1), 1300);
+    assert.equal(econ.stepBet(s, 1300, 1), 1300);
+    assert.equal(econ.stepBet(s, 777, -1), 500);
+    assert.equal(econ.stepBet(s, 0, -1), 0);
+});
+
+test("easy lines land half as often, the rest keep their odds", () => {
+    const rand = seeded(11);
+    const n = 400_000;
+    const hits = {};
+    for (let i = 0; i < n; i++) {
+        const o = econ.evaluateSpin(econ.rollReels(rand));
+        if (o.mult) hits[o.symbol] = (hits[o.symbol] ?? 0) + 1;
+    }
+    const odds = econ.lineOdds();
+    for (const sym of SYMBOLS) {
+        const expected = odds[sym.id].triple + odds[sym.id].pair;
+        const seen = (hits[sym.id] ?? 0) / n;
+        assert.ok(Math.abs(seen - expected) < expected * 0.08 + 1e-4, `${sym.id}: ${seen} vs ${expected}`);
+    }
+    const total = SYMBOLS.reduce((sum, x) => sum + x.weight, 0);
+    const p = SYMBOLS[0].weight / total;
+    assert.ok(Math.abs(odds.cherry.pair - p * p * (1 - p) * 0.5) < 1e-12);
+});
+
+test("pets raise odds, never force: SEVEN tops 7-7-7 at 2.5%, bends never make a jackpot", () => {
+    const rand = seeded(5);
+    const n = 400_000;
+    let jackpots = 0;
+    let bentJackpots = 0;
+    for (let i = 0; i < n; i++) {
+        const seven = econ.petBend(econ.rollReels(rand), { seven: true }, rand).roll;
+        if (seven.every((x) => x === "seven")) jackpots++;
+        const bent = econ.petBend(econ.rollReels(rand), { bend: true }, rand);
+        if (bent.bent && bent.roll.every((x) => x === "seven")) bentJackpots++;
+    }
+    assert.ok(Math.abs(jackpots / n - PET_REEL.jackpotMax) < 0.0015, `7-7-7 ${(jackpots / n) * 100}%`);
+    assert.ok(jackpots / n <= PET_REEL.jackpotMax + 0.0015);
+    assert.equal(bentJackpots, 0);
+    // Bending only touches dead rolls.
+    assert.deepEqual(econ.petBend(["gem", "gem", "bell"], { bend: true }, () => 0).roll, ["gem", "gem", "bell"]);
+});
+
+test("save: v3 bet step index becomes a bet amount", () => {
+    const s = restore({ version: 3, coins: 10, level: 15, betIndex: 13 });
+    assert.equal(s.bet, 10_000);
+    assert.equal(s.betIndex, undefined);
+    assert.equal(restore({ version: 3, coins: 10, level: 2, betIndex: 19 }).bet, econ.betCap(2));
+});
+
+test("stats: every record group renders for a fresh and an old save", () => {
+    for (const s of [freshState(0), restore({ coins: 5, level: 3 })]) {
+        const groups = recordGroups(s);
+        assert.ok(groups.length >= 4);
+        for (const g of groups) for (const [label, value] of g.rows) assert.ok(label && value !== undefined && !String(value).includes("NaN"), `${g.title} ${label}`);
+    }
 });

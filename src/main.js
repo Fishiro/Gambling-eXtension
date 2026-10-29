@@ -25,6 +25,7 @@ import { createAchievements } from "./achievements.js";
 import { createBag } from "./bag.js";
 import { createFarm } from "./farm.js";
 import * as farming from "./core/farming.js";
+import { recordGroups } from "./core/records.js";
 import { emit } from "./events.js";
 import { TEXT } from "./text.js";
 import { $ } from "./ui.js";
@@ -131,16 +132,11 @@ function renderDots() {
     });
 }
 
+// Every record, one group per system (core/records.js).
 function renderStats() {
-    const { spins, timed, perfects, bestWin } = state.stats;
-    const rows = [
-        ["SPINS", econ.formatNumber(spins)],
-        ["HIT RATE", spins ? `${Math.round((timed / spins) * 100)}%` : "-"],
-        ["PERFECTS", econ.formatNumber(perfects)],
-        ["BEST WIN", econ.formatNumber(bestWin)],
-        ["LEVEL", state.level],
-    ];
-    el.stats.innerHTML = rows.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("");
+    el.stats.innerHTML = recordGroups(state)
+        .map(({ title, rows }) => `<h5 class="stats-head">${title}</h5>${rows.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}`)
+        .join("");
 }
 
 function setTab(name) {

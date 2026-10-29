@@ -177,7 +177,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         state.coins += coins;
         const levels = econ.gainXp(state, econ.sellXp(coins));
         commit();
-        emit("sell", { amount });
+        emit("sell", { amount, coins });
         sfx.coin();
         const p = fx.centerOf(el.sell);
         fx.coinShower(p.x, p.y, Math.min(24, 3 + Math.floor(amount / 15)));

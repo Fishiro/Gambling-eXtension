@@ -1,17 +1,27 @@
+// `easy` symbols are the cheap, frequent wins: only EASY_KEEP of the lines they make actually land; the rest
+// slip into a near miss (economy.rollReels). Every other line keeps its plain weight odds.
 export const SYMBOLS = [
-    { id: "cherry", name: "CHERRY", weight: 30, pair: 1, triple: 5 },
-    { id: "lemon", name: "LEMON", weight: 25, pair: 1, triple: 8 },
-    { id: "bell", name: "BELL", weight: 18, pair: 3, triple: 12 },
+    { id: "cherry", name: "CHERRY", weight: 30, pair: 1, triple: 5, easy: true },
+    { id: "lemon", name: "LEMON", weight: 25, pair: 1, triple: 8, easy: true },
+    { id: "bell", name: "BELL", weight: 18, pair: 3, triple: 12, easy: true },
     { id: "clover", name: "CLOVER", weight: 13, pair: 5, triple: 25 },
     { id: "gem", name: "GEM", weight: 9, pair: 8, triple: 50 },
     { id: "seven", name: "SEVEN", weight: 5, pair: 15, triple: 150 },
 ];
 
-// Steps past 10,000 are VIP-only: each VIP tier opens one more.
-export const BET_STEPS = [0, 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 1000000, 5000000];
-export const BASE_BET_MAX = 13;
+export const EASY_KEEP = 0.5;
 
-export const START = { coins: 100, betIndex: 3 };
+// Any whole bet from 0 up to the level's cap can be typed in. The cap starts at `first` and grows by `growth`
+// per level (rounded to 2 significant digits) up to `max` (LV19), which nothing raises, VIP included.
+// `steps` are the stops the -/+ buttons and arrow keys jump between.
+export const BET = {
+    first: 5,
+    growth: 2,
+    max: 1_000_000,
+    steps: [0, 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000],
+};
+
+export const START = { coins: 100, bet: 5 };
 
 export const BREAK_SECONDS = 5 * 60;
 
@@ -64,7 +74,6 @@ export const LEVELS = {
     spinsGrowth: 1.1,
     sellXp: 2,
     coinRewardPerLevel: 25,
-    firstMaxBetIndex: 3,
 };
 
 // Overheat: each tap adds 1 heat, `rest` heat cools off per second. Past `free` heat each tap loses 1/span
@@ -117,8 +126,8 @@ export const MARKET = {
 
 export const LUCK = {
     rarities: [
-        { id: "common", name: "COMMON", weight: 60, color: "l" },
-        { id: "rare", name: "RARE", weight: 28, color: "B" },
+        { id: "common", name: "COMMON", weight: 30, color: "l" },
+        { id: "rare", name: "RARE", weight: 14, color: "B" },
         { id: "epic", name: "EPIC", weight: 10, color: "v" },
         { id: "legendary", name: "LEGENDARY", weight: 2, color: "y" },
     ],
@@ -134,12 +143,12 @@ export const LUCK = {
     earlyFloor: 0.3,
     maxChests: 25,
     legendaryBoost: 100,
-    chestPerTap: 0.012,
-    chestPerSpin: 0.02,
+    chestPerTap: 0.006,
+    chestPerSpin: 0.01,
     chestTripleSymbols: ["gem", "seven"],
-    awayMinutesPerChest: 20,
+    awayMinutesPerChest: 40,
     awayMaxChests: 3,
-    batMeanSeconds: 75,
+    batMeanSeconds: 150,
     batSeconds: 5,
     batBoost: 1,
     tripleBoost: 2,
@@ -172,6 +181,9 @@ const MIN = 60 * 1000;
 // (see items.bonus). `role` groups them by play style. Prices assume the post-market economy: helpers cost
 // ~10-20 min of play when pets open (LV3), playstyle pets ~30-60 min at mid levels, legends are hours-long goals.
 export const PET_SLOTS = [0, 15, 40];
+// Pets only ever raise odds, they never force a result. SEVEN's buff makes 7-7-7 exactly `jackpotMax` likely
+// on a spin (the natural odds included); DICEY and SIX bend a dead roll into a pair `bendChance` of the time.
+export const PET_REEL = { jackpotMax: 0.025, bendChance: 0.3 };
 export const PET_ROLES = {
     buddy: { name: "BUDDY", color: "O", desc: "WEAK, BUT CARRIES LOOT ON TRIPS" },
     helper: { name: "HELPER", color: "c", desc: "DOES THE CHORES" },
@@ -379,7 +391,7 @@ export const PETS = [
         cooldown: 20 * MIN,
         loadedSpins: 5,
         passive: { stat: "payout", per: 0.1, label: "SLOT PAYOUT" },
-        desc: "TAP SKILL: YOUR NEXT 5 BET SPINS CAN'T MISS. A DEAD ROLL BECOMES A PAIR. SAVE IT FOR MAX BET.",
+        desc: "TAP SKILL: FOR YOUR NEXT 5 BET SPINS, A DEAD ROLL HAS A 30% CHANCE TO BECOME A PAIR. SAVE IT FOR BIG BETS.",
         lines: ["ROLL ME", "SNAKE EYES? NEVER.", "I AM ALWAYS SIX", "TOTALLY FAIR DIE", "RAGE BAIT? NAH. RNG."],
     },
     {
@@ -466,7 +478,7 @@ export const PETS = [
         cooldown: 0,
         every: 6,
         passive: { stat: "payout", per: 0.66, label: "SLOT PAYOUT" },
-        desc: "AUTO: EVERY 6TH BET SPIN CAN'T LOSE. A DEAD ROLL BECOMES A PAIR. OWN SIX AND SEVEN TOGETHER FOR A SECRET SKIN.",
+        desc: "AUTO: ON EVERY 6TH BET SPIN A DEAD ROLL HAS A 30% CHANCE TO BECOME A PAIR. OWN SIX AND SEVEN TOGETHER FOR A SECRET SKIN.",
         lines: ["SIX", "SIIIX", "6!", "WHERE IS SEVEN?", "6... 7?"],
     },
     {
@@ -478,8 +490,9 @@ export const PETS = [
         skill: "SEVEN HEAVEN",
         auto: false,
         cooldown: 7 * MIN,
+        sevenSpins: 7,
         passive: { stat: "chest", per: 0.77, label: "CHEST CHANCE" },
-        desc: "TAP SKILL: YOUR NEXT BET SPIN LANDS 7-7-7. RECHARGES IN 7 MIN. OWN SIX AND SEVEN TOGETHER FOR A SECRET SKIN.",
+        desc: "TAP SKILL: YOUR NEXT 7 BET SPINS EACH HAVE A 2.5% CHANCE TO LAND 7-7-7 (NORMALLY 1 IN 8,000). RECHARGES IN 7 MIN. OWN SIX AND SEVEN TOGETHER FOR A SECRET SKIN.",
         lines: ["SEVEN", "SEVEEEN", "7!", "SIX? SIX!", "WHAT DOES IT MEAN? 7."],
     },
 ];
@@ -580,27 +593,28 @@ export const ITEMS = {
     surgeBrew: { name: "ORE SURGE", rarity: "rare", from: "FORGE", use: { type: "timed", key: "surge", seconds: 90, label: "SURGE: TAPS DIG x2 ORE" }, effect: "90S: EVERY TAP DIGS x2 ORE" },
 };
 
-// Chance per event that each item drops while you play.
+// Chance per event that each item drops while you play. Common and rare finds are the easy ones: they drop half
+// as often as they used to; epic and legendary finds keep their odds.
 export const DROPS = {
     tap: [
-        { id: "stone", chance: 0.06 },
-        { id: "iron", chance: 0.012 },
-        { id: "pebble", chance: 0.02 },
-        { id: "nail", chance: 0.01 },
-        { id: "dustbunny", chance: 0.008 },
-        { id: "spoon", chance: 0.003 },
+        { id: "stone", chance: 0.03 },
+        { id: "iron", chance: 0.006 },
+        { id: "pebble", chance: 0.01 },
+        { id: "nail", chance: 0.005 },
+        { id: "dustbunny", chance: 0.004 },
+        { id: "spoon", chance: 0.0015 },
     ],
     luckyTap: [
         { id: "crystal", chance: 0.25 },
-        { id: "marble", chance: 0.12 },
+        { id: "marble", chance: 0.06 },
         { id: "oldcoin", chance: 0.03 },
         { id: "tooth", chance: 0.005 },
     ],
     win: [
-        { id: "shard", chance: 0.35 },
-        { id: "bottlecap", chance: 0.08 },
-        { id: "ticket", chance: 0.05 },
-        { id: "button", chance: 0.03 },
+        { id: "shard", chance: 0.175 },
+        { id: "bottlecap", chance: 0.04 },
+        { id: "ticket", chance: 0.025 },
+        { id: "button", chance: 0.015 },
         { id: "duck", chance: 0.005 },
     ],
     star: [
@@ -608,9 +622,9 @@ export const DROPS = {
         { id: "horseshoe", chance: 0.05 },
     ],
     bat: [
-        { id: "wing", chance: 1 },
-        { id: "feather", chance: 0.25 },
-        { id: "key", chance: 0.2 },
+        { id: "wing", chance: 0.5 },
+        { id: "feather", chance: 0.125 },
+        { id: "key", chance: 0.1 },
     ],
 };
 
@@ -690,7 +704,7 @@ export const BUFF_CHIPS = [
     { key: "hotSpins", kind: "count", cls: "hot", icon: "flame", title: "HOT MACHINE SPINS LEFT" },
     { key: "rockSpins", kind: "count", cls: "rock", icon: "rock", title: "DWAYNE: PERFECT SPINS LEFT" },
     { key: "loadedSpins", kind: "count", cls: "dice", icon: "dice", title: "DICEY: LOADED SPINS LEFT" },
-    { key: "sevenSpins", kind: "count", cls: "seven", icon: "digit7", title: "SEVEN: NEXT BET SPIN IS 7-7-7", text: "777" },
+    { key: "sevenSpins", kind: "count", cls: "seven", icon: "digit7", title: "SEVEN: 2.5% 7-7-7 CHANCE, SPINS LEFT" },
     { key: "midas", kind: "timer", cls: "brew", icon: "midasBrew", scale: 1, color: "y", title: "MIDAS: SLOT WINS x2" },
     { key: "titan", kind: "timer", cls: "brew", icon: "titanBrew", scale: 1, color: "l", title: "TITAN: TAPS x5 + AUTO TAP" },
     { key: "phoenix", kind: "timer", cls: "brew", icon: "phoenixBrew", scale: 1, color: "v", title: "PHOENIX: COMBO CAN'T BREAK" },
@@ -769,7 +783,7 @@ export const SKINS = [
     },
 ];
 
-// VIP: permanent tiers earned by total coins bet. Each tier opens one more bet step and adds bonuses.
+// VIP: permanent tiers earned by total coins bet. Each tier adds bonuses (bets are capped by level, not VIP).
 export const VIP = [
     { name: "GUEST", at: 0, color: "l", bonus: {} },
     { name: "BRONZE", at: 1e7, color: "O", bonus: { payout: 0.05 } },

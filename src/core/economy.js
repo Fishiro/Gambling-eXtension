@@ -1,6 +1,5 @@
-import { SYMBOLS, BET_STEPS, BASE_BET_MAX, TIMING, LEVELS, MINE, BURN, COSMIC, LUCK, GEMS, UNLOCKS, FARM, BREW_FX } from "./config.js";
+import { SYMBOLS, EASY_KEEP, BET, PET_REEL, TIMING, LEVELS, MINE, BURN, COSMIC, LUCK, GEMS, UNLOCKS, FARM, BREW_FX } from "./config.js";
 import { bonus } from "./items.js";
-import { vipTier } from "./vip.js";
 
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -18,7 +17,33 @@ export function rollSymbol(rand = Math.random) {
     return SYMBOLS[0].id;
 }
 
-export const rollReels = (rand = Math.random) => [rollSymbol(rand), rollSymbol(rand), rollSymbol(rand)];
+// A symbol other than `not`, by weight.
+function rollOther(not, rand) {
+    const pool = SYMBOLS.filter((s) => s.id !== not);
+    let r = rand() * pool.reduce((sum, s) => sum + s.weight, 0);
+    for (const s of pool) if ((r -= s.weight) < 0) return s.id;
+    return pool[0].id;
+}
+
+// The machine's roll. A line of an `easy` symbol only lands EASY_KEEP of the time; otherwise the middle reel
+// slips to another symbol, leaving a near miss (it can never make a new line, since reel 1 keeps its symbol).
+export function rollReels(rand = Math.random) {
+    const roll = [rollSymbol(rand), rollSymbol(rand), rollSymbol(rand)];
+    const [a, b] = roll;
+    if (a === b && symbolById[a].easy && rand() >= EASY_KEEP) roll[1] = rollOther(a, rand);
+    return roll;
+}
+
+// Exact odds of each line per spin (stars aside), with the easy slip: { id: { triple, pair } }.
+export function lineOdds() {
+    return Object.fromEntries(
+        SYMBOLS.map((s) => {
+            const p = s.weight / totalWeight;
+            const keep = s.easy ? EASY_KEEP : 1;
+            return [s.id, { triple: p ** 3 * keep, pair: p * p * (1 - p) * keep }];
+        }),
+    );
+}
 
 function evaluate([a, b, c]) {
     if (a === b && b === c) return { kind: "triple", symbol: a, mult: symbolById[a].triple, cells: [0, 1, 2] };
@@ -69,8 +94,23 @@ export function rollStars(grade, boost = 1, rand = Math.random) {
     return 0;
 }
 
-// Dicey's loaded die: a roll that would pay nothing is bent into a pair.
-export const loadDice = ([a, b, c]) => (evaluate([a, b, c]).mult ? [a, b, c] : [a, a, c]);
+// A roll that pays nothing bent into a pair, never a triple: [a, b, c] -> [a, a, c], or [b, b, a] for a near
+// miss like 7-?-7 where c is a (copying a would make the triple).
+export function loadDice([a, b, c]) {
+    if (evaluate([a, b, c]).mult) return [a, b, c];
+    return c === a ? [b, b, a] : [a, a, c];
+}
+
+// The natural chance of 7-7-7 on a spin (an easy-slip can't touch it: SEVEN is not easy).
+const naturalJackpot = (symbolById.seven.weight / totalWeight) ** 3;
+
+// Pets raise reel odds, never force them. `seven`: SEVEN's buff, a total PET_REEL.jackpotMax chance of 7-7-7
+// (natural odds included). `bend`: DICEY or SIX, a PET_REEL.bendChance chance to turn a dead roll into a pair.
+export function petBend(roll, { seven = false, bend = false } = {}, rand = Math.random) {
+    if (seven && rand() < (PET_REEL.jackpotMax - naturalJackpot) / (1 - naturalJackpot)) return { roll: ["seven", "seven", "seven"], jackpot: true, bent: false };
+    if (bend && !evaluate(roll).mult && rand() < PET_REEL.bendChance) return { roll: loadDice(roll), jackpot: false, bent: true };
+    return { roll, jackpot: false, bent: false };
+}
 
 export function placeStars(result, stars, rand = Math.random) {
     const spots = [0, 1, 2].sort(() => rand() - 0.5).slice(0, stars);
@@ -165,20 +205,44 @@ export const sellXp = (coins) => xpForStake(coins) * LEVELS.sellXp;
 // A level costs a growing number of GOOD spins at that level's top non-VIP bet.
 export function xpToNext(level) {
     const spins = LEVELS.spinsBase * LEVELS.spinsGrowth ** (level - 1);
-    return Math.round(spins * spinXp(BET_STEPS[maxBetIndex(level)], "good"));
+    return Math.round(spins * spinXp(betCap(level), "good"));
 }
 
-// Level opens bet steps up to 10,000; past that each VIP tier opens one more.
-const maxBetIndex = (level, vip = 0) => Math.min(BET_STEPS.length - 1, BASE_BET_MAX + vip, LEVELS.firstMaxBetIndex + level - 1);
+// Round to 2 significant digits: 1,280 -> 1,300.
+const nice = (x) => {
+    const unit = 10 ** Math.max(0, Math.floor(Math.log10(x)) - 1);
+    return Math.round(x / unit) * unit;
+};
 
-export const maxBet = (state) => maxBetIndex(state.level, vipTier(state));
+// The highest bet `level` allows: doubling from BET.first each level, up to BET.max.
+export const betCap = (level) => Math.min(BET.max, nice(BET.first * BET.growth ** (Math.max(1, level) - 1)));
+
+export const maxBet = (state) => betCap(state.level);
+
+// Any typed amount becomes a whole bet between 0 and the cap.
+export const clampBet = (state, amount) => clamp(Math.floor(Number.isFinite(amount) ? amount : 0), 0, maxBet(state));
+
+// The -/+ buttons: the next BET.steps stop below or above `bet` (the cap itself is the top stop).
+export function stepBet(state, bet, delta) {
+    const cap = maxBet(state);
+    const stops = [...new Set([...BET.steps.filter((x) => x < cap), cap])];
+    const next = delta > 0 ? stops.find((x) => x > bet) : stops.findLast((x) => x < bet);
+    return next ?? bet;
+}
+
+// Typed bets: "2500", "2,500", "2.5K", "1M". Returns NaN when it isn't a number.
+export function parseBet(text) {
+    const m = String(text).trim().toUpperCase().replace(/[,\s]/g, "").match(/^(\d+(?:\.\d+)?)([KM]?)$/);
+    if (!m) return NaN;
+    return Math.floor(Number(m[1]) * { "": 1, K: 1e3, M: 1e6 }[m[2]]);
+}
 
 // Auto spin is SPINNY's job: it works while SPINNY is on the team.
 export const canAutoSpin = (state) => state.pets.team.includes("spinny");
 
 export function unlocksAt(level) {
     const list = [];
-    if (maxBetIndex(level) > maxBetIndex(level - 1)) list.push(`BET ${formatNumber(BET_STEPS[maxBetIndex(level)])}`);
+    if (betCap(level) > betCap(level - 1)) list.push(`BET ${formatNumber(betCap(level))}`);
     UNLOCKS.filter((u) => u.level === level).forEach((u) => list.push(u.name));
     FARM.zones.filter((z) => z.level === level && level > 1).forEach((z) => list.push(`${z.name} TRIPS`));
     return list;

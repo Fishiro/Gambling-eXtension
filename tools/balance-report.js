@@ -1,7 +1,7 @@
 // Balance report: `npm run report`. Prints the difficulty curve, the XP curve, slot return per build, the mine
 // upgrade payback, bot playthroughs and the chest distribution, all computed from src/core.
 
-import { BET_STEPS, TIMING, MINE, LUCK } from "../src/core/config.js";
+import { TIMING, MINE, LUCK, SYMBOLS } from "../src/core/config.js";
 import * as econ from "../src/core/economy.js";
 import * as luck from "../src/core/luck.js";
 import { rawBonus } from "../src/core/items.js";
@@ -27,11 +27,17 @@ for (const bet of [1, 5, 100, 1000, 10_000, 100_000, 5_000_000]) console.log(`be
 h("XP CURVE (spins at the level's max bet / at a 10x smaller bet, GOOD timing)");
 console.log(" LV   xp to next   max bet   spins   at bet/10");
 for (const lv of [1, 3, 5, 8, 10, 11, 12, 15, 20, 25, 30, 40]) {
-    const bet = BET_STEPS[econ.maxBet({ level: lv, burned: 0 })];
+    const bet = econ.betCap(lv);
     const need = econ.xpToNext(lv);
     const at = (b) => (need / econ.spinXp(b, "good")).toFixed(1);
     console.log(`${pad(lv, 3)}  ${pad(fmt(need), 11)}  ${pad(fmt(bet), 8)}  ${pad(at(bet), 6)}  ${pad(at(Math.max(1, bet / 10)), 9)}`);
 }
+
+h("LINE ODDS PER SPIN (easy lines slip half the time)");
+const odds = econ.lineOdds();
+for (const s of SYMBOLS) console.log(`${s.name.padEnd(7)} 3x ${(odds[s.id].triple * 100).toFixed(3)}%  2x ${(odds[s.id].pair * 100).toFixed(2)}%${s.easy ? "  (easy)" : ""}`);
+const anyWin = SYMBOLS.reduce((sum, s) => sum + odds[s.id].triple + odds[s.id].pair, 0);
+console.log(`any line: ${(anyWin * 100).toFixed(1)}% of spins`);
 
 h("SLOT RETURN (win / bet, long run)");
 const fresh = freshState(0);
@@ -90,5 +96,6 @@ for (let i = 0; i < 100_000; i++) {
     longest.epic = Math.max(longest.epic, since.epic);
     longest.legendary = Math.max(longest.legendary, since.legendary);
 }
-for (const r of LUCK.rarities) console.log(`${r.name.padEnd(10)} ${pad(((seen[r.id] / 1000)).toFixed(2), 6)}%  (table ${r.weight}%)`);
+const weights = LUCK.rarities.reduce((sum, r) => sum + r.weight, 0);
+for (const r of LUCK.rarities) console.log(`${r.name.padEnd(10)} ${pad((seen[r.id] / 1000).toFixed(2), 6)}%  (table ${((r.weight / weights) * 100).toFixed(1)}%)`);
 console.log(`longest run without epic+: ${longest.epic} (pity ${LUCK.pity.epic}), without legendary: ${longest.legendary} (pity ${LUCK.pity.legendary})`);

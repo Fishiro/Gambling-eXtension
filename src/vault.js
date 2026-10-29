@@ -1,4 +1,4 @@
-import { VAULT, VIP, BET_STEPS, BREW_FX } from "./core/config.js";
+import { VAULT, VIP, BREW_FX } from "./core/config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./core/economy.js";
 import * as luck from "./core/luck.js";
@@ -124,7 +124,6 @@ export function createVault() {
     function vipPerks(index) {
         const tier = VIP[index];
         const perks = Object.entries(tier.bonus).map(([stat, per]) => `+${Math.round(per * 100)}% ${TEXT.statName[stat]}`);
-        if (index) perks.push(TEXT.vipBet(econ.formatNumber(BET_STEPS[Math.min(BET_STEPS.length - 1, 13 + index)])));
         return perks;
     }
 

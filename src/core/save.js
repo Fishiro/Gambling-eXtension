@@ -1,12 +1,12 @@
-import { xpToNext } from "./economy.js";
-import { START, FARM, TIMING, BET_STEPS, RELICS, LUCK, PETS, SKINS, ITEMS, GEAR, GEAR_MAX, GEAR_STARS } from "./config.js";
+import { xpToNext, betCap } from "./economy.js";
+import { START, FARM, TIMING, RELICS, LUCK, PETS, SKINS, ITEMS, GEAR, GEAR_MAX, GEAR_STARS } from "./config.js";
 
 // The save format. Pure: no localStorage here (store.js owns that), so it can be tested in Node.
 // SAVE_VERSION goes up whenever a saved field changes meaning; migrate() walks an old save forward one step at
 // a time, then sanitize() forces every field into a shape and range the game can trust. Both run on load and
 // on import, so a hand-edited or broken backup can never crash the game or hand out impossible values.
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export const freshState = (now = Date.now()) => ({
     version: SAVE_VERSION,
@@ -15,7 +15,7 @@ export const freshState = (now = Date.now()) => ({
     mineAt: now,
     xp: 0,
     level: 1,
-    betIndex: START.betIndex,
+    bet: START.bet,
     upgrades: { pick: 0, drill: 0, cart: 0 },
     chests: [],
     burned: 0,
@@ -82,6 +82,12 @@ const MIGRATIONS = {
         const share = Math.min(0.99, Math.max(0, (save.xp ?? 0) / oldNeed));
         save.xp = Math.floor(share * xpToNext(level));
     },
+    // v3 -> v4: the bet became a typed amount instead of a step index (the old step list is frozen here).
+    3(save) {
+        const OLD_STEPS = [0, 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 1000000, 5000000];
+        save.bet = OLD_STEPS[save.betIndex] ?? START.bet;
+        delete save.betIndex;
+    },
 };
 
 export function migrate(save) {
@@ -139,7 +145,7 @@ export function sanitize(save, now = Date.now()) {
     s.burned = num(save.burned, 0);
     s.betEma = num(save.betEma, 0);
     s.burnChests = int(save.burnChests, 0, 0);
-    s.betIndex = int(save.betIndex, base.betIndex, 0, BET_STEPS.length - 1);
+    s.bet = int(save.bet, base.bet, 0, betCap(s.level));
     s.heat = int(save.heat, 0, 0, TIMING.heatMax);
     s.skill = num(save.skill, base.skill, 0, 1);
     s.mineAt = num(save.mineAt, now, 0, now);

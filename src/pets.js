@@ -119,7 +119,7 @@ export function createPets({ reveal, showFarm }) {
         if (pet.id === "stonks") market.pump(state, pet.pump);
         if (pet.id === "rock") state.buffs.rockSpins += pet.perfectSpins;
         if (pet.id === "dice") state.buffs.loadedSpins += pet.loadedSpins;
-        if (pet.id === "digit7") state.buffs.sevenSpins = 1;
+        if (pet.id === "digit7") state.buffs.sevenSpins += pet.sevenSpins;
         if (pet.id === "hourglass") farming.skipTime(state, pet.skipMinutes * 60_000);
         commit();
         sfx.upgrade();
@@ -267,26 +267,22 @@ export function createPets({ reveal, showFarm }) {
         shout(TEXT.berrySpin, "G");
     }
 
-    // Pets that bend the next bet spin's reels: SEVEN's sure 7-7-7, Dicey's loaded die, SIX's every 6th spin.
+    // Pets that raise the next bet spin's reel odds (core/economy.petBend): SEVEN's 2.5% 7-7-7, DICEY's loaded
+    // die and SIX's every 6th spin (a chance to bend a dead roll into a pair).
     function bendRoll(rolled, bet) {
         if (!bet) return rolled;
-        if (state.buffs.sevenSpins > 0) {
-            state.buffs.sevenSpins--;
-            shout(TEXT.sevenHeaven, "R");
-            return ["seven", "seven", "seven"];
-        }
-        let roll = rolled;
-        if (state.buffs.loadedSpins > 0) {
-            state.buffs.loadedSpins--;
-            roll = econ.loadDice(roll);
-        }
+        const seven = state.buffs.sevenSpins > 0;
+        if (seven) state.buffs.sevenSpins--;
+        const loaded = state.buffs.loadedSpins > 0;
+        if (loaded) state.buffs.loadedSpins--;
+        let six = false;
         if (equipped("digit6")) {
             state.pets.sixCount = (state.pets.sixCount ?? 0) + 1;
-            if (state.pets.sixCount % byId.digit6.every === 0) {
-                roll = econ.loadDice(roll);
-                shout(TEXT.sixShot, "c");
-            }
+            six = state.pets.sixCount % byId.digit6.every === 0;
         }
+        const { roll, jackpot, bent } = econ.petBend(rolled, { seven, bend: loaded || six });
+        if (jackpot) shout(TEXT.sevenHeaven, "R");
+        else if (bent && six) shout(TEXT.sixShot, "c");
         return roll;
     }
 

@@ -364,6 +364,7 @@ export function createAchievements() {
             f().jackpots = (f().jackpots ?? 0) + 1;
         }
         f().bigBet = Math.max(f().bigBet ?? 0, bet);
+        f().coinsWon = (f().coinsWon ?? 0) + win;
         f().bestWinRun = Math.max(f().bestWinRun ?? 0, f().winRun);
         best("worstStreak", f().lossStreak);
     }
@@ -378,8 +379,10 @@ export function createAchievements() {
 
     on("tap", () => bump("taps"));
     on("tap-full", () => bump("tapFull"));
-    on("sell", ({ amount }) => {
+    on("sell", ({ amount, coins = 0 }) => {
         f().sells = (f().sells ?? 0) + 1;
+        f().sellCoins = (f().sellCoins ?? 0) + coins;
+        f().bestSellCoins = Math.max(f().bestSellCoins ?? 0, coins);
         f().oreSold = (f().oreSold ?? 0) + amount;
         if (amount === 1) f().sellOne = 1;
         best("bestSell", amount);
@@ -406,6 +409,8 @@ export function createAchievements() {
     });
     on("chest-open", ({ rarity }) => rarity === "legendary" && bump("legendaryChests"));
     on("relic-reroll", () => bump("rerolls"));
+    on("scrap", ({ coins }) => bump("scrapCoins", coins));
+    on("vault-crack", ({ tier }) => best("bestVault", tier));
     on("brew", ({ id }) => bump(`brew_${id}`));
     on("combo", ({ count }) => count === 67 && bump("combo67"));
     on("craft", () => bump("crafts"));

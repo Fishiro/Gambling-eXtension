@@ -20,10 +20,10 @@ test("slot return: the house wins against no skill, skill pays, nothing prints m
     const skilled = slotReturn(fresh, { grade: "perfect", heat: TIMING.heatMax, burn: burnMax, spins });
     const maxIdle = slotReturn(max, { grade: "miss", spins });
     const maxFlawless = slotReturn(max, { grade: "perfect", heat: TIMING.heatMax, burn: burnMax, spins });
-    assert.ok(base > 0.78 && base < 0.95, `base return x${base.toFixed(2)}`);
-    assert.ok(skilled > 1.2, `skill should pay: x${skilled.toFixed(2)}`);
-    assert.ok(maxIdle < 1.35, `max build with no skill: x${maxIdle.toFixed(2)}`);
-    assert.ok(maxFlawless < 2.3, `max build flawless: x${maxFlawless.toFixed(2)}`);
+    assert.ok(base > 0.5 && base < 0.7, `base return x${base.toFixed(2)}`);
+    assert.ok(skilled > 1.15, `skill should pay: x${skilled.toFixed(2)}`);
+    assert.ok(maxIdle < 1, `max build with no skill must not print money: x${maxIdle.toFixed(2)}`);
+    assert.ok(maxFlawless < 1.7, `max build flawless: x${maxFlawless.toFixed(2)}`);
 });
 
 test("chests: the table holds, and pity caps every dry streak", () => {
@@ -45,9 +45,11 @@ test("chests: the table holds, and pity caps every dry streak", () => {
     }
     assert.ok(worstEpic < LUCK.pity.epic && worstLegend < LUCK.pity.legendary);
     // Pity lifts the rare tiers a little, never a lot.
+    const weights = LUCK.rarities.reduce((sum, r) => sum + r.weight, 0);
     for (const r of LUCK.rarities) {
         const share = (seen[r.id] / n) * 100;
-        assert.ok(Math.abs(share - r.weight) < Math.max(2.5, r.weight * 0.5), `${r.id}: ${share.toFixed(1)}% vs table ${r.weight}%`);
+        const table = (r.weight / weights) * 100;
+        assert.ok(Math.abs(share - table) < Math.max(2.5, table * 0.5), `${r.id}: ${share.toFixed(1)}% vs table ${table.toFixed(1)}%`);
     }
 });
 
@@ -63,9 +65,10 @@ for (const [name, player] of Object.entries(PLAYERS)) {
             const recent = Math.max(...gaps.slice(i - 3, i));
             assert.ok(gaps[i] < recent * 3, `LV${levels[i].level} took ${gaps[i].toFixed(1)} min after ${recent.toFixed(1)}`);
         }
+        // The slot is a coin sink unless you time well; the mine and chests must carry the wallet.
         const { slot, mine, chest } = run.income;
-        const mineShare = mine / (slot + mine + chest);
-        assert.ok(mineShare > 0.2 && mineShare < 0.8, `mine share ${Math.round(mineShare * 100)}%`);
+        assert.ok(slot + mine + chest > 0, "the bot went broke overall");
+        assert.ok(mine > 0, "the mine must earn");
         // The meter keeps every player in reach: nobody sinks below 1 in 10 hits.
         for (const [lv, h] of Object.entries(run.hitRate)) if (h.all > 100) assert.ok(h.hit / h.all > 0.1, `LV${lv} hit rate ${h.hit}/${h.all}`);
     });

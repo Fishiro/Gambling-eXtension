@@ -34,6 +34,7 @@ export const TEXT = {
     broke: "COOKED!",
     brokeSub: "BRO IS BROKE. MINE ORE, SELL IT, RUN IT BACK",
     betLowered: (bet) => `BET LOWERED TO ${bet}`,
+    betCap: (cap) => `MAX BET ${cap} AT THIS LEVEL`,
     spin: "SPIN",
     stop: "STOP",
     skip: "SKIP",
@@ -72,10 +73,9 @@ export const TEXT = {
     vipUp: (name) => `VIP ${name}!`,
     vipSub: "FOREVER. NOBODY CAN TAKE YOUR AURA.",
     vipOk: "AURA FARMING",
-    vipBet: (bet) => `BET UP TO ${bet}`,
     vipNext: (left, name) => `${left} MORE BET TO ${name}`,
     vipTop: "THE TOP. THE VERY TOP.",
-    vipGuest: "BET MORE TO JOIN VIP. TIERS RAISE YOUR MAX BET AND PAYOUTS.",
+    vipGuest: "BET MORE TO JOIN VIP. TIERS RAISE YOUR PAYOUTS AND CHESTS.",
     vaultTier: (n) => `#${n}`,
     vaultDone: "CRACKED!",
     vaultHint: "SPINS AND MINE TAPS CHIP IT. PERFECTS HIT 3X.",
@@ -183,7 +183,7 @@ export const TEXT = {
             { target: "#pet-list", text: "HELPERS DO CHORES: SPINNY AUTO SPINS, CHESTER OPENS CHESTS. THE REST PICK A PLAYSTYLE. Q USES A SKILL.", last: true },
         ],
         vault: [
-            { target: "#vip", tab: "slot", text: "LEVEL 7: MAIN CHARACTER ERA! VIP: EVERY COIN YOU BET RAISES YOUR TIER AND YOUR MAX BET." },
+            { target: "#vip", tab: "slot", text: "LEVEL 7: MAIN CHARACTER ERA! VIP: EVERY COIN YOU BET RAISES YOUR TIER: BIGGER PAYOUTS, MORE CHESTS." },
             { target: "#vault", text: "THE VAULT: SPINS AND MINE TAPS CRACK IT. ONE A DAY, HUGE LOOT. RELICS FROM IT OPEN AT LV10.", last: true },
         ],
         relics: [

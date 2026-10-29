@@ -2,7 +2,7 @@
 // virtual clock. Used by tools/balance-report.js and by the balance tests, so both read the same numbers.
 // Everything is seeded: the same seed always gives the same run.
 
-import { BET_STEPS, MINE, TIMING, LUCK, GEAR, GEAR_MAX, GEAR_STARS, VIP, RELICS } from "../src/core/config.js";
+import { BET, MINE, TIMING, LUCK, GEAR, GEAR_MAX, GEAR_STARS, VIP, RELICS } from "../src/core/config.js";
 import * as econ from "../src/core/economy.js";
 import * as luck from "../src/core/luck.js";
 import * as market from "../src/core/market.js";
@@ -73,12 +73,10 @@ function stopMeter(spec, player, rand) {
     return "miss";
 }
 
-// The bot's bet: the biggest open step it can lose 25 times in a row.
+// The bot's bet: the biggest button stop under the cap it can lose 25 times in a row.
 function chooseBet(state) {
-    let index = 0;
-    for (let i = 1; i <= econ.maxBet(state); i++) if (BET_STEPS[i] * 25 <= state.coins) index = i;
-    state.betIndex = index;
-    return BET_STEPS[index];
+    state.bet = BET.steps.findLast((x) => x <= econ.maxBet(state) && x * 25 <= state.coins) ?? 0;
+    return state.bet;
 }
 
 // Buy the mine upgrade whose cost is lowest, while it costs under a fifth of the wallet.

@@ -899,9 +899,21 @@ main,
     color: var(--muted);
     line-height: 1.2;
 }
-.bet-value b {
+.bet-value input {
+    width: 80px;
+    padding: 1px 2px;
+    border: 1px solid transparent;
+    background: transparent;
     font: 700 var(--fs-2)/1 "Silkscreen", monospace;
     color: var(--text);
+    text-align: center;
+    cursor: text;
+}
+.bet-value input:hover:not(:read-only),
+.bet-value input:focus {
+    border-color: var(--muted);
+    background: var(--panel);
+    outline: none;
 }
 .toggle {
     min-width: 84px;
@@ -1758,6 +1770,12 @@ kbd {
     color: var(--muted);
 }
 .stats b {
+    color: var(--text);
+    text-align: right;
+}
+.stats .stats-head {
+    grid-column: 1 / -1;
+    margin: 8px 0 0;
     color: var(--text);
 }
 /* ---- settings: grouped cards, one control per row ---- */

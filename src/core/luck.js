@@ -1,4 +1,4 @@
-import { LUCK, BET_STEPS, TIMING, ITEMS, SCRAP } from "./config.js";
+import { LUCK, TIMING, ITEMS, SCRAP } from "./config.js";
 import * as relics from "./relics.js";
 import * as econ from "./economy.js";
 import * as items from "./items.js";
@@ -55,8 +55,8 @@ export function addChest(state, boost = 0) {
 
 // The coin unit chest rewards (and scrap) scale with: about the bet the player usually makes, smaller early on.
 export function rewardUnit(state) {
-    const maxBet = BET_STEPS[econ.maxBet(state)];
-    const typical = econ.clamp(state.betEma || maxBet, BET_STEPS[1], maxBet);
+    const maxBet = econ.maxBet(state);
+    const typical = econ.clamp(state.betEma || maxBet, 1, maxBet);
     const early = Math.max(LUCK.earlyFloor, Math.min(1, state.level / LUCK.earlyLevels));
     return typical * early;
 }

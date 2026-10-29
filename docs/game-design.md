@@ -69,13 +69,23 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
 
 ## 7. Economy rules
 
-- **Base slot return x0.85** (no skill). Skill pays: perfect + max heat + burn is ~x1.8.
+- **Easy wins are rare-ish (2026-10-29, owner's call):** CHERRY, LEMON and BELL lines only land half the time
+  (`EASY_KEEP`, the rest slip into a near miss); any line hits ~12% of spins. Payouts were not raised, so the
+  slot is a **coin sink unless you time well**: base return x0.59, good timing + heat 3 ~x0.75, flawless ~x1.26.
+  The mine and chests carry the wallet; the slot is for XP, burn, chests, the vault and big swings.
+- **Bets:** type any whole amount up to the level cap: 5 at LV1, doubling each level (2 significant digits), 1M
+  from LV19. 1M is absolute: VIP gives payout/chest bonuses, never bigger bets.
+- **Pets raise odds, never force results:** SEVEN's skill gives 7 spins at exactly 2.5% 7-7-7 (natural odds
+  included); DICEY and SIX give a 30% chance to bend a dead roll into a pair, which can never be a triple.
 - **Soft caps** (`STAT_CAPS`): past a knee each stat gives diminishing returns toward a hard cap. The payout stat
   (burn included) caps at +50%, so the strongest build returns ~x2.1 with flawless play and ~x1.26 with none
   (was ~x8 uncapped).
 - **Mine upgrades compound** (`value = (base + step*lv) * compound^lv`), so payback grows ~x1.3 per level instead of
   exploding. Bots earn ~45-55% of their coins from the mine.
 - **Chests follow the usual bet** (`luck.rewardUnit`), with pity: an epic+ at least every 15, a legendary every 60.
+  Chests drop half as often as in 1.1 (per tap, per spin, bats, time away), and the common/rare weights were
+  halved (shares: common ~54%, rare 25%, epic 18%, legendary 3.6%): fewer chests, each one better.
+- **Play drops:** common and rare finds drop half as often; epic and legendary finds keep their odds.
 
 ## 8. Rejected alternatives (do not re-propose)
 
@@ -90,19 +100,25 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
 
 ## 9. Acceptance criteria (enforced by `tests/`)
 
-- Base slot return in x0.78..x0.95; skilled > x1.2; max build < x1.35 with no skill, < x2.3 flawless.
+- Base slot return in x0.5..x0.7; flawless > x1.15; max build < x1 with no skill, < x1.7 flawless.
+- Easy lines land at EASY_KEEP of their weight odds (Monte Carlo within 8%); SEVEN never passes 2.5% 7-7-7 and a
+  bend never makes a jackpot.
+- Bet cap never above 1M, VIP included; typed bets parse ("2.5K", "1M") and clamp.
 - Difficulty: rising peaks, each chapter opens easier than the last peak, 0 at LV1, 1 at the end.
 - XP: logarithmic (x10 bet = same flat gain); one perfect spin at the top VIP bet is under 1/4 of a level; LV30 under 200 spins.
 - Something unlocks at every level 2-11.
 - Mine: value always rises; payback never jumps more than x1.6 per level.
 - Chests: shares within tolerance of the table; no dry streak reaches the pity limit.
-- Bots (casual, skilled): LV10 within 30 min of play, no level taking 3x the recent ones, mine share 20-80%,
+- Bots (casual, skilled): LV10 within 30 min of play, no level taking 3x the recent ones, net income positive with
+  the mine earning,
   hit rate above 10% at every level.
 - Saves: versioned, old saves migrate, broken or hostile imports are rejected or clamped.
 - Every relative import resolves; `src/core` never touches the DOM.
 
 ## 10. Open questions
 
+- The slot now loses coins for most players (x0.59-x0.75). Raise the easy payouts x2 to restore ~x0.85 with
+  fewer, bigger wins, or keep the slot as a sink?
 - 21 pets is a lot to read at LV3. Gate the legend tier in the shop until LV10?
 - Should the vault give relics before the relic view opens at LV10, or hold them?
 - Late game (LV30+) relies on VIP bet steps; is the x1.25 XP tail right once VIP is maxed?

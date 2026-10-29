@@ -1,4 +1,4 @@
-import { BET_STEPS, TIMING, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./core/config.js";
+import { BET, TIMING, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./core/config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./core/economy.js";
 import * as luck from "./core/luck.js";
@@ -79,7 +79,8 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
     let shownHeat = state.heat;
     let autoMarkup = "";
 
-    const currentBet = () => BET_STEPS[state.betIndex];
+    // Never above the level's cap, even if the saved bet was set higher.
+    const currentBet = () => Math.min(state.bet, econ.maxBet(state));
 
     // Buzz the machine and light its rim in `tone` for `ms`. Only the machine moves, and only sideways.
     let rimTimer = 0;
@@ -115,22 +116,20 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         requestAnimationFrame(step);
     }
 
-    function affordableIndex() {
-        for (let i = state.betIndex - 1; i > 0; i--) if (BET_STEPS[i] <= state.coins) return i;
-        return 0;
-    }
+    // The biggest button stop the wallet still covers (0 when it covers none).
+    const affordableBet = () => BET.steps.findLast((x) => x > 0 && x <= Math.min(state.coins, currentBet())) ?? 0;
 
     function spin() {
         const bet = currentBet();
         const free = state.freeSpin && bet > 0;
         if (!free && bet > state.coins) {
-            const lower = affordableIndex();
+            const lower = affordableBet();
             sfx.denied();
             fx.shake(el.spin, 4);
             if (lower) {
-                state.betIndex = lower;
+                state.bet = lower;
                 commit();
-                setMessage(TEXT.betLowered(econ.formatNumber(BET_STEPS[lower])), "", "info");
+                setMessage(TEXT.betLowered(econ.formatNumber(lower)), "", "info");
                 fx.pop(el.bet);
                 scheduleAuto("lose");
                 return;
@@ -410,9 +409,12 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         const bet = currentBet();
         const idle = phase === "idle";
         const free = state.freeSpin && bet > 0;
-        el.bet.textContent = econ.formatNumber(bet);
-        el.betDown.disabled = !idle || state.betIndex === 0;
-        el.betUp.disabled = !idle || state.betIndex >= econ.maxBet(state);
+        // While the player types, the field is theirs.
+        if (document.activeElement !== el.bet) el.bet.value = econ.formatNumber(bet);
+        el.bet.readOnly = !idle;
+        el.bet.title = TEXT.betCap(econ.formatNumber(econ.maxBet(state)));
+        el.betDown.disabled = !idle || bet === 0;
+        el.betUp.disabled = !idle || bet >= econ.maxBet(state);
 
         el.spin.dataset.mode = !idle ? (phase === "spinning" ? "stop" : "busy") : free ? "free" : bet ? "spin" : "practice";
         el.spinLabel.textContent = phase === "spinning" ? TEXT.stop : phase === "stopping" ? TEXT.skip : free && idle ? TEXT.freeSpin : TEXT.spin;
@@ -434,23 +436,54 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         el.burn.dataset.tier = burn.index;
     }
 
-    function changeBet(delta) {
-        if (phase !== "idle") return;
-        const next = econ.clamp(state.betIndex + delta, 0, econ.maxBet(state));
-        if (next === state.betIndex) {
-            emit("bet-stuck", { delta });
-            sfx.denied();
-            fx.shake(el.bet.parentElement, 2, 200);
-            return;
-        }
-        state.betIndex = next;
+    function setBet(next) {
+        state.bet = next;
         commit();
         emit("bet-change");
         fx.pop(el.bet);
     }
 
+    function changeBet(delta) {
+        if (phase !== "idle") return;
+        const next = econ.stepBet(state, currentBet(), delta);
+        if (next === currentBet()) {
+            emit("bet-stuck", { delta });
+            sfx.denied();
+            fx.shake(el.bet.parentElement, 2, 200);
+            return;
+        }
+        setBet(next);
+    }
+
+    // A typed bet ("2500", "2.5K", "1M"): clamped to the cap, with a word when it was too high.
+    function typeBet() {
+        const wanted = econ.parseBet(el.bet.value);
+        el.bet.blur();
+        if (phase !== "idle" || Number.isNaN(wanted)) return render();
+        const next = econ.clampBet(state, wanted);
+        if (next < wanted) {
+            sfx.denied();
+            const p = fx.centerOf(el.bet);
+            fx.float(p.x, p.y - 18, TEXT.betCap(econ.formatNumber(next)), { color: "R", life: 70 });
+        }
+        if (next !== state.bet) setBet(next);
+        render();
+    }
+
     el.spin.addEventListener("click", () => press());
     el.betDown.addEventListener("click", () => changeBet(-1));
+    el.bet.addEventListener("focus", () => el.bet.select());
+    el.bet.addEventListener("change", typeBet);
+    // Keys typed into the bet must not drive the game; Enter confirms, Escape gives up.
+    el.bet.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") typeBet();
+        if (e.key === "Escape") {
+            el.bet.value = "";
+            el.bet.blur();
+            render();
+        }
+    });
     el.betUp.addEventListener("click", () => changeBet(1));
     el.auto.addEventListener("click", () => toggleAuto());
     $("reels").addEventListener("pointerdown", () => phase === "spinning" && stop(false));

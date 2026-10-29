@@ -1,5 +1,5 @@
 import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./core/config.js";
-import { formatNumber } from "./core/economy.js";
+import { formatNumber, lineOdds } from "./core/economy.js";
 import { PALETTE, svgIcon, iconScale } from "./sprites.js";
 import { TEXT } from "./text.js";
 
@@ -199,7 +199,7 @@ function guideHtml() {
             "relic",
             "ENDGAME",
             `${tiles([
-                [icon("gem"), "VIP", `${VIP.length - 1} TIERS, BIGGER BETS`],
+                [icon("gem"), "VIP", `${VIP.length - 1} TIERS, BIGGER PAYOUTS`],
                 [icon("vault"), "THE VAULT", "CRACK ONE A DAY"],
                 [icon("relic"), "RELICS", `${RELICS.slots} SLOTS, RANDOM STATS`],
                 [icon("kid"), "SKINS", "PAID IN DIAMONDS"],
@@ -248,12 +248,10 @@ const card = (iconName, title, takeaway, body, open = false) => `<details class=
     </details>`;
 
 function slotOdds() {
-    const total = totalWeight(SYMBOLS);
+    const odds = lineOdds();
     let win = 0;
     const rows = [...SYMBOLS].reverse().flatMap((s) => {
-        const p = s.weight / total;
-        const triple = p ** 3;
-        const pair = p * p * (1 - p);
+        const { triple, pair } = odds[s.id];
         win += triple + pair;
         return [
             row(reels([s.id, s.id, s.id], [0, 1, 2]), `3 ${s.name}`, triple, { note: `PAYS x${s.triple}`, c: "y" }),
