@@ -548,6 +548,27 @@ i[data-icon] {
 .pet-btn[data-ready="true"] {
     color: var(--green);
 }
+/* One chip per team pet: its face and its own cooldown. */
+.pet-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--muted);
+}
+.pet-chip + .pet-chip {
+    margin-left: 6px;
+}
+.pet-chip small {
+    font-size: 8px;
+    font-variant-numeric: tabular-nums;
+}
+.pet-chip[data-state="ready"] small {
+    color: var(--green);
+    animation: blink 1s steps(2) infinite;
+}
+.pet-chip[data-state="cd"] .ico {
+    opacity: 0.55;
+}
 #mine-rate {
     display: inline-block;
     min-width: 7ch;

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 // The extension has no bundler, so a broken import only shows up as a blank popup. This walks every module
@@ -52,4 +53,14 @@ test("popup.html loads the entry module", () => {
     const html = readFileSync(join(root, "popup.html"), "utf8");
     const entry = html.match(/<script[^>]+src="([^"]+)"/)[1];
     assert.ok(existsSync(join(root, entry)), `popup.html points at missing ${entry}`);
+});
+
+test("every module parses", () => {
+    for (const file of sources) {
+        try {
+            execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
+        } catch (e) {
+            assert.fail(`${file} does not parse:\n${e.stderr}`);
+        }
+    }
 });

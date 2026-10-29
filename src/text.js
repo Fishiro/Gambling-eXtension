@@ -36,6 +36,7 @@ export const TEXT = {
     betLowered: (bet) => `BET LOWERED TO ${bet}`,
     rateSplit: (drill, taps) => `DRILL ${drill}/MIN + TAPS ${taps}/MIN`,
     burnMax: "MAX",
+    petReadyQ: "READY, PRESS Q",
     burnMaxTip: "BURN IS MAXED. THE BONUS STAYS FOREVER.",
     betCap: (cap) => `MAX BET ${cap} AT THIS LEVEL`,
     spin: "SPIN",

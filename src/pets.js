@@ -98,7 +98,7 @@ export function createPets({ reveal, showFarm }) {
         commit();
     }
 
-    // Q / USE: fire `id`'s skill, or with no id the first tap skill on the team that is ready.
+    // Q / USE: fire `id`'s skill, or with no id every tap skill on the team that is ready, all at once.
     function useSkill(id) {
         const tappers = members().filter((p) => !p.auto);
         if (!state.pets.team.length) return reveal();
@@ -106,11 +106,23 @@ export function createPets({ reveal, showFarm }) {
             sfx.denied();
             return shout(TEXT.petAuto, "l");
         }
-        const pet = id ? byId[id] : (tappers.find((p) => cooldownLeft(p.id) <= 0) ?? tappers[0]);
-        if (!trigger(pet.id)) {
+        const chosen = id ? [byId[id]] : tappers;
+        const fired = chosen.filter((pet) => trigger(pet.id));
+        if (!fired.length) {
+            // Nothing ready: say when each one is, soonest first.
             sfx.denied();
-            return shout(`${pet.name} ${econ.formatClock(cooldownLeft(pet.id))}`, "l");
+            const waits = [...chosen].sort((a, b) => cooldownLeft(a.id) - cooldownLeft(b.id));
+            return shout(waits.map((p) => `${p.name} ${econ.formatClock(cooldownLeft(p.id))}`).join("  "), "l");
         }
+        fired.forEach(fireSkill);
+        commit();
+        fired.forEach((pet, i) => setTimeout(() => sfx.skill(pet.role), i * 140));
+        shout(fired.map((p) => `${p.skill}!`).join(" + "));
+        fx.confetti(1);
+    }
+
+    // What a tap skill does once it has fired.
+    function fireSkill(pet) {
         if (pet.id === "toaster") {
             econ.addOre(state, econ.cartCap(state));
             luck.applyReward(state, { type: "goldRush", seconds: pet.rushSeconds });
@@ -122,10 +134,6 @@ export function createPets({ reveal, showFarm }) {
         if (pet.id === "dice") state.buffs.loadedSpins += pet.loadedSpins;
         if (pet.id === "digit7") state.buffs.sevenSpins += pet.sevenSpins;
         if (pet.id === "hourglass") farming.skipTime(state, pet.skipMinutes * 60_000);
-        commit();
-        sfx.skill(pet.role);
-        shout(`${pet.skill}!`);
-        fx.confetti(1);
     }
 
     function equip(pet, button) {
@@ -239,18 +247,29 @@ export function createPets({ reveal, showFarm }) {
         if (markup !== c.markup) actions.innerHTML = c.markup = markup;
     }
 
-    // Top bar: the team's faces, then the first tap skill's countdown (or ON for an all-auto team).
+    // One pet's state on the top bar: a tap skill is READY or counting down; an auto skill with a cooldown counts
+    // down while recharging; an always-on pet shows just its face.
+    function chipState(pet) {
+        const left = cooldownLeft(pet.id);
+        if (left > 0) return { state: "cd", text: econ.formatClock(left), tip: TEXT.petCooldown(econ.formatClock(left)) };
+        if (!pet.auto) return { state: "ready", text: TEXT.petReady, tip: TEXT.petReadyQ };
+        return { state: "auto", text: "", tip: pet.cooldown ? TEXT.petReady : TEXT.petOn };
+    }
+
+    // Top bar: every team pet with its own status, so mixed cooldowns read at a glance.
     function render() {
         const list = members();
         let markup;
-        if (!list.length) markup = `${svgIcon("i-paw", 2)}${TEXT.pets}`;
-        else {
-            const tapper = list.find((p) => !p.auto);
-            const left = tapper ? cooldownLeft(tapper.id) : 0;
-            markup = `${list.map((p) => svgIcon(p.id, 2)).join("")}<span>${left > 0 ? econ.formatClock(left) : tapper ? TEXT.petReady : TEXT.petOn}</span>`;
-            el.button.dataset.ready = String(left <= 0);
+        if (!list.length) {
+            markup = `${svgIcon("i-paw", 2)}${TEXT.pets}`;
+            delete el.button.dataset.ready;
+            el.button.title = "";
+        } else {
+            const chips = list.map((p) => ({ pet: p, ...chipState(p) }));
+            markup = chips.map(({ pet, state: s, text }) => `<span class="pet-chip" data-state="${s}">${svgIcon(pet.id, 2)}${text ? `<small>${text}</small>` : ""}</span>`).join("");
+            el.button.dataset.ready = String(chips.some((c) => c.state === "ready"));
+            el.button.title = chips.map(({ pet, tip }) => `${pet.name} (${pet.skill}): ${tip}`).join("\n");
         }
-        if (!list.length) delete el.button.dataset.ready;
         if (markup !== el.button.innerHTML) el.button.innerHTML = markup;
         if (el.list.offsetParent) {
             renderTeam();
