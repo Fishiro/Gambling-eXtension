@@ -3305,6 +3305,23 @@ body.is-calm::after {
     outline: 2px solid var(--text);
     outline-offset: 2px;
 }
+/* Wide web box: as many columns as fit at a size that grows with --ui-scale (src/mode.js), and the detail
+   card's icons grow by the same factor. */
+html.web .item-grid {
+    grid-template-columns: repeat(auto-fill, minmax(calc(60px * var(--ui-scale, 1)), 1fr));
+    gap: calc(8px * var(--ui-scale, 1));
+}
+/* The icon takes a share of the tile instead of a fixed size, so it grows with it (sprites are vector: still sharp). */
+html.web .tile > .ico {
+    width: 52%;
+    height: auto;
+}
+html.web .tile b {
+    font-size: calc(var(--fs-1) * var(--ui-scale, 1));
+}
+html.web .item-detail :is(.detail-art, .use-chip > .ico, .scrap-btn .ibox) {
+    zoom: var(--ui-scale, 1);
+}
 .tile .new {
     position: absolute;
     top: -6px;

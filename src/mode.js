@@ -9,6 +9,10 @@ if (new URLSearchParams(location.search).has("web")) {
     const WEB_MIN_H = 620;
     const WEB_MAX_W = 1280;
     const WEB_MAX_H = 840;
+    // Icons that should grow with the box (the bag's items) scale by --ui-scale: 1 up to this box width, then in
+    // step with it, up to UI_SCALE_MAX.
+    const UI_SCALE_FROM = 1000;
+    const UI_SCALE_MAX = 1.3;
     const root = document.documentElement;
     root.classList.add("web");
     const fit = () => {
@@ -21,6 +25,7 @@ if (new URLSearchParams(location.search).has("web")) {
         const h = Math.min(WEB_MAX_H, document.body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
         root.style.setProperty("--app-w", `${w / zoom}px`);
         root.style.setProperty("--app-h", `${h / zoom}px`);
+        root.style.setProperty("--ui-scale", Math.min(UI_SCALE_MAX, Math.max(1, w / zoom / UI_SCALE_FROM)).toFixed(3));
         requestAnimationFrame(frame);
     };
     // The gold frame (body::before/::after) wraps the box, one body padding out from it.
