@@ -22,6 +22,10 @@
     --green: #a7f070;
     --cyan: #73eff7;
     --rail: clamp(210px, 15vw, 280px);
+    /* The game box tops out at 1280x840 plus its 18px frame margin (src/mode.js); the frame matches it so the
+       panels stay next to the game on a big screen instead of drifting to the window's edges. */
+    --game-w: 1316px;
+    --game-h: 876px;
     --fs: 9pt;
     --gap: 20px;
     --b: 3px;
@@ -39,7 +43,10 @@ body {
 /* Wide: panel | game | panel. The game takes everything in between and lays itself out for that size. */
 body {
     display: grid;
-    grid-template-columns: var(--rail) minmax(0, 1fr) var(--rail);
+    grid-template-columns: var(--rail) minmax(0, var(--game-w)) var(--rail);
+    grid-template-rows: minmax(0, var(--game-h));
+    justify-content: center;
+    align-content: center;
     gap: var(--gap);
     padding: var(--gap);
     overflow: hidden;
@@ -177,7 +184,7 @@ kbd.is-down {
 
 /* Panels off (the game's key button, or a window too narrow for them): the game takes the whole window. */
 body[data-rails="off"] {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, var(--game-w));
     padding: 0;
 }
 body[data-rails="off"] .rail {
