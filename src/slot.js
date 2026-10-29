@@ -19,7 +19,7 @@ const AUTO_DELAY = { lose: 650, near: 800, free: 650, win: 900, big: 1600, mega:
 const TIER_FX = {
     win: { count: 350, coins: 4, buzz: [0, 700], sound: "win" },
     big: { count: 900, coins: 12, buzz: [2, 450], sound: "big" },
-    mega: { count: 1500, coins: 20, buzz: [2, 700], sound: "big", confetti: 1 },
+    mega: { count: 1500, coins: 20, buzz: [2, 700], sound: "mega", confetti: 1 },
     jackpot: { count: 2400, coins: 32, buzz: [3, 1000], sound: "jackpot", confetti: 2 },
     cosmic: { count: 4000, coins: 30, buzz: [3, 1400], sound: "cosmic", confetti: 4 },
 };
@@ -135,6 +135,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
                 return;
             }
             setAuto(false);
+            sfx.broke();
             setMessage(TEXT.broke, TEXT.brokeSub, "bad");
             onBroke();
             return;
@@ -155,7 +156,8 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         phase = "spinning";
         commit();
 
-        sfx.spin();
+        sfx.spin(state.heat);
+        if (free) sfx.freeSpin();
         fx.frameMode("spin");
         onSpin();
         emit("spin");
@@ -208,7 +210,10 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         const cosmic = stars === 3;
         const tease = result[0] === result[1];
         if (cosmic) startCosmic();
-        else if (tease) setMessage("...", "", "prompt");
+        else if (tease) {
+            setMessage("...", "", "prompt");
+            sfx.tease();
+        }
         await reels.stopAt(result, { tease, cosmic });
         settle(grade, outcome, result);
     }
@@ -335,9 +340,8 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
 
     function presentStars(outcome) {
         const double = outcome.stars === 2;
-        sfx.lucky();
+        (double ? sfx.doubleStar : sfx.star)();
         if (double) {
-            sfx.chest();
             fx.cosmicStorm(fx.centerOf(el.machine).y, 1800);
         }
         if (!onScreen()) return;
@@ -353,7 +357,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         const now = econ.burnTier(state.burned);
         if (now.index > before.index) {
             const p = fx.centerOf(el.burn);
-            sfx.upgrade();
+            sfx.burnTier();
             fx.burst(p.x, p.y, { count: 40, colors: ["R", "y", "r", "w"], speed: [1.5, 4.5], life: [24, 44] });
             fx.float(p.x, p.y - 16, `${now.tier.name}!`, { color: "R", size: 24, life: 90 });
             fx.shake(el.burn, 3, 300);
@@ -377,8 +381,10 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
     }
 
     function setAuto(on) {
+        const was = state.auto;
         state.auto = on && econ.canAutoSpin(state);
         commit();
+        if (state.auto !== was) (state.auto ? sfx.autoOn : sfx.autoOff)();
         if (state.auto && phase === "idle") scheduleAuto("lose");
         else clearTimeout(autoTimer);
     }
@@ -394,7 +400,8 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
             fx.pop(pip);
             const p = fx.centerOf(pip);
             fx.burst(p.x, p.y, { count: 8, colors: ["R", "y", "r"], speed: [0.8, 2], angle: -Math.PI / 2, spread: 1.4, gravity: -0.04, life: [16, 28] });
-        }
+            sfx.heatUp(state.heat);
+        } else if (!state.heat && shownHeat) sfx.heatLost();
         shownHeat = state.heat;
     }
 
@@ -443,6 +450,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
     function changeBet(delta) {
         if (phase !== "idle") return;
         const next = econ.stepBet(state, currentBet(), delta);
+        if (next !== currentBet()) sfx.bet(delta, next / econ.maxBet(state));
         if (next === currentBet()) {
             emit("bet-stuck", { delta });
             sfx.denied();
@@ -463,7 +471,10 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
             const p = fx.centerOf(el.bet);
             fx.float(p.x, p.y - 18, TEXT.betCap(econ.formatNumber(next)), { color: "R", life: 70 });
         }
-        if (next !== state.bet) setBet(next);
+        if (next !== state.bet) {
+            setBet(next);
+            sfx.betSet();
+        }
         render();
     }
 

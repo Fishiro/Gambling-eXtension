@@ -37,7 +37,8 @@ export const freshState = (now = Date.now()) => ({
     unlocked: null,
     relics: { list: [], equipped: Array(RELICS.slots).fill(null) },
     vault: { day: "", tier: 0, hp: 0, cracked: false },
-    settings: { volume: 100, calm: false, frame: true },
+    // mix: each sound bus's volume in % (see sound.js BUSES).
+    settings: { volume: 100, calm: false, frame: true, mix: { ui: 100, slot: 100, mine: 100, loot: 100, world: 100 } },
     skins: { owned: ["miner"], active: "miner" },
     bag: {},
     gear: {},
@@ -171,6 +172,7 @@ export function sanitize(save, now = Date.now()) {
 
     s.vault = sub("vault");
     s.settings = sub("settings");
+    s.settings.mix = { ...base.settings.mix, ...numMap(save.settings?.mix, new Set(Object.keys(base.settings.mix)), 0, 100) };
     s.market = sub("market");
     s.market.price = num(s.market.price, 1, 0.01, 100);
     s.market.at = num(s.market.at, now, 0, now);

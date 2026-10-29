@@ -31,7 +31,7 @@ export function createMarket() {
         const p = fx.centerOf(el.root);
         fx.float(p.x, p.y - 10, TEXT.marketAlert[id], { color: phase.color, size: 16, rise: 0.3, life: 90 });
         fx.shake(el.root, 3, 400);
-        (id === "boom" ? sfx.lucky : sfx.near)();
+        ({ boom: sfx.marketBoom, crash: sfx.marketCrash, moon: sfx.marketMoon })[id]?.() ?? sfx.marketTurn();
     }
 
     // Once a second: run due ticks, then redraw.

@@ -57,7 +57,7 @@ export function createChests({ onLevelUp, onOpened }) {
     function dropChest(sourceEl, boost) {
         if (!luck.addChest(state, boost)) return;
         commit();
-        sfx.chest();
+        sfx.chestDrop();
         const from = fx.centerOf(sourceEl);
         const to = fx.centerOf(el.button);
         fx.float(from.x, from.y - 24, TEXT.chestFound, { color: "y", size: 24, life: 70 });
@@ -105,7 +105,7 @@ export function createChests({ onLevelUp, onOpened }) {
         for (const ms of steps) {
             i = (i + 1) % 4;
             paint(LUCK.rarities[i]);
-            sfx.tick();
+            sfx.roulette(i);
             fx.shake(el.chest, 1 + Math.floor(ms / 100), ms);
             await wait(ms);
             if (skipping) break;
@@ -163,7 +163,7 @@ export function createChests({ onLevelUp, onOpened }) {
         fx.float(p.x + 40, p.y + 26, TEXT.chesterOpened(count), { color: "y", rise: 0.35, life: 90 });
         luck.mergeLines(lines).forEach((l, i) => fx.float(p.x + 40, p.y + 44 + i * 16, l.text, { color: "G", rise: 0.35, life: 90 + i * 8 }));
         fx.burst(p.x, p.y, { count: 20, colors: ["y", "O", "w"], speed: [1, 3], life: [16, 30] });
-        sfx.chest();
+        sfx.chester();
         emit("chester-eat", { count });
         if (levels.length) onLevelUp(levels);
         return count;
@@ -227,8 +227,8 @@ export function createChests({ onLevelUp, onOpened }) {
         }, 3800);
     }
 
-    // Reuse the loot overlay for any reveal (expedition returns, big harvests).
-    function reveal({ icon, title, color = "y", lines }) {
+    // Reuse the loot overlay for any reveal (expedition returns, big harvests), with its own sound.
+    function reveal({ icon, title, color = "y", lines, sound = () => sfx.reveal(2) }) {
         if (opening || !el.loot.hidden) return false;
         el.chest.innerHTML = svgIcon(icon, 7);
         el.loot.style.setProperty("--rarity", PALETTE[color]);
@@ -240,7 +240,7 @@ export function createChests({ onLevelUp, onOpened }) {
         el.loot.setAttribute("data-revealed", "");
         el.loot.hidden = false;
         fx.pop(el.chest);
-        sfx.reveal(2);
+        sound();
         const p = fx.centerOf(el.chest);
         fx.burst(p.x, p.y, { count: 40, colors: [color, "w", "G"], speed: [1.5, 4], life: [24, 44] });
         return true;

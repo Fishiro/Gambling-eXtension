@@ -57,12 +57,12 @@ export function createArmory() {
     const ACTIONS = {
         equip(relic) {
             if (!relics.equip(state, relic.uid)) return sfx.denied();
-            sfx.upgrade();
+            sfx.relicEquip();
             emit("relic-equip");
         },
         unequip(relic) {
             relics.unequip(state, relic.uid);
-            sfx.click();
+            sfx.petUnequip();
         },
         reroll(relic, button) {
             const cost = relics.rarityDef(relic).reroll;
@@ -70,7 +70,7 @@ export function createArmory() {
             Object.assign(relic, relics.reroll(relic));
             const p = fx.centerOf(button.closest(".relic"));
             fx.burst(p.x, p.y, { count: 24, colors: ["c", "v", "w"], speed: [1.5, 3.5], life: [16, 30] });
-            sfx.chest();
+            sfx.reroll();
             emit("relic-reroll");
         },
         salvage(relic) {
@@ -88,7 +88,7 @@ export function createArmory() {
                     emit("relic-salvage");
                     commit();
                     render();
-                    sfx.coin();
+                    sfx.scrap();
                 },
             });
         },

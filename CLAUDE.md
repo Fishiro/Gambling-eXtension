@@ -25,6 +25,7 @@ Load the folder unpacked at `chrome://extensions` (Developer mode), then reload 
 - `src/events.js`: tiny `emit`/`on` bus (`tap`, `sell`, `drops`, ...) used by achievements and other listeners.
 - Feature modules export a `createX(...)` factory returning `{ render, ... }`; `main.js` wires them and runs a once-a-second loop.
 - `fx.js`, `sound.js`, `sprites.js`: visuals, sfx, SVG pixel icons. UI text lives in `text.js`.
+- `sound.js`: every sound is synthesized (no files) and plays on a category bus (`BUSES`: ui, slot, mine, loot, world) with its own volume in Settings. A new event gets its own sound in the right bus group; spammable sounds go in `THROTTLE`. `tests/sound.test.js` fails on any `sfx.x` that doesn't exist.
 - `tools/sim.js`: seeded bot + slot Monte Carlo on top of `src/core`; `tools/animator.html`: standalone sprite tool.
 
 ## Conventions

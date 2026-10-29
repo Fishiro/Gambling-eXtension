@@ -165,7 +165,7 @@ export function createBag() {
             commit();
             if (result !== "up") {
                 const row = button.closest(".row") ?? button;
-                sfx.lose();
+                (result === "crack" ? sfx.crack : sfx.fizzle)();
                 fx.shake(row, result === "crack" ? 5 : 3, 350);
                 const p = fx.centerOf(row);
                 fx.burst(p.x, p.y, { count: result === "crack" ? 24 : 10, colors: ["r", "R", "S"], speed: [1.5, 4], life: [16, 30] });
@@ -173,7 +173,7 @@ export function createBag() {
                 emit("ascend-fail", { id, lost: result === "crack" });
                 return;
             }
-            sfx.upgrade();
+            (items.gearLevel(state, id) > GEAR_MAX ? sfx.ascend : sfx.anvil)();
             celebrate(button, `${gear.name} ${levelText(items.gearLevel(state, id))}`);
             emit("craft", { id, level: items.gearLevel(state, id) });
         },
@@ -182,7 +182,7 @@ export function createBag() {
             if (!items.spend(state, items.brewCost(recipe))) return deny(button);
             items.add(state, id);
             commit();
-            sfx.chest();
+            sfx.brew();
             celebrate(button, `+1 ${items.item(id).name}`);
             emit("brew", { id });
         },
@@ -190,7 +190,7 @@ export function createBag() {
             const coins = luck.scrap(state, id);
             if (!coins) return deny(button);
             commit();
-            sfx.coin();
+            sfx.scrap();
             celebrate(button, `+${econ.formatNumber(coins)} COIN`);
             emit("scrap", { id, coins });
         },
@@ -198,7 +198,7 @@ export function createBag() {
             if (!items.spend(state, { [id]: 1 })) return deny(button);
             const { lines } = luck.applyReward(state, items.item(id).use);
             commit();
-            sfx.levelUp();
+            sfx.drink();
             const p = fx.centerOf(button);
             lines.forEach((l, i) => fx.float(p.x, p.y - 20 - i * 16, l.text, { color: "y", life: 70 }));
             fx.confetti(1);
@@ -236,6 +236,7 @@ export function createBag() {
     on("drops", ({ drops, from }) => {
         if (!drops?.length) return;
         const p = fx.centerOf(from);
+        sfx.drop(Math.max(...drops.map((d) => luck.rarityIndex(items.rarityOf(d.id)))));
         drops.forEach((d, i) => {
             fresh.add(d.id);
             const rarity = items.rarityOf(d.id);

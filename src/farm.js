@@ -138,7 +138,7 @@ export function createFarm({ reveal, onLoot, replant }) {
     function announce(loot, icon, title) {
         onLoot(loot);
         const lines = lootLines(loot);
-        reveal({ icon, title, color: "G", lines: lines.length ? lines : [{ icon: "i-close", text: TEXT.nothingFound }] });
+        reveal({ icon, title, color: "G", sound: sfx.tripBack, lines: lines.length ? lines : [{ icon: "i-close", text: TEXT.nothingFound }] });
     }
 
     function popLoot(loot, from) {
@@ -175,12 +175,12 @@ export function createFarm({ reveal, onLoot, replant }) {
         seat(id) {
             if (party.length >= seats || party.includes(id)) return;
             party = [...party, id];
-            sfx.click();
+            sfx.seat();
             render();
         },
         unseat(id) {
             party = party.filter((p) => p !== id);
-            sfx.click();
+            sfx.unseat();
             render();
         },
         send(_, button) {
@@ -188,7 +188,7 @@ export function createFarm({ reveal, onLoot, replant }) {
             const pets = party.length;
             party = [];
             commit();
-            sfx.upgrade();
+            sfx.tripSend();
             emit("trip-start", { zone: zoneId, pets });
         },
         collect() {
@@ -214,13 +214,13 @@ export function createFarm({ reveal, onLoot, replant }) {
             const [i, seed] = id.split(":");
             if (!farming.plant(state, Number(i), seed)) return deny(button);
             commit();
-            sfx.good();
+            sfx.plant();
             emit("plant", { seed });
         },
         harvest(id, button) {
             if (!harvestOne(Number(id), button)) return deny(button);
             commit();
-            sfx.coin();
+            sfx.harvest();
         },
         harvestAll(_, button) {
             state.garden.forEach((_, i) => {
@@ -228,7 +228,7 @@ export function createFarm({ reveal, onLoot, replant }) {
                 if (farming.plotStatus(state, i)?.ready) harvestOne(i, plot ?? button);
             });
             commit();
-            sfx.win();
+            sfx.harvest();
         },
     };
 

@@ -255,6 +255,7 @@ function welcomeBack() {
         lines,
         ok: TEXT.welcomeOk,
         color: "G",
+        sound: sfx.welcome,
     });
 }
 
@@ -272,11 +273,13 @@ function setMenuTab(name) {
 
 function openMenu(tab = "guide") {
     achievements.bump("menu");
+    sfx.menuOpen();
     setMenuTab(tab);
     el.menu.hidden = false;
 }
 
 function closeMenu() {
+    if (!el.menu.hidden) sfx.menuClose();
     el.menu.hidden = true;
 }
 
@@ -336,7 +339,7 @@ function collapse() {
 // and the gold frame flares for the buttons that spend or earn.
 const PRESS = {
     major: "#btn-spin, #btn-sell, #btn-chest, #btn-chest-all, #loot-all, [data-action='buy'], [data-action='upgrade'], [data-action='brew'], [data-action='send'], [data-action='collect'], [data-action='harvest'], [data-action='harvestAll'], [data-action='skill'], [data-action='use']",
-    nav: ".tab, .seg button, [data-menu]",
+    nav: ".tab, .seg button, [data-menu], [data-bag]",
 };
 
 document.addEventListener("pointerdown", (e) => {
@@ -355,8 +358,10 @@ document.addEventListener("pointerdown", (e) => {
     if (button.matches(PRESS.major)) {
         sfx.clink();
         fx.gild();
-    } else if (button.matches(PRESS.nav)) sfx.tab();
-    else sfx.click();
+    } else if (button.dataset.tab) sfx.tab(button.dataset.tab);
+    else if (button.matches(PRESS.nav)) sfx.nav();
+    // Toggles voice their own on/off where they flip.
+    else if (!button.matches(".toggle")) sfx.click();
 });
 document.addEventListener("pointerup", (e) => fx.spring(e.target.closest("button:not(:disabled)")));
 document.addEventListener("click", (e) => e.target.closest("button")?.blur());

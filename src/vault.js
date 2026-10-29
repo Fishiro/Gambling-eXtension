@@ -58,6 +58,7 @@ export function createVault() {
         if (from) {
             const p = fx.centerOf(from);
             fx.float(p.x, p.y, `-${econ.formatNumber(amount)}`, { color: "R", rise: 0.5, life: 40 });
+            sfx.vaultHit();
         }
         if (v.hp === 0) crack();
     }
@@ -73,7 +74,7 @@ export function createVault() {
         items.addAll(state, loot);
         const relicLines = luck.applyReward(state, { type: "relic", floor: prize.relicFloor }).lines;
         commit();
-        sfx.jackpot();
+        sfx.vaultCrack();
         fx.shake(el.card, 6, 500);
         modal.show({
             icon: "vault",
@@ -116,7 +117,7 @@ export function createVault() {
             ok: TEXT.vipOk,
             color: info.tier.color,
             confetti: 2,
-            sound: sfx.levelUp,
+            sound: sfx.vipUp,
         });
         emit("vip-up", { tier: info.index });
     }

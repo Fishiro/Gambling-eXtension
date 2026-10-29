@@ -114,6 +114,7 @@ export function createPets({ reveal, showFarm }) {
         if (pet.id === "toaster") {
             econ.addOre(state, econ.cartCap(state));
             luck.applyReward(state, { type: "goldRush", seconds: pet.rushSeconds });
+            sfx.goldRush();
         }
         if (pet.id === "frosty") luck.applyReward(state, { type: "timed", key: "freeze", seconds: pet.freezeSeconds, label: pet.skill });
         if (pet.id === "stonks") market.pump(state, pet.pump);
@@ -122,7 +123,7 @@ export function createPets({ reveal, showFarm }) {
         if (pet.id === "digit7") state.buffs.sevenSpins += pet.sevenSpins;
         if (pet.id === "hourglass") farming.skipTime(state, pet.skipMinutes * 60_000);
         commit();
-        sfx.upgrade();
+        sfx.skill(pet.role);
         shout(`${pet.skill}!`);
         fx.confetti(1);
     }
@@ -141,7 +142,7 @@ export function createPets({ reveal, showFarm }) {
         econ.settleOre(state);
         state.pets.team = [...state.pets.team, pet.id];
         commit();
-        sfx.upgrade();
+        sfx.petEquip();
         emit("pet-equip", { id: pet.id });
     }
 
@@ -156,7 +157,7 @@ export function createPets({ reveal, showFarm }) {
         state.gems -= cost;
         state.pets.slots += 1;
         commit();
-        sfx.levelUp();
+        sfx.slotOpen();
         const p = fx.centerOf(button);
         fx.burst(p.x, p.y, { count: 30, colors: ["c", "B", "w"], speed: [1.5, 4], life: [20, 40] });
         fx.float(p.x, p.y - 16, TEXT.slotOpened, { color: "c", life: 80 });
@@ -176,7 +177,7 @@ export function createPets({ reveal, showFarm }) {
             state.pets.owned.push(pet.id);
             if (!teamFull()) state.pets.team = [...state.pets.team, pet.id];
             commit();
-            sfx.levelUp();
+            sfx.petBuy();
             fx.confetti(1);
             fx.burst(p.x, p.y, { count: 30, colors: ["y", "G", "w", "R"], speed: [1.5, 4], life: [20, 40] });
             fx.float(p.x, p.y - 20, TEXT.petHello(pet.name), { color: "y", life: 80 });
@@ -188,7 +189,7 @@ export function createPets({ reveal, showFarm }) {
             state.pets.team = state.pets.team.filter((id) => id !== pet.id);
             if (pet.id === "spinny" && state.auto) state.auto = false;
             commit();
-            sfx.tab();
+            sfx.petUnequip();
         },
         pat(pet, button) {
             const p = fx.centerOf(button);
@@ -263,7 +264,7 @@ export function createPets({ reveal, showFarm }) {
         state.freeSpin = true;
         state.buffs.hotSpins += byId.berry.hotSpins;
         commit();
-        sfx.chest();
+        sfx.freeSpin();
         shout(TEXT.berrySpin, "G");
     }
 
@@ -281,7 +282,10 @@ export function createPets({ reveal, showFarm }) {
             six = state.pets.sixCount % byId.digit6.every === 0;
         }
         const { roll, jackpot, bent } = econ.petBend(rolled, { seven, bend: loaded || six });
-        if (jackpot) shout(TEXT.sevenHeaven, "R");
+        if (jackpot) {
+            sfx.sevenHeaven();
+            shout(TEXT.sevenHeaven, "R");
+        }
         else if (bent && six) shout(TEXT.sixShot, "c");
         return roll;
     }

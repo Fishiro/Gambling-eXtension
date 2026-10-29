@@ -82,7 +82,7 @@ export function createGains() {
             const n = now.gems - last.gems;
             show.gems(n);
             toast({ icon: "gem", tag: TEXT.diamondTag, title: TEXT.gemsGained(n), text: TEXT.diamondHint, color: "c" });
-            sfx.lucky();
+            sfx.gem();
         }
         last = now;
     }

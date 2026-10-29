@@ -1811,6 +1811,28 @@ kbd {
     margin: 8px 0 0;
     color: var(--text);
 }
+/* ---- settings: the sound mixer, one slider per kind of sound ---- */
+.mix {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.mix-row {
+    display: grid;
+    grid-template-columns: 112px 1fr 40px;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+}
+.mix-row span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mix-row output {
+    text-align: right;
+    color: var(--text);
+}
 /* ---- settings: grouped cards, one control per row ---- */
 .settings {
     display: flex;

@@ -132,9 +132,9 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
             combo.hit(0);
             scene.swing({ power: 0, lucky: false });
             emit("tap-full");
+            sfx.cartFull();
             if (now - fullWarnedAt < 1200) return;
             fullWarnedAt = now;
-            sfx.denied();
             const p = fx.centerOf(el.scene);
             fx.float(p.x, p.y - 20, TEXT.cartFull, { color: "R", life: 45 });
             fx.shake(el.sell, 3);
@@ -151,7 +151,9 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         if (drops.length) emit("drops", { drops, from: el.scene });
         sfx.mine();
         combo.hit(added);
-        if (lucky) sfx.lucky();
+        if (lucky) sfx.crystal();
+        if (overheated) sfx.sizzle();
+        else if (frozen()) sfx.ice();
         if (lucky && luck.chance(GEMS.luckyTapChance)) {
             state.gems += 1;
             const p = fx.centerOf(el.scene);
@@ -195,7 +197,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         const levels = econ.gainXp(state, econ.sellXp(coins));
         commit();
         emit("sell", { amount, coins });
-        sfx.coin();
+        sfx.sell(amount / econ.cartCap(state));
         const p = fx.centerOf(el.sell);
         fx.coinShower(p.x, p.y, Math.min(24, 3 + Math.floor(amount / 15)));
         fx.float(p.x, p.y - 24, `+${econ.formatNumber(coins)}`, { color: "y", life: 55 });
@@ -215,7 +217,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         state.coins -= cost;
         state.upgrades[kind] = lv + 1;
         commit();
-        sfx.upgrade();
+        sfx.mineUpgrade(kind);
         fx.pop(row.querySelector(".up-icon"));
         const p = fx.centerOf(row.querySelector(".up-icon"));
         fx.burst(p.x, p.y, { count: 16, colors: ["G", "y", "w"], speed: [1, 3], angle: -Math.PI / 2, spread: 1.6, life: [18, 32] });
@@ -241,7 +243,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
 
     function gotBat(at, label, boost = LUCK.batBoost) {
         state.fun.bats = (state.fun.bats ?? 0) + 1;
-        sfx.lucky();
+        sfx.batCatch();
         fx.burst(at.x, at.y, { count: 30, colors: ["y", "w", "Y"], speed: [1.5, 4.5], life: [20, 40] });
         fx.float(at.x, at.y - 16, label, { color: "y", life: 60 });
         emit("drops", { drops: items.rollDrops(state, "bat"), from: el.scene });

@@ -86,7 +86,7 @@ function next() {
     void el.root.offsetWidth;
     el.root.hidden = false;
 
-    (sound ?? sfx.chest)();
+    (sound ?? sfx.modal)();
     fx.pop(el.card);
     if (icon) {
         const p = fx.centerOf(el.art);
@@ -101,7 +101,7 @@ function dismiss(yes) {
     if (!current) return false;
     const { onOk, onCancel } = current;
     clearTimeout(closeTimer);
-    sfx.coin();
+    sfx.confirm();
     next();
     (yes ? onOk : onCancel)?.();
     return true;

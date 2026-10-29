@@ -1,5 +1,5 @@
 import { state, commit, exportSave, importSave } from "./store.js";
-import { sfx, setSound, setVolume } from "./sound.js";
+import { sfx, setSound, setVolume, setMix, BUSES } from "./sound.js";
 import * as fx from "./fx.js";
 import { TEXT } from "./text.js";
 import * as modal from "./modal.js";
@@ -46,9 +46,33 @@ export function createSettings({ startTour, openGuide, bump }) {
     };
     const prefs = () => state.settings;
 
+    // One slider per sound bus; dragging one plays a sound from that bus so you hear what it changes.
+    const MIX_STEP = 10;
+    const PREVIEW = { ui: sfx.clink, slot: sfx.win, mine: sfx.mine, loot: sfx.chestDrop, world: sfx.anvil };
+    const mixRows = BUSES.map(({ id, name }) => {
+        const row = document.createElement("label");
+        row.className = "mix-row";
+        row.innerHTML = `<span>${name}</span><input class="slider" type="range" min="0" max="100" step="${MIX_STEP}" aria-label="${name} volume" /><output></output>`;
+        const input = row.querySelector("input");
+        input.addEventListener("input", () => setMixLevel(id, Number(input.value)));
+        $("set-mix").append(row);
+        return { id, input, out: row.querySelector("output") };
+    });
+
+    let mixPreviewAt = 0;
+    function setMixLevel(id, value) {
+        prefs().mix[id] = Math.max(0, Math.min(100, Math.round(value / MIX_STEP) * MIX_STEP));
+        save();
+        if (performance.now() - mixPreviewAt > 150) {
+            mixPreviewAt = performance.now();
+            PREVIEW[id]();
+        }
+    }
+
     function apply() {
         setSound(state.sound);
         setVolume(prefs().volume / 100);
+        BUSES.forEach(({ id }) => setMix(id, (prefs().mix?.[id] ?? 100) / 100));
         fx.setCalm(prefs().calm);
         fx.setFrameFx(prefs().frame);
     }
@@ -68,6 +92,12 @@ export function createSettings({ startTour, openGuide, bump }) {
         el.volume.dataset.loud = String(vol > 100);
         el.volumeOut.textContent = state.sound ? `${vol}%` : TEXT.muted;
         document.querySelectorAll("[data-vol]").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.vol) === vol));
+        for (const { id, input, out } of mixRows) {
+            const v = prefs().mix?.[id] ?? 100;
+            input.value = v;
+            input.style.setProperty("--pct", `${v}%`);
+            out.textContent = v ? `${v}%` : TEXT.off;
+        }
     }
 
     function save() {
@@ -79,6 +109,7 @@ export function createSettings({ startTour, openGuide, bump }) {
     function toggleSound() {
         state.sound = !state.sound;
         save();
+        sfx.toggle(state.sound);
         bump("sound");
     }
 
@@ -173,10 +204,12 @@ export function createSettings({ startTour, openGuide, bump }) {
     el.calm.addEventListener("click", () => {
         prefs().calm = !prefs().calm;
         save();
+        sfx.toggle(prefs().calm);
     });
     el.frame.addEventListener("click", () => {
         prefs().frame = !prefs().frame;
         save();
+        sfx.toggle(prefs().frame);
     });
     $("set-tour").addEventListener("click", startTour);
     $("set-keys").addEventListener("click", openGuide);

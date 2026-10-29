@@ -94,6 +94,14 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
   rarity (rare 400, epic 2,000, legendary 10,000), stars keep their own STAR_COST coins.
 - **Play drops:** common and rare finds drop half as often; epic and legendary finds keep their odds.
 
+## 7b. Sound
+
+Every event has its own synthesized voice on one of five buses (BUTTONS, SLOT, MINE, LOOT, FARM/PETS/FORGE),
+each with a mixer slider. Hype rules: streaks climb in pitch (heat pips up a pentatonic scale, combo taps, bet
+steps by how close to the cap, bigger sales jingle more coins), rarity scales length and fullness (chest reveal
+coin -> chime -> fanfare -> choir), and suspense gets a riser (two matching reels, a star attempt). Losses are
+short and soft so they never punish louder than wins reward. Spammable sounds are throttled.
+
 ## 8. Rejected alternatives (do not re-propose)
 
 - **Hard cap per stat:** dead upgrades at the cap feel bad; soft cap keeps every purchase worth a little.

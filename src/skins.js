@@ -45,7 +45,7 @@ export function createSkins() {
             state.skins.owned.push(skin.id);
             state.skins.active = skin.id;
             commit();
-            sfx.levelUp();
+            sfx.skinBuy();
             fx.confetti(2);
             fx.burst(p.x, p.y, { count: 30, colors: ["c", "w", "v"], speed: [1.5, 4], life: [20, 40] });
             fx.float(p.x, p.y - 20, TEXT.skinNew(skin.name), { color: "c", life: 80 });
