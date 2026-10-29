@@ -6,7 +6,7 @@ import * as econ from "../src/core/economy.js";
 import * as luck from "../src/core/luck.js";
 import * as farming from "../src/core/farming.js";
 import * as market from "../src/core/market.js";
-import { softcap, bonus, upgrade, upgradeChance, gearLevel, gearCost, brewCost, spend } from "../src/core/items.js";
+import { softcap, bonus, upgrade, upgradeChance, gearLevel, gearCost, brewCost, spend, usesOf, brewNeed } from "../src/core/items.js";
 import { freshState, restore, SAVE_VERSION } from "../src/core/save.js";
 import { withClock } from "../tools/sim.js";
 import { seeded } from "../src/core/farming.js";
@@ -406,4 +406,23 @@ test("every craft costs coins: gear levels by GEAR_GROWTH, brews by rarity", () 
     s.coins = 0;
     Object.assign(s.bag, BREWS[0].cost);
     assert.equal(spend(s, brewCost(BREWS[0])), false);
+});
+
+test("item uses: every recipe that needs an item is listed, junk keeps what brews need", () => {
+    for (const id of Object.keys(ITEMS)) {
+        const uses = usesOf(id);
+        for (const b of BREWS) if (b.cost[id]) assert.ok(uses.some((u) => u.brew === b), `${id} -> ${b.id}`);
+        for (const g of GEAR) if (g.cost[id]) assert.ok(uses.some((u) => u.kind === "gear" && u.name === g.name), `${id} -> ${g.id}`);
+    }
+    assert.deepEqual(usesOf("duck"), []);
+    assert.equal(brewNeed("pebble"), 6);
+    assert.ok(usesOf("seed").some((u) => u.kind === "plant"));
+    const s = freshState(0);
+    s.level = 4;
+    s.bag.pebble = 10;
+    const one = luck.scrap(s, "pebble", 1);
+    assert.equal(s.bag.pebble, 9);
+    assert.equal(one, luck.scrapValue(s, "pebble"));
+    luck.scrap(s, "pebble", 10 - 1 - brewNeed("pebble"));
+    assert.equal(s.bag.pebble, brewNeed("pebble"), "scrap extra leaves exactly what the brew needs");
 });

@@ -63,20 +63,50 @@ export function createBag() {
         const item = items.item(selected);
         const rarity = items.rarityOf(selected);
         const n = items.count(state, selected);
-        // Junk scraps for coins; keep it instead if a combo brew needs it.
-        const use = item.use
-            ? `<button class="primary-sm" data-action="use" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.use}</button>`
-            : item.junk
-              ? `<button class="primary-sm" data-action="scrap" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.scrap(econ.formatNumber(n * luck.scrapValue(state, selected)))}</button>`
-              : "";
-        return `<span class="detail-art">${svgIcon(selected, 4)}</span>
-            <div class="detail-info">
-                <b style="color:${PALETTE[rarity.color]}">${item.name}</b>
-                <small>${rarity.name} / ${TEXT.owned(econ.formatNumber(n))}</small>
-                ${item.effect ? `<small class="y">${item.effect}</small>` : ""}
-                <small>${TEXT.foundIn(item.from)}</small>
+        const use = item.use ? `<button class="primary-sm" data-action="use" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.use}</button>` : "";
+        return `<div class="detail-top">
+                <span class="detail-art">${svgIcon(selected, 4)}</span>
+                <div class="detail-info">
+                    <b style="color:${PALETTE[rarity.color]}">${item.name}</b>
+                    <small>${rarity.name} / ${TEXT.owned(econ.formatNumber(n))}</small>
+                    ${item.effect ? `<small class="y">${item.effect}</small>` : ""}
+                    <small>${TEXT.foundIn(item.from)}</small>
+                </div>
+                ${use}
             </div>
-            ${use}`;
+            ${usesHtml(selected)}
+            ${item.junk ? scrapHtml(selected, n) : ""}`;
+    }
+
+    // What the item is crafted into. Secret combo brews stay secret until learned.
+    function usesHtml(id) {
+        const uses = items.usesOf(id);
+        if (!uses.length) return `<div class="detail-uses"><small class="detail-label">${TEXT.usedIn}</small><span class="hint">${TEXT.usedNowhere}</span></div>`;
+        const chips = uses.map((u) => {
+            const secret = u.brew && !learned(u.brew);
+            const icon = secret ? "lock" : u.icon;
+            const name = secret ? TEXT.secretBrew : u.name;
+            const where = u.kind === "plant" ? "" : `data-action="forge"`;
+            return `<button class="use-chip" ${where} title="${name}">${svgIcon(icon, 2)}<span>${name}</span><em>x${u.n}${u.kind === "star" ? "+" : ""}</em></button>`;
+        });
+        return `<div class="detail-uses"><small class="detail-label">${TEXT.usedIn}</small><div class="use-chips">${chips.join("")}</div></div>`;
+    }
+
+    // Junk: the price per piece, then scrap one, scrap the spare ones a brew doesn't need, or scrap them all.
+    function scrapHtml(id, n) {
+        const each = luck.scrapValue(state, id);
+        const keep = items.brewNeed(id);
+        const spare = Math.max(0, n - keep);
+        const extra = keep && spare && spare < n ? `<button data-action="scrap" data-id="${id}" data-n="${spare}">${TEXT.scrapExtra(spare, econ.formatNumber(spare * each))}</button>` : "";
+        return `<div class="detail-scrap">
+                <small class="detail-label">${TEXT.scrapEach(econ.formatNumber(each))}</small>
+                ${keep ? `<small class="r">${TEXT.scrapKeep(keep)}</small>` : ""}
+                <div class="scrap-buttons">
+                    <button data-action="scrap" data-id="${id}" data-n="1" ${n ? "" : "disabled"}>${TEXT.scrapOne}</button>
+                    ${extra}
+                    <button class="primary-sm" data-action="scrap" data-id="${id}" ${n ? "" : "disabled"}>${TEXT.scrapAll(econ.formatNumber(n * each))}</button>
+                </div>
+            </div>`;
     }
 
     function gearHtml(gear) {
@@ -187,13 +217,14 @@ export function createBag() {
             emit("brew", { id });
         },
         scrap(id, button) {
-            const coins = luck.scrap(state, id);
+            const coins = luck.scrap(state, id, button.dataset.n ? Number(button.dataset.n) : Infinity);
             if (!coins) return deny(button);
             commit();
             sfx.scrap();
             celebrate(button, `+${econ.formatNumber(coins)} COIN`);
             emit("scrap", { id, coins });
         },
+        forge: () => show("forge"),
         use(id, button) {
             if (!items.spend(state, { [id]: 1 })) return deny(button);
             const { lines } = luck.applyReward(state, items.item(id).use);

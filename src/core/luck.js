@@ -59,12 +59,13 @@ export const rewardUnit = (state) => LUCK.coinPerLevel * state.level;
 // Junk scrap: what one piece of junk `id` is worth in coins right now.
 export const scrapValue = (state, id) => (ITEMS[id]?.junk ? Math.max(1, Math.round(rewardUnit(state) * SCRAP[ITEMS[id].rarity])) : 0);
 
-// Scrap every piece of junk `id` for coins. The item stays known (the junk collection still counts it).
-export function scrap(state, id) {
-    const n = state.bag[id] ?? 0;
-    const coins = n * scrapValue(state, id);
+// Scrap up to `n` pieces of junk `id` (all by default) for coins. The item stays known (the junk collection
+// still counts it). Returns the coins made.
+export function scrap(state, id, n = Infinity) {
+    const pieces = Math.min(n, state.bag[id] ?? 0);
+    const coins = pieces * scrapValue(state, id);
     if (!coins) return 0;
-    state.bag[id] = 0;
+    state.bag[id] -= pieces;
     state.coins += coins;
     return coins;
 }

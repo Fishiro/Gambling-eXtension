@@ -1,4 +1,4 @@
-import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, STAR_CHANCE, CRAFT_FEE, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
+import { ITEMS, DROPS, BREWS, FARM, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, STAR_CHANCE, CRAFT_FEE, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
 import { vipBonus } from "./vip.js";
 import { relicBonus } from "./relics.js";
 
@@ -97,6 +97,21 @@ export function bonus(state, stat, extra = 0) {
     const raw = rawBonus(state, stat) + extra;
     return STAT_CAPS[stat] ? softcap(raw, STAT_CAPS[stat]) : raw;
 }
+
+// Every recipe that needs item `id`, with how many one craft takes: gear levels (LV1 materials), gear stars,
+// brews, and the garden for seeds. `brew` is set on brew uses so callers can hide secret recipes.
+export function usesOf(id) {
+    const uses = [];
+    for (const g of GEAR) if (g.cost[id]) uses.push({ kind: "gear", name: g.name, icon: g.icon, n: g.cost[id] });
+    const star = STAR_COST.find((c) => c[id]);
+    if (star) uses.push({ kind: "star", name: "GEAR STARS", icon: "pstar", n: star[id] });
+    for (const b of BREWS) if (b.cost[id]) uses.push({ kind: "brew", name: ITEMS[b.id].name, icon: b.id, n: b.cost[id], brew: b });
+    if (FARM.crops[id]) uses.push({ kind: "plant", name: "GARDEN", icon: "sprout", n: 1 });
+    return uses;
+}
+
+// How many of `id` the brews need at most (one craft): scrapping past this never blocks a brew.
+export const brewNeed = (id) => Math.max(0, ...BREWS.map((b) => b.cost[id] ?? 0));
 
 export function rollDrops(state, source, rand = Math.random) {
     const found = DROPS[source].filter((d) => rand() < d.chance).map((d) => ({ id: d.id, n: 1 }));

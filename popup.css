@@ -2577,9 +2577,70 @@ body.is-calm::after {
 /* ---- bag ---- */
 .item-detail {
     display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-height: 64px;
+}
+.detail-top {
+    display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 64px;
+}
+/* What the item is crafted into, and the scrap controls, each under a small label. */
+.detail-uses,
+.detail-scrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+}
+.detail-label {
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+.detail-scrap .r {
+    color: var(--red);
+}
+.use-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+}
+.use-chips:has(> :only-child) {
+    grid-template-columns: 1fr;
+}
+.use-chip {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 2px 4px;
+    color: var(--text);
+    background: var(--panel);
+}
+.use-chip span {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.use-chip em {
+    color: var(--gold);
+    font-style: normal;
+}
+.scrap-buttons {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 3px;
+}
+.scrap-buttons button {
+    padding-inline: 2px;
+    white-space: nowrap;
 }
 .detail-art {
     display: flex;
