@@ -1,4 +1,4 @@
-import { SYMBOLS, TIMING, LEVELS, MINE, LUCK, COSMIC, BURN, COMBO, PETS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./config.js";
+import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./config.js";
 import { formatNumber } from "./economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import { TEXT } from "./text.js";
@@ -27,6 +27,17 @@ function meter(cursor = 0.5) {
             <rect x="1" y="1" width="2" height="14" fill="${PALETTE.w}"/>
         </g>
     </svg>`;
+}
+
+// A row of market bars around the x1 line, like the tracker on the mine tab.
+function market(prices) {
+    const bars = prices
+        .map((p, i) => {
+            const y = 12 - Math.log2(p) * 12;
+            return `<rect x="${i * 6}" y="${Math.min(y, 12).toFixed(1)}" width="4" height="${Math.max(1, Math.abs(y - 12)).toFixed(1)}" fill="${p >= 1 ? PALETTE.G : PALETTE.R}"/>`;
+        })
+        .join("");
+    return `<svg class="g-market" viewBox="0 0 ${prices.length * 6} 24" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="12" width="${prices.length * 6}" height="1" fill="${PALETTE.S}"/>${bars}</svg>`;
 }
 
 const reels = (symbols, wins = []) =>
@@ -109,7 +120,17 @@ function guideHtml() {
                 [icon("i-drill"), "DRILL", `+${u.drill.step} / MIN`],
                 [icon("i-cart"), "CART", `+${u.cart.step} SPACE`],
             ])}
-            <p>THE DRILL KEEPS DIGGING WHILE THE POPUP IS CLOSED.</p>`,
+            <p>THE DRILL KEEPS DIGGING WHILE THE POPUP IS CLOSED.</p>
+            <p>SPAM FASTER THAN ~${MINE.overheat.rest} TAPS A SECOND AND THE PICK OVERHEATS: EACH TAP DIGS LESS, DOWN TO ${pct(MINE.overheat.floor)}. EASE OFF A SECOND AND IT COOLS.</p>
+            <p>SELLING GIVES ${MINE.xpPerOre} XP PER ORE x THE MARKET PRICE.</p>`,
+        ),
+        section(
+            "coin",
+            "MARKET",
+            `${flow(node(icon("ore"), "SELL"), node(market([1, 1.2, 1.5, 1.3, 0.8, 0.6, 0.9, 1.1]), "PRICE / MIN"), node(icon("coin"), "ORE x PRICE"))}
+            ${tiles(MARKET.phases.map((p) => [`<span class="g-dot" style="--c:${PALETTE[p.color]}"></span>`, color(p.color, p.name), p.drift ? `${p.drift > 0 ? "+" : ""}${pct(p.drift)} / MIN` : "STEADY"]), 5)}
+            <p>THE PRICE MOVES EVERY ${MARKET.tickSeconds}S AND ALWAYS DRIFTS BACK TO x1.</p>
+            <p>SELL UP TO ${pct(MARKET.demandUpTo)} OF A CART A MINUTE: +${pct(MARKET.demandBump)} NEXT MINUTE. SELL MORE AND THE PRICE SINKS AS YOU SELL, HARDER EACH CART.</p>`,
         ),
         section(
             "flame",
@@ -275,6 +296,20 @@ function itemSources(id) {
     return out.length ? out.join(" · ") : ITEMS[id].from;
 }
 
+function marketOddsHtml() {
+    const total = totalWeight(MARKET.phases);
+    const dip = (n) => MARKET.dump * Math.max(0, n - MARKET.demandUpTo) ** MARKET.dumpCurve;
+    const carts = [MARKET.demandUpTo, 1, 2, 3, 5].map((n) => [icon("i-cart", 2), `${n} CART${n === 1 ? "" : "S"} IN ONE MINUTE`, n <= MARKET.demandUpTo ? `+${MARKET.demandBump} NEXT MIN` : `PRICE -${dip(n).toFixed(2)}`, ""]);
+    return section(
+        "coin",
+        "MARKET",
+        `<p>A NEW MOOD IS PICKED WHEN THE LAST ONE ENDS. EACH MINUTE: PRICE += MOOD + NOISE, THEN PULLED BACK TOWARD x1. PRICE STAYS BETWEEN x${MARKET.floor} AND x${MARKET.cap}.</p>
+        ${table(MARKET.phases.map((p) => [color(p.color, p.name), rate(p.weight / total), `${p.ticks[0]}-${p.ticks[1]} MIN`, `${p.drift >= 0 ? "+" : ""}${pct(p.drift)} / MIN, PULL ${pct(p.revert)}`]))}
+        ${table(carts)}
+        <p>THE DIP HITS AS YOU SELL. WHEN THE MINUTE ENDS ${pct(1 - MARKET.stick)} OF IT BOUNCES BACK, THE REST STAYS.</p>`,
+    );
+}
+
 function itemOddsHtml() {
     return section(
         "i-bag",
@@ -301,7 +336,7 @@ function endgameOddsHtml() {
 }
 
 function oddsHtml() {
-    return `<p class="g-lead">EVERY CHANCE IN THE GAME, STRAIGHT FROM THE RULES.</p>${[slotOddsHtml(), chestOddsHtml(), itemOddsHtml(), endgameOddsHtml()].join("")}`;
+    return `<p class="g-lead">EVERY CHANCE IN THE GAME, STRAIGHT FROM THE RULES.</p>${[slotOddsHtml(), chestOddsHtml(), marketOddsHtml(), itemOddsHtml(), endgameOddsHtml()].join("")}`;
 }
 
 export function buildGuide(onPlay, onTour) {

@@ -117,6 +117,12 @@ export const TEXT = {
     cartFull: "CART FULL",
     fullIn: (clock) => `FULL IN ${clock}`,
     sell: (ore) => `SELL ${ore} ORE`,
+    marketLabel: "MARKET",
+    pickWarm: "PICK WARM",
+    overheat: (pct) => `OVERHEAT -${pct}%`,
+    marketNext: (clock) => `NEXT ${clock}`,
+    marketSold: (carts) => `${carts} CART SOLD`,
+    marketAlert: { boom: "ORE BOOM! SELL NOW", crash: "CRASH! HOLD YOUR ORE" },
     cartEmpty: "CART EMPTY",
     lucky: "LUCKY!",
     max: "MAX",
@@ -142,6 +148,12 @@ export const TEXT = {
     unlocksAt: (lv) => `UNLOCKS AT LV${lv}`,
     // One short tour per feature, played the first time it opens.
     unlockTours: {
+        market: [
+            { target: ".scene-wrap", tab: "mine", text: "NEW: SPAM TOO FAST AND THE PICK OVERHEATS. EACH TAP DIGS LESS UNTIL IT COOLS. SELLING GIVES LESS XP NOW TOO." },
+            { target: "#market", text: "AND THE ORE MARKET! THE PRICE MOVES EVERY MINUTE. GREEN BARS = ABOVE x1, RED = BELOW." },
+            { target: "#mkt-phase", text: "WATCH THE MOOD. BULL RUN AND BOOM PAY MORE. BEAR AND CRASH? HOLD YOUR ORE AND WAIT." },
+            { target: ".mkt-supply", text: "THIS BAR IS ORE SOLD THIS MINUTE. UNDER HALF A CART, THE PRICE CLIMBS. DUMP MORE AND IT TANKS. DON'T BE THE EXIT LIQUIDITY.", last: true },
+        ],
         bag: [
             { target: '[data-tab="bag"]', text: "LEVEL 2! YOUR BAG IS OPEN. EVERYTHING YOU FIND LANDS HERE. TAP BAG.", wait: "tab-bag" },
             { target: "#item-grid", text: "TAP ANY ITEM TO SEE WHAT IT IS AND WHERE TO FIND MORE.", last: true },
@@ -184,7 +196,9 @@ export const TEXT = {
         { target: "#burn", text: "EVERY COIN YOU BET FEEDS BURN: A BONUS THAT STAYS FOREVER." },
         { target: '[data-tab="mine"]', text: "LOW ON COINS? THE MINE PAYS. TAP MINE.", wait: "tab-mine" },
         { target: ".scene-wrap", text: "SMASH THE ROCK! TAP IT OR SPAM J K L. LOCK IN!", wait: "tap", count: 10 },
+        { target: ".scene-wrap", text: "SPAM TOO FAST AND THE PICK OVERHEATS: LESS ORE PER TAP. FIND A RHYTHM, OR GO FERAL FOR THE SPARKS." },
         { target: "#btn-sell", text: "SELL ORE FOR COINS. THE CART FILLS EVEN WHILE YOU WORK." },
+        { target: "#market", text: "THE ORE MARKET MOVES EVERY MINUTE. SELL WHEN IT'S GREEN. DUMP MORE THAN HALF A CART A MINUTE AND THE PRICE TANKS." },
         { target: "#btn-menu", text: "RULES AND SECRETS LIVE HERE. NOW GO GET RICH. LET HIM COOK!", last: true },
     ],
     cosmicStar: "COSMIC STAR!",

@@ -6,6 +6,7 @@ A Chrome extension (Manifest V3) popup game: slot machine + idle mine. Spin on y
 
 - **Slot**: timing-meter spins, heat, cosmic stars, VIP tiers, the daily Vault.
 - **Mine**: tap or spam H/J/K/L to mine ore, sell it, upgrade pick, drill and cart.
+- **Ore market**: the ore price moves every minute through moods (calm, bull, bear, boom, crash). Dumping lots of ore at once crashes it, selling a little lifts it.
 - **Farm**: timed expeditions and a garden.
 - **Bag & Forge**: items, gear, brews, relics.
 - **Pets, skins, achievements, chests**.

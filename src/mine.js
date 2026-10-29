@@ -3,6 +3,7 @@ import { state, commit } from "./store.js";
 import * as econ from "./economy.js";
 import * as luck from "./luck.js";
 import * as items from "./items.js";
+import * as market from "./market.js";
 import { createMineScene } from "./mine-scene.js";
 import { createCombo } from "./combo.js";
 import { petById } from "./pets.js";
@@ -27,6 +28,9 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         sellLabel: $("sell-label"),
         sellGain: $("sell-gain"),
         upgrades: $("upgrades"),
+        heat: $("overheat"),
+        heatLabel: $("overheat-label"),
+        heatFill: $("overheat-fill"),
     };
 
     const scene = createMineScene(el.scene, {
@@ -54,6 +58,10 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     });
 
     let sixSevenTaps = 0;
+    // Pick heat only lives for this session: it cools off in seconds, so there is nothing worth saving.
+    let pickHeat = 0;
+    let pickAt = 0;
+    let heatFrame = 0;
 
     const titanMult = () => (luck.timedLeft(state, "titan") > 0 ? BREW_FX.titanMult : 1);
 
@@ -76,6 +84,18 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         fx.float(p.x, p.y - 10, TEXT.sixSeven, { size: 24, rainbow: true, rise: 0.25, life: 110 });
     }
 
+    // The overheat gauge, redrawn every frame while the pick cools.
+    function renderHeat() {
+        cancelAnimationFrame(heatFrame);
+        const heat = econ.coolHeat(pickHeat, pickAt, performance.now());
+        const mult = econ.heatMult(heat);
+        el.heat.hidden = heat < MINE.overheat.free / 2;
+        el.heat.toggleAttribute("data-hot", mult < 1);
+        el.heatFill.style.width = `${Math.min(1, heat / econ.maxHeat()) * 100}%`;
+        el.heatLabel.textContent = mult < 1 ? TEXT.overheat(Math.round((1 - mult) * 100)) : TEXT.pickWarm;
+        if (heat > 0) heatFrame = requestAnimationFrame(renderHeat);
+    }
+
     function tap() {
         emit("tap");
         sixSeven();
@@ -92,8 +112,14 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
             fx.shake(el.sell, 3);
             return;
         }
+        const now = performance.now();
+        pickHeat = econ.coolHeat(pickHeat, pickAt, now) + 1;
+        pickAt = now;
+        const cooled = econ.heatMult(pickHeat);
+        const overheated = cooled < 1;
+        renderHeat();
         const lucky = Math.random() < MINE.luckyChance;
-        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * titanMult() * (lucky ? MINE.luckyMult : 1));
+        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * titanMult() * cooled * (lucky ? MINE.luckyMult : 1));
         const chest = luck.chance(LUCK.chestPerTap * (1 + items.bonus(state, "chest")));
         const drops = [...items.rollDrops(state, "tap"), ...(lucky ? items.rollDrops(state, "luckyTap") : [])];
         onOre(added);
@@ -119,6 +145,11 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
                     speed: [1, lucky ? 4 : 2.5 + heat * 0.3],
                     life: [14, 28],
                 });
+                // Overheated taps pay less but look hotter: extra sparks and a jolt, so spam still feels big.
+                if (overheated) {
+                    fx.burst(p.x, p.y, { count: 8, colors: ["R", "r", "y", "w"], speed: [2, 4.5], life: [10, 22] });
+                    fx.shake(el.scene, 1.5, 120);
+                }
                 const label = `${TEXT.lucky} +${Math.round(added)}`;
                 if (lucky && !combo.flash(label)) fx.float(p.x, p.y - 30, label, { color: "y", size: 16, life: 60 });
             },
@@ -133,16 +164,19 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
             fx.shake(el.sell, 3);
             return;
         }
-        const coins = Math.round(amount * econ.orePrice(state));
+        market.settle(state);
+        const mult = market.sell(state, amount);
+        const coins = Math.round(amount * econ.orePrice(state) * mult);
         state.ore -= amount;
         state.coins += coins;
-        const levels = econ.gainXp(state, amount * MINE.xpPerOre);
+        const levels = econ.gainXp(state, amount * mult * MINE.xpPerOre);
         commit();
         emit("sell", { amount });
         sfx.coin();
         const p = fx.centerOf(el.sell);
         fx.coinShower(p.x, p.y, Math.min(24, 3 + Math.floor(amount / 15)));
         fx.float(p.x, p.y - 24, `+${econ.formatNumber(coins)}`, { color: "y", life: 55 });
+        if (Math.abs(mult - 1) >= 0.05) fx.float(p.x, p.y - 44, `${TEXT.marketLabel} ${market.formatMult(mult)}`, { color: mult > 1 ? "G" : "R", life: 55 });
         if (levels.length) onLevelUp(levels);
     }
 
@@ -213,7 +247,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         el.eta.textContent = full ? TEXT.cartFull : TEXT.fullIn(econ.formatClock((cap - now) / (econ.orePerSecond(state) * boost)));
         el.eta.toggleAttribute("data-full", full);
         el.sellLabel.textContent = ore ? TEXT.sell(econ.formatNumber(ore)) : TEXT.cartEmpty;
-        el.sellGain.innerHTML = ore ? `+${svgIcon("coin", 2)}${econ.formatNumber(Math.round(ore * econ.orePrice(state)))}` : "";
+        el.sellGain.innerHTML = ore ? `+${svgIcon("coin", 2)}${econ.formatNumber(Math.round(ore * econ.orePrice(state) * market.quote(state, ore).mult))}` : "";
         el.sell.disabled = !ore;
         el.sell.toggleAttribute("data-ready", ore >= cap * 0.5);
 

@@ -1046,6 +1046,116 @@ main,
     animation: pulse 0.9s steps(2) infinite;
 }
 
+/* ---- pick overheat gauge: top right of the mine scene, opposite the combo ---- */
+.overheat {
+    position: absolute;
+    top: 14px;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    width: 120px;
+    color: var(--gold);
+    text-shadow: 2px 2px 0 var(--ink);
+    pointer-events: none;
+}
+.overheat .bar {
+    width: 100%;
+}
+#overheat-fill {
+    height: 100%;
+    width: 0;
+    background: var(--gold);
+}
+.overheat[data-hot] {
+    color: var(--orange);
+}
+.overheat[data-hot] small {
+    animation: blink 0.4s steps(2) infinite;
+}
+.overheat[data-hot] #overheat-fill {
+    background: repeating-linear-gradient(90deg, var(--orange) 0 6px, var(--red) 6px 8px);
+}
+
+/* ---- ore market tracker: price, mood, recent closes, supply sold this minute ---- */
+.market {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: var(--s2);
+}
+.market .card-title {
+    margin: 0;
+}
+.mkt-phase {
+    margin-left: auto;
+    font: 700 var(--fs-1)/1 "Silkscreen", monospace;
+}
+.market[data-phase="boom"] .mkt-phase,
+.market[data-phase="crash"] .mkt-phase {
+    animation: blink 0.6s steps(2) infinite;
+}
+.market[data-phase="boom"] {
+    box-shadow: 0 0 0 2px var(--gold);
+}
+.market[data-phase="crash"] {
+    box-shadow: 0 0 0 2px var(--red);
+}
+.mkt-top {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s2);
+}
+#mkt-price {
+    font: 700 var(--fs-2)/1 "Silkscreen", monospace;
+    color: var(--green);
+}
+.market[data-trend="down"] #mkt-price {
+    color: var(--orange);
+}
+#mkt-change[data-trend="up"] {
+    color: var(--green);
+}
+#mkt-change[data-trend="down"] {
+    color: var(--orange);
+}
+#mkt-next {
+    margin-left: auto;
+    color: var(--muted);
+}
+.mkt-chart {
+    display: block;
+    width: 100%;
+    height: 32px;
+    background: var(--ink);
+}
+.mkt-supply {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    color: var(--muted);
+}
+.mkt-supply .bar {
+    flex: 1;
+}
+#mkt-supply-fill {
+    height: 100%;
+    width: 0;
+    background: var(--green-dk);
+}
+#mkt-supply-fill[data-level="mid"] {
+    background: var(--gold);
+}
+#mkt-supply-fill[data-level="high"] {
+    background: var(--orange);
+}
+.g-market {
+    width: 96px;
+    height: 24px;
+    background: var(--ink);
+}
+
 .upgrades {
     display: flex;
     flex-direction: column;

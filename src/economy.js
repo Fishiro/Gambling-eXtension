@@ -176,6 +176,12 @@ export const orePerSecond = (state) => (upgradeValue("drill", state.upgrades.dri
 
 export const cartCap = (state) => Math.round(upgradeValue("cart", state.upgrades.cart) * (1 + bonus(state, "cart")));
 
+// Pick heat cooled from `lastAt` to `now` (ms), and what a tap at that heat yields (1 = full, down to the floor).
+export const coolHeat = (heat, lastAt, now) => Math.max(0, heat - (MINE.overheat.rest * (now - lastAt)) / 1000);
+export const heatMult = (heat) => clamp(1 - (heat - MINE.overheat.free) / MINE.overheat.span, MINE.overheat.floor, 1);
+// Heat at which a tap hits the floor: the overheat bar is full there.
+export const maxHeat = () => MINE.overheat.free + MINE.overheat.span * (1 - MINE.overheat.floor);
+
 export const orePrice = (state) => MINE.orePrice * (1 + bonus(state, "sell"));
 
 // state.ore is the cart at time state.mineAt; anything later is derived, never ticked.

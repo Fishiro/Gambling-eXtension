@@ -14,6 +14,7 @@ import { createUnlocks, tabOpen, viewOpen } from "./unlocks.js";
 import { sfx, drone } from "./sound.js";
 import { createSlot } from "./slot.js";
 import { createMine } from "./mine.js";
+import { createMarket } from "./market.js";
 import { createChests } from "./chest.js";
 import { createHistory } from "./history.js";
 import { buildGuide } from "./guide.js";
@@ -70,6 +71,7 @@ const slot = createSlot({
     bendRoll: pets.bendRoll,
 });
 const mine = createMine({ onLevelUp: celebrateLevel, onChest: chests.gain, onOre: (ore) => vault.damage(ore), pets });
+const market = createMarket();
 
 let shownCoins = state.coins;
 let coinAnim = 0;
@@ -112,7 +114,7 @@ function renderHud() {
 
 const DOTS = {
     slot: () => state.freeSpin,
-    mine: () => mine.needsAttention(),
+    mine: () => mine.needsAttention() || market.hot(),
     farm: () => farming.needsAttention(state),
     bag: () => bag.needsAttention(),
 };
@@ -436,6 +438,7 @@ setInterval(() => {
         mine.updateBat();
     }
     mine.titanTick();
+    market.tick();
     unlocks.tick();
     [mine, chests, buffs, pets].forEach((panel) => panel.render());
     farm.tick();
@@ -451,7 +454,7 @@ document.addEventListener("visibilitychange", () => document.hidden && commit())
 subscribe(() => {
     renderHud();
     unlocks.apply();
-    [vault, armory, slot, mine, chests, buffs, pets, bag, farm].forEach((panel) => panel.render());
+    [vault, armory, slot, mine, market, chests, buffs, pets, bag, farm].forEach((panel) => panel.render());
     achievements.check();
 });
 

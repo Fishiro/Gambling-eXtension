@@ -101,6 +101,10 @@
                         <small class="combo-ore"></small>
                         <div class="combo-timer"><span></span></div>
                     </div>
+                    <div id="overheat" class="overheat" hidden>
+                        <small id="overheat-label"></small>
+                        <div class="bar"><div id="overheat-fill"></div></div>
+                    </div>
                 </div>
                 <div class="cart">
                     <div class="cart-top">
@@ -108,6 +112,16 @@
                         <span class="cart-meta"><span id="mine-rate"></span><span id="mine-eta"></span></span>
                     </div>
                     <div class="bar"><div id="cart-fill"></div></div>
+                </div>
+                <div id="market" class="card market">
+                    <h4 class="card-title"><i data-icon="coin"></i>MARKET<span id="mkt-phase" class="mkt-phase"></span></h4>
+                    <div class="mkt-top">
+                        <b id="mkt-price">x1.00</b><span id="mkt-change"></span><span id="mkt-next"></span>
+                    </div>
+                    <svg id="mkt-chart" class="mkt-chart" shape-rendering="crispEdges" aria-hidden="true"></svg>
+                    <div class="mkt-supply">
+                        <div class="bar"><div id="mkt-supply-fill"></div></div><span id="mkt-supply"></span>
+                    </div>
                 </div>
                 </div>
                 <aside class="side">

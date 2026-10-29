@@ -35,6 +35,8 @@ export const TIMING = {
 
 // Features open by level, so a new player meets one thing at a time. Each comes with its own short tour.
 export const UNLOCKS = [
+    // Open from the start: new players meet it in the first tour, older saves get its own tour once.
+    { id: "market", level: 1, name: "MARKET" },
     { id: "bag", level: 2, name: "BAG" },
     { id: "farm", level: 4, name: "FARM" },
     { id: "forge", level: 5, name: "FORGE" },
@@ -51,9 +53,13 @@ export const LEVELS = {
     autoSpinLevel: 3,
 };
 
+// Overheat: each tap adds 1 heat, `rest` heat cools off per second. Past `free` heat each tap loses 1/span
+// of its yield, down to `floor`. Steady tapping (~rest taps/s) never overheats; frantic spam does.
+// XP: per ore sold, times the market price, so a dump at x0.25 also earns a quarter of the XP.
 export const MINE = {
     orePrice: 1,
-    xpPerOre: 0.25,
+    xpPerOre: 0.1,
+    overheat: { rest: 4, free: 6, span: 18, floor: 0.25 },
     luckyChance: 0.06,
     luckyMult: 5,
     upgrades: {
@@ -61,6 +67,30 @@ export const MINE = {
         drill: { name: "DRILL", unit: "/MIN", cost: 35, growth: 1.7, base: 6, step: 5 },
         cart: { name: "CART", unit: " CAP", cost: 25, growth: 1.6, base: 100, step: 100 },
     },
+};
+
+// The ore market: a price multiplier that moves once a tick. A phase pushes it (drift + noise) while
+// `revert` pulls it back toward x1. Selling piles up supply for the current tick: the first demandUpTo of a
+// cart is free and nudges the next tick up; past that the price sinks, each extra cart harder
+// (dump * extraCarts^dumpCurve). When the tick closes, only `stick` of that dip stays.
+export const MARKET = {
+    tickSeconds: 60,
+    history: 30,
+    floor: 0.25,
+    cap: 3,
+    dump: 0.1,
+    dumpCurve: 1.5,
+    stick: 0.4,
+    demandUpTo: 0.5,
+    demandBump: 0.03,
+    catchUpTicks: 240,
+    phases: [
+        { id: "calm", name: "CALM", weight: 40, drift: 0, vol: 0.03, revert: 0.3, ticks: [3, 6], color: "l" },
+        { id: "bull", name: "BULL RUN", weight: 22, drift: 0.06, vol: 0.04, revert: 0.1, ticks: [3, 6], color: "G" },
+        { id: "bear", name: "BEAR", weight: 22, drift: -0.05, vol: 0.04, revert: 0.1, ticks: [3, 6], color: "R" },
+        { id: "boom", name: "BOOM!", weight: 8, drift: 0.2, vol: 0.06, revert: 0, ticks: [2, 3], color: "y", loud: true },
+        { id: "crash", name: "CRASH!", weight: 8, drift: -0.15, vol: 0.05, revert: 0, ticks: [2, 3], color: "r", loud: true },
+    ],
 };
 
 export const LUCK = {

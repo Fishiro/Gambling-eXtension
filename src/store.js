@@ -39,6 +39,9 @@ const fresh = () => ({
     garden: Array(FARM.plots).fill(null),
     achv: {},
     fun: {},
+    // Ore market: price multiplier, current phase and ticks left in it, start of the current tick,
+    // ore sold during it and the price that knocked off, and the recent closing prices.
+    market: { price: 1, phase: "calm", left: 3, at: Date.now(), sold: 0, dumped: 0, hist: [] },
     lastSeen: Date.now(),
 });
 
@@ -59,6 +62,7 @@ function load() {
                 relics: { ...base.relics, ...saved.relics },
                 vault: { ...base.vault, ...saved.vault },
                 settings: { ...base.settings, ...saved.settings },
+                market: { ...base.market, ...saved.market },
                 garden: base.garden.map((_, i) => saved.garden?.[i] ?? null),
             };
         }
