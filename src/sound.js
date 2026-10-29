@@ -507,17 +507,7 @@ const world = {
         arpeggio([784, 988, 1175, 1568], 0.06, { type: "triangle", vol: 0.04 });
         noise(0.4, 0.04, 0.2, { filter: "highpass", freq: 5000 });
     },
-    // Farm: DIGGS sets off (a little march), comes back (a fanfare), seeds go in, crops pop out.
-    tripSend: () => [0, 0.14, 0.28, 0.42].forEach((at, i) => {
-        tone(i % 2 ? 196 : 262, 0.08, { type: "triangle", vol: 0.04, at });
-        noise(0.04, 0.05, at, { freq: 400 });
-    }),
-    tripBack: () => {
-        arpeggio([392, 523, 659, 784, 1047], 0.07, { vol: 0.04 });
-        chord([523, 659, 784], 0.6, { type: "triangle", vol: 0.022, at: 0.35 });
-    },
-    seat: () => tone(note(19), 0.05, { type: "triangle", vol: 0.03, slide: 200 }),
-    unseat: () => tone(note(19), 0.05, { type: "triangle", vol: 0.03, slide: -200 }),
+    // Farm: seeds go in, crops pop out.
     plant: () => {
         noise(0.08, 0.08, 0, { freq: 350 });
         tone(330, 0.08, { type: "sine", slide: 330, vol: 0.03, at: 0.05 });

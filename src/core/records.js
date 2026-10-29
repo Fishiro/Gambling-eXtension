@@ -51,7 +51,7 @@ export function recordGroups(state) {
             rows: [
                 ["CHESTS OPENED", n(s.chestsOpened)],
                 ["LEGENDARY CHESTS", n(f.legendaryChests)],
-                ["TRIPS", n(f.trips)],
+                ["SEEDS PLANTED", n(f.plants)],
                 ["HARVESTS", n(f.harvests)],
                 ["GOLD FRUIT", n(f.goldfruits)],
                 ["GEAR CRAFTED", n(f.crafts)],

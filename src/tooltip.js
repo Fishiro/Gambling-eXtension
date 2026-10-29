@@ -4,7 +4,7 @@ import { formatNumber } from "./core/economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import { TEXT } from "./text.js";
 
-// Hover card for anything tagged data-tip="<item id>" (bag tiles, cost chips, zone loot).
+// Hover card for anything tagged data-tip="<item id>" (bag tiles, cost chips, seed drops).
 // An optional data-need="<n>" adds a have/need line so short costs say exactly what is missing.
 // hint() reuses the same box for short messages ("UNLOCKS AT LV4") next to whatever was tapped.
 

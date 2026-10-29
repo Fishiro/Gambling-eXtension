@@ -6,7 +6,7 @@ import { START, FARM, TIMING, RELICS, LUCK, PETS, SKINS, ITEMS, GEAR, GEAR_MAX, 
 // a time, then sanitize() forces every field into a shape and range the game can trust. Both run on load and
 // on import, so a hand-edited or broken backup can never crash the game or hand out impossible values.
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export const freshState = (now = Date.now()) => ({
     version: SAVE_VERSION,
@@ -42,7 +42,6 @@ export const freshState = (now = Date.now()) => ({
     skins: { owned: ["miner"], active: "miner" },
     bag: {},
     gear: {},
-    trip: null,
     garden: Array(FARM.plots).fill(null),
     achv: {},
     fun: {},
@@ -88,6 +87,14 @@ const MIGRATIONS = {
         save.bet = OLD_STEPS[save.betIndex] ?? START.bet;
         delete save.betIndex;
     },
+    // v4 -> v5: expeditions are gone. A trip still out ends where it is (its pets were never off the owned list),
+    // and relics rolled with TRIP FINDS now carry GARDEN YIELD. Items only trips gave are dropped by sanitize.
+    4(save) {
+        delete save.trip;
+        for (const relic of save.relics?.list ?? []) {
+            for (const line of relic?.stats ?? []) if (line?.stat === "loot") line.stat = "yield";
+        }
+    },
 };
 
 export function migrate(save) {
@@ -109,6 +116,7 @@ const numMap = (map, known, lo, hi) =>
     isObj(map) ? Object.fromEntries(Object.entries(map).filter(([k, v]) => known.has(k) && Number.isFinite(v)).map(([k, v]) => [k, num(v, 0, lo, hi)])) : {};
 
 const PET_IDS = new Set(PETS.map((p) => p.id));
+const isPlot = (p) => isObj(p) && Object.hasOwn(FARM.crops, p.seed) && Number.isFinite(p.at);
 const SKIN_IDS = new Set(SKINS.map((s) => s.id));
 const ITEM_IDS = new Set(Object.keys(ITEMS));
 const GEAR_IDS = new Set(GEAR.map((g) => g.id));
@@ -177,8 +185,7 @@ export function sanitize(save, now = Date.now()) {
     s.market.price = num(s.market.price, 1, 0.01, 100);
     s.market.at = num(s.market.at, now, 0, now);
     if (!Array.isArray(s.market.hist)) s.market.hist = [];
-    s.garden = base.garden.map((_, i) => (isObj(save.garden?.[i]) ? save.garden[i] : null));
-    s.trip = isObj(save.trip) && typeof save.trip.zone === "string" ? save.trip : null;
+    s.garden = base.garden.map((_, i) => (isPlot(save.garden?.[i]) ? save.garden[i] : null));
     for (const key of ["history", "hall"]) s[key] = Array.isArray(save[key]) ? save[key] : [];
     for (const key of ["achv", "fun"]) s[key] = isObj(save[key]) ? save[key] : {};
     if (s.unlocked !== null && !Array.isArray(s.unlocked)) s.unlocked = null;

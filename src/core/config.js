@@ -50,7 +50,7 @@ export const TIMING = {
 };
 
 // Features open by level, so a new player meets one thing at a time. Each comes with its own short tour.
-// Levels 6-10 keep the drip going: VOLCANO trips (FARM.zones) at 6, the vault at 7, relics + SPACE at 10.
+// Levels 7-10 keep the drip going: the vault at 7, relics at 10.
 export const UNLOCKS = [
     // Open from the start: new players meet it in the first tour, older saves get its own tour once.
     { id: "market", level: 1, name: "MARKET" },
@@ -135,12 +135,20 @@ export const LUCK = {
         { id: "legendary", name: "LEGENDARY", weight: 2, color: "y" },
     ],
     rewards: {
-        common: [{ type: "coins", mult: 3 }, { type: "ore", fill: 0.4 }, { type: "xp", frac: 0.15 }, { type: "item", id: "seed", n: 2 }],
-        rare: [{ type: "coins", mult: 8 }, { type: "freeSpin" }, { type: "heat", amount: 3 }, { type: "ore", fill: 1 }, { type: "item", id: "seed", n: 4 }],
+        common: [{ type: "coins", mult: 3 }, { type: "ore", fill: 0.4 }, { type: "xp", frac: 0.15 }],
+        rare: [{ type: "coins", mult: 8 }, { type: "freeSpin" }, { type: "heat", amount: 3 }, { type: "ore", fill: 1 }],
         epic: [{ type: "goldRush", seconds: 90 }, { type: "hotMachine", spins: 8 }, { type: "coins", mult: 20 }, { type: "item", id: "goldseed", n: 1 }, { type: "gems", n: 1 }],
         legendary: [{ type: "coins", mult: 40 }, { type: "bundle" }, { type: "gems", n: 5 }, { type: "relic" }],
     },
     fallbackMult: { ore: 3, freeSpin: 8, bundle: 15 },
+    // Every chest also drops seeds on top of its reward, the garden's steady supply: `seed` plain seeds and a
+    // `gold` chance at one gold seed, by rarity.
+    chestSeeds: {
+        common: { seed: 1, gold: 0.02 },
+        rare: { seed: 2, gold: 0.05 },
+        epic: { seed: 3, gold: 0.25 },
+        legendary: { seed: 4, gold: 1 },
+    },
     // Coins in chests (and junk scrap) are counted in units of coinPerLevel x level, never the bet: a big bet is
     // pure risk, chests can't pay it back.
     coinPerLevel: 25,
@@ -191,7 +199,7 @@ export const PET_SLOTS = [0, 15, 40];
 // on a spin (the natural odds included); DICEY and SIX bend a dead roll into a pair `bendChance` of the time.
 export const PET_REEL = { jackpotMax: 0.025, bendChance: 0.3 };
 export const PET_ROLES = {
-    buddy: { name: "BUDDY", color: "O", desc: "WEAK, BUT CARRIES LOOT ON TRIPS" },
+    buddy: { name: "BUDDY", color: "O", desc: "CHEAP, WITH A TINY BONUS" },
     helper: { name: "HELPER", color: "c", desc: "DOES THE CHORES" },
     slot: { name: "SLOT", color: "y", desc: "BETTER SPINS" },
     mine: { name: "MINE", color: "l", desc: "DIG AND SELL" },
@@ -199,7 +207,7 @@ export const PET_ROLES = {
     legend: { name: "LEGEND", color: "v", desc: "THE BIG GOALS" },
 };
 export const PETS = [
-    // Buddies: cheap, weak or useless on the team. Their real job is riding along on expeditions.
+    // Buddies: cheap first pets, each with a tiny passive.
     {
         id: "worker",
         role: "buddy",
@@ -209,7 +217,8 @@ export const PETS = [
         skill: "NONE",
         auto: true,
         cooldown: 0,
-        desc: "DOES NOTHING. NO SKILL, NO BONUS, NO THOUGHTS. HE CAN STILL CARRY LOOT ON AN EXPEDITION.",
+        passive: { stat: "yield", per: 0.05, label: "GARDEN YIELD" },
+        desc: "NO SKILL, NO THOUGHTS. WATERS THE GARDEN WHEN NOBODY IS LOOKING, SO HARVESTS COME IN A LITTLE BIGGER.",
         lines: ["...", "IS IT 5 YET?", "I'M ON BREAK", "NOT MY JOB", "UNPAID, UNBOTHERED"],
     },
     {
@@ -234,9 +243,9 @@ export const PETS = [
         skill: "SNIFF AROUND",
         auto: true,
         cooldown: 0,
-        passive: { stat: "loot", per: 0.1, label: "TRIP FINDS" },
-        desc: "LOST ITS PAIR IN THE DRYER. NOW IT SNIFFS OUT A FEW EXTRA TRIP FINDS.",
-        lines: ["WHERE IS MY PAIR", "*SNIFF*", "I SMELL LOOT", "DRYER TOOK HIM", "LEFT FOOT ONLY"],
+        passive: { stat: "yield", per: 0.1, label: "GARDEN YIELD" },
+        desc: "LOST ITS PAIR IN THE DRYER. NOW IT SNIFFS AROUND THE GARDEN AND TURNS UP A FEW EXTRA CROPS.",
+        lines: ["WHERE IS MY PAIR", "*SNIFF*", "I SMELL HERBS", "DRYER TOOK HIM", "LEFT FOOT ONLY"],
     },
     {
         id: "ducky",
@@ -327,7 +336,7 @@ export const PETS = [
         skill: "SPORE SPREAD",
         auto: true,
         cooldown: 0,
-        passive: { stat: "loot", per: 0.4, label: "TRIP FINDS" },
+        passive: { stat: "yield", per: 0.4, label: "GARDEN YIELD" },
         desc: "AUTO: A HARVESTED PLOT REPLANTS ITSELF WITH THE SAME SEED IF YOU HAVE ONE. SET UP THE GARDEN ONCE, FARM FOREVER.",
         lines: ["FUN GUY", "I LIVE IN THE DARK", "SPORES EVERYWHERE", "NOT THAT KIND", "LOWKENUINELY A FUN GUY"],
     },
@@ -441,7 +450,7 @@ export const PETS = [
         cooldown: 30 * MIN,
         skipMinutes: 60,
         passive: { stat: "grow", per: 0.3, label: "GROW SPEED" },
-        desc: "TAP SKILL: THE EXPEDITION AND EVERY GROWING PLOT JUMP 1 HOUR AHEAD. TIME IT WITH LONG TRIPS.",
+        desc: "TAP SKILL: EVERY GROWING PLOT JUMPS 1 HOUR AHEAD. SAVE IT FOR A GOLD SEED.",
         lines: ["TICK TOCK", "I AM RUNNING OUT", "FLIP ME", "SAND IN EVERYTHING", "LOCK IN. TIME'S TICKING"],
     },
     {
@@ -541,20 +550,17 @@ export const COMBO = {
 
 // Everything you can hold. Brews carry a `use` reward, applied through luck.applyReward.
 export const ITEMS = {
-    stone: { name: "STONE", rarity: "common", from: "MINE TAPS, CAVE" },
-    iron: { name: "IRON", rarity: "rare", from: "MINE TAPS, CAVE" },
-    crystal: { name: "CRYSTAL", rarity: "epic", from: "LUCKY TAPS, CAVE, SPACE" },
+    stone: { name: "STONE", rarity: "common", from: "MINE TAPS" },
+    iron: { name: "IRON", rarity: "rare", from: "MINE TAPS" },
+    crystal: { name: "CRYSTAL", rarity: "epic", from: "LUCKY TAPS" },
     shard: { name: "LUCK SHARD", rarity: "common", from: "SLOT WINS" },
-    stardust: { name: "STARDUST", rarity: "epic", from: "COSMIC STARS, SPACE" },
+    stardust: { name: "STARDUST", rarity: "epic", from: "COSMIC STARS" },
     wing: { name: "BAT WING", rarity: "rare", from: "GOLDEN BATS" },
-    wood: { name: "WOOD", rarity: "common", from: "FOREST" },
-    herb: { name: "HERB", rarity: "common", from: "FOREST, GARDEN" },
-    glowcap: { name: "GLOWCAP", rarity: "rare", from: "CAVE, GARDEN" },
-    ember: { name: "EMBER", rarity: "rare", from: "VOLCANO" },
-    obsidian: { name: "OBSIDIAN", rarity: "epic", from: "VOLCANO" },
-    meteor: { name: "METEORITE", rarity: "legendary", from: "SPACE" },
-    seed: { name: "SEED", rarity: "common", from: "CHESTS, FOREST" },
-    goldseed: { name: "GOLD SEED", rarity: "epic", from: "CHESTS, LUCKY HARVESTS" },
+    herb: { name: "HERB", rarity: "common", from: "GARDEN" },
+    glowcap: { name: "GLOWCAP", rarity: "rare", from: "GARDEN" },
+    meteor: { name: "METEORITE", rarity: "legendary", from: "THE VAULT" },
+    seed: { name: "SEED", rarity: "common", from: "EVERY CHEST, HARVESTS" },
+    goldseed: { name: "GOLD SEED", rarity: "epic", from: "LUCKY CHESTS, LUCKY HARVESTS" },
     goldfruit: { name: "GOLD FRUIT", rarity: "legendary", from: "GOLD SEEDS" },
     relicDust: { name: "RELIC DUST", rarity: "epic", from: "SALVAGED RELICS, THE VAULT" },
     // Junk. Mostly it just piles up and looks good in the bag; some of it brews the combo brews.
@@ -572,16 +578,6 @@ export const ITEMS = {
     feather: { name: "GOLD FEATHER", rarity: "rare", from: "GOLDEN BATS", junk: true },
     key: { name: "MYSTERY KEY", rarity: "rare", from: "GOLDEN BATS", junk: true },
     horseshoe: { name: "HORSESHOE", rarity: "legendary", from: "COSMIC STARS", junk: true },
-    pinecone: { name: "PINECONE", rarity: "common", from: "FOREST", junk: true },
-    peel: { name: "BANANA PEEL", rarity: "common", from: "FOREST", junk: true },
-    sock: { name: "LONELY SOCK", rarity: "rare", from: "FOREST", junk: true },
-    cheese: { name: "MOLDY CHEESE", rarity: "rare", from: "FOREST", junk: true },
-    boot: { name: "OLD BOOT", rarity: "rare", from: "DEEP CAVE", junk: true },
-    seashell: { name: "SEASHELL", rarity: "rare", from: "DEEP CAVE", junk: true },
-    fossil: { name: "FOSSIL", rarity: "epic", from: "DEEP CAVE", junk: true },
-    candle: { name: "WAX CANDLE", rarity: "rare", from: "VOLCANO", junk: true },
-    watch: { name: "BROKEN WATCH", rarity: "epic", from: "SPACE", junk: true },
-    moonrock: { name: "MOON ROCK", rarity: "legendary", from: "SPACE", junk: true },
     rushBrew: { name: "RUSH BREW", rarity: "rare", from: "FORGE", use: { type: "goldRush", seconds: 120 }, effect: "GOLD RUSH 120S" },
     fireBrew: { name: "FIRE BREW", rarity: "rare", from: "FORGE", use: { type: "heat", amount: 5 }, effect: "MAX HEAT" },
     hotBrew: { name: "HOT BREW", rarity: "epic", from: "FORGE", use: { type: "hotMachine", spins: 10 }, effect: "10 HOT SPINS" },
@@ -641,7 +637,7 @@ export const STAT_CAPS = {
     chest: { knee: 1, cap: 2 },
     sell: { knee: 0.6, cap: 1.2 },
     drill: { knee: 1, cap: 3 },
-    loot: { knee: 1, cap: 2.5 },
+    yield: { knee: 1, cap: 2.5 },
     grow: { knee: 0.5, cap: 0.75 },
     petCd: { knee: 0.3, cap: 0.6 },
 };
@@ -655,14 +651,14 @@ export const GEAR_GROWTH = 1.7;
 export const GEAR = [
     { id: "grip", name: "STONE GRIP", icon: "i-pick", stat: "tap", per: 1, label: "ORE PER TAP", cost: { stone: 8 } },
     { id: "bit", name: "IRON BIT", icon: "i-drill", stat: "drill", per: 0.1, pct: true, label: "DRILL SPEED", cost: { iron: 4, stone: 6 } },
-    { id: "pockets", name: "BIG POCKETS", icon: "i-cart", stat: "cart", per: 0.15, pct: true, label: "CART SIZE", cost: { wood: 8, herb: 4 } },
+    { id: "pockets", name: "BIG POCKETS", icon: "i-cart", stat: "cart", per: 0.15, pct: true, label: "CART SIZE", cost: { stone: 10, herb: 4 } },
     { id: "ring", name: "MERCHANT RING", icon: "coin", stat: "sell", per: 0.06, pct: true, label: "ORE PRICE", cost: { iron: 4, crystal: 1 } },
     { id: "charm", name: "LUCKY CHARM", icon: "clover", stat: "chest", per: 0.15, pct: true, label: "CHEST CHANCE", cost: { shard: 8, wing: 1 } },
     { id: "lens", name: "STAR LENS", icon: "gem", stat: "zone", per: 0.05, pct: true, label: "TIMING ZONE", cost: { crystal: 2, stardust: 1 } },
-    { id: "compass", name: "COMPASS", icon: "i-clock", stat: "loot", per: 0.1, pct: true, label: "TRIP FINDS", cost: { wood: 10, iron: 3 } },
+    { id: "compass", name: "SEED POUCH", icon: "seed", stat: "yield", per: 0.1, pct: true, label: "GARDEN YIELD", cost: { herb: 8, iron: 3 } },
     { id: "can", name: "WATERING CAN", icon: "herb", stat: "grow", per: 0.08, pct: true, label: "GROW SPEED", cost: { iron: 3, herb: 6 } },
     { id: "collar", name: "PET COLLAR", icon: "heart", stat: "petCd", per: 0.06, pct: true, label: "PET RECHARGE", cost: { wing: 2, glowcap: 3 } },
-    { id: "crown", name: "METEOR CROWN", icon: "meteor", stat: "payout", per: 0.04, pct: true, label: "SLOT PAYOUT", cost: { meteor: 1, obsidian: 2, goldfruit: 1 } },
+    { id: "crown", name: "METEOR CROWN", icon: "meteor", stat: "payout", per: 0.04, pct: true, label: "SLOT PAYOUT", cost: { meteor: 1, crystal: 3, goldfruit: 1 } },
 ];
 
 // Past LV5 gear ascends: 1-5 stars. Each star adds STAR_MULT x the piece's normal step, and costs a fortune.
@@ -690,23 +686,23 @@ export const SET_STARS = 3;
 export const GEAR_SETS = [
     { id: "digger", name: "DIGGER SET", gear: ["grip", "bit", "pockets", "ring"], stat: "sell", per: 0.5, label: "ORE PRICE" },
     { id: "roller", name: "HIGH ROLLER SET", gear: ["charm", "lens", "crown"], stat: "payout", per: 0.25, label: "SLOT PAYOUT" },
-    { id: "keeper", name: "KEEPER SET", gear: ["compass", "can", "collar"], stat: "loot", per: 0.5, label: "TRIP FINDS" },
+    { id: "keeper", name: "KEEPER SET", gear: ["compass", "can", "collar"], stat: "yield", per: 0.5, label: "GARDEN YIELD" },
 ];
 
 export const BREWS = [
     { id: "rushBrew", cost: { herb: 3, iron: 1 } },
-    { id: "fireBrew", cost: { ember: 2, herb: 2 } },
+    { id: "fireBrew", cost: { glowcap: 1, herb: 3 } },
     { id: "hotBrew", cost: { glowcap: 2, shard: 4 } },
     { id: "luckBrew", cost: { goldfruit: 1, stardust: 1 } },
     { id: "midasBrew", cost: { goldfruit: 1, meteor: 1, relicDust: 2 } },
     { id: "starBrew", cost: { stardust: 5, crystal: 3 } },
-    { id: "titanBrew", cost: { ember: 5, obsidian: 3, meteor: 1 } },
-    { id: "breakerBrew", cost: { relicDust: 5, obsidian: 2 } },
-    { id: "phoenixBrew", cost: { goldfruit: 1, ember: 8 } },
+    { id: "titanBrew", cost: { glowcap: 4, iron: 5, meteor: 1 } },
+    { id: "breakerBrew", cost: { relicDust: 5, crystal: 2 } },
+    { id: "phoenixBrew", cost: { goldfruit: 1, glowcap: 5 } },
     // `combo` brews sit under their own heading and stay secret until each ingredient has been found once.
-    { id: "voidBrew", cost: { pebble: 6, nail: 4, boot: 1, iron: 2 }, combo: true },
+    { id: "voidBrew", cost: { pebble: 6, nail: 4, spoon: 1, iron: 2 }, combo: true },
     { id: "hypeBrew", cost: { bottlecap: 5, ticket: 4, button: 3, oldcoin: 1 }, combo: true },
-    { id: "surgeBrew", cost: { dustbunny: 4, marble: 2, pinecone: 4, stone: 6 }, combo: true },
+    { id: "surgeBrew", cost: { dustbunny: 4, marble: 2, herb: 4, stone: 6 }, combo: true },
 ];
 
 // What the big brews do while they run.
@@ -730,35 +726,14 @@ export const BUFF_CHIPS = [
     { key: "breakerSpins", kind: "count", cls: "brew", icon: "breakerBrew", scale: 1, color: "B", title: "VAULT BREAKER: DAMAGE x3" },
 ];
 
-// Expeditions and the garden run on timestamps: results are rolled from a stored seed when you collect.
+// The garden runs on timestamps: each planting rolls its grow time (minutes, between the two numbers) when it goes
+// in, and its harvest from a stored seed, so reopening the popup always shows the same plot. A yield line is
+// [item, amount, chance]; GARDEN YIELD multiplies the amount (the fraction left over is a chance at one more).
 export const FARM = {
-    // `luck` tilts each find toward rarer loot: a find's weight is multiplied by luck^(rarityRank * luckCurve),
-    // rank 0 common .. 3 legendary. x1 at 10 minutes is the zone's own odds; 4 hours is the luckiest trip.
-    trips: [
-        { minutes: 10, label: "10M", rolls: 2, luck: 1 },
-        { minutes: 30, label: "30M", rolls: 5, luck: 1.8 },
-        { minutes: 60, label: "1H", rolls: 9, luck: 2.6 },
-        { minutes: 240, label: "4H", rolls: 30, luck: 5 },
-    ],
-    luckCurve: 0.5,
-    // How DIGGS spends the trip: FORAGE brings more finds, DELVE fewer but much rarer ones.
-    stances: [
-        { id: "steady", name: "STEADY", rolls: 1, luck: 1 },
-        { id: "forage", name: "FORAGE", rolls: 1.4, luck: 0.6 },
-        { id: "delve", name: "DELVE", rolls: 0.6, luck: 1.8 },
-    ],
-    // Pets riding along: index = pets sent (0 = DIGGS alone), value = finds multiplier.
-    party: [1, 1.5, 2.2, 3.2],
-    zones: [
-        { id: "forest", name: "FOREST", level: 1, icon: "wood", loot: [["wood", 50], ["herb", 35], ["seed", 12], ["goldseed", 1], ["pinecone", 6], ["peel", 4], ["sock", 3], ["cheese", 2]] },
-        { id: "cave", name: "DEEP CAVE", level: 3, icon: "glowcap", loot: [["stone", 40], ["iron", 30], ["glowcap", 22], ["crystal", 6], ["boot", 3], ["seashell", 2], ["fossil", 2]] },
-        { id: "volcano", name: "VOLCANO", level: 6, icon: "ember", loot: [["stone", 30], ["ember", 45], ["obsidian", 12], ["crystal", 6], ["candle", 4]] },
-        { id: "space", name: "SPACE", level: 10, icon: "meteor", loot: [["stardust", 40], ["crystal", 30], ["goldseed", 4], ["meteor", 4], ["watch", 2], ["moonrock", 2]] },
-    ],
-    plots: 3,
+    plots: 6,
     crops: {
-        seed: { minutes: 20, yields: [["herb", 3, 1], ["glowcap", 1, 0.35], ["goldseed", 1, 0.05]] },
-        goldseed: { minutes: 120, yields: [["goldfruit", 1, 1], ["goldseed", 1, 0.15]] },
+        seed: { minutes: [1, 30], yields: [["herb", 3, 1], ["glowcap", 1, 0.35], ["seed", 1, 0.5], ["goldseed", 1, 0.03]] },
+        goldseed: { minutes: [45, 120], yields: [["goldfruit", 1, 1], ["goldseed", 1, 0.15]] },
     },
 };
 
@@ -823,7 +798,7 @@ export const RELICS = {
         { stat: "sell", min: 0.1, max: 0.3, label: "ORE PRICE", adj: "MERCHANT'S" },
         { stat: "drill", min: 0.1, max: 0.4, label: "DRILL SPEED", adj: "THUNDER" },
         { stat: "zone", min: 0.04, max: 0.12, label: "TIMING ZONE", adj: "STEADY" },
-        { stat: "loot", min: 0.1, max: 0.3, label: "TRIP FINDS", adj: "WANDERER'S" },
+        { stat: "yield", min: 0.1, max: 0.3, label: "GARDEN YIELD", adj: "HARVEST" },
         { stat: "grow", min: 0.1, max: 0.25, label: "GROW SPEED", adj: "BLOOMING" },
         { stat: "petCd", min: 0.05, max: 0.15, label: "PET RECHARGE", adj: "LOYAL" },
     ],

@@ -6,14 +6,14 @@ Verified by `npm test` (thresholds in section 9) and `npm run report` (curves an
 
 ## 1. Core experience
 
-A 5-minute break toy. Spin a timing-based slot, tap a mine, send DIGGS on trips; close the popup and the mine,
-trips, garden and pets keep working. The player should feel *skill pays, time away pays, nothing is a dead end*.
+A 5-minute break toy. Spin a timing-based slot, tap a mine, plant a garden; close the popup and the mine,
+garden and pets keep working. The player should feel *skill pays, time away pays, nothing is a dead end*.
 
 ## 2. Main loops
 
 - **Slot (active):** bet -> stop the meter in the zone -> grade x heat x bonuses -> coins + XP -> bigger bet.
 - **Mine (active + idle):** tap / drill -> cart -> sell into a market that punishes dumping -> upgrades.
-- **Farm (idle):** trips and garden on timestamps -> materials -> forge gear and brews -> stats.
+- **Farm (idle):** chests drop seeds -> garden plots on timestamps -> herbs, glowcaps, gold fruit -> forge gear and brews -> stats.
 - **Meta:** chests from everything, pets, relics, vault, VIP. All feed a few shared stats (soft capped).
 
 ## 3. Mechanics in the order they are taught
@@ -24,11 +24,10 @@ trips, garden and pets keep working. The player should feel *skill pays, time aw
 | 2 | Mine, overheat, ore market | 1 | `market` | slot (coins), vault |
 | 3 | Bag + skins | 2 | `bag` | all drops |
 | 4 | Pets (team, skills) | 3 | `pets` | slot, mine, farm |
-| 5 | Farm: trips + garden (cave trips) | 4 | `farm` | pets ride along |
-| 6 | Forge: gear + brews | 5 | `forge` | farm materials, junk |
-| 7 | Volcano trips | 6 | (zone list) | forge (ember, obsidian) |
-| 8 | VIP + Vault | 7 | `vault` | slot bets, mine taps |
-| 9 | Relics, space trips | 10 | `relics` | vault, legendary chests |
+| 5 | Farm: a garden of seeds from chests | 4 | `farm` | chests, SPORE, SANDY |
+| 6 | Forge: gear + brews | 5 | `forge` | garden crops, junk |
+| 7 | VIP + Vault | 7 | `vault` | slot bets, mine taps |
+| 8 | Relics | 10 | `relics` | vault, legendary chests |
 
 Every level from 2 to 11 also opens a bigger bet step, so each level up gives something (tested).
 
@@ -57,21 +56,26 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
 | Chapter | Levels | Teaches | Step | Win condition | Why harder than before |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 1-5 | slot, mine, market, bag, pets, farm, forge | introduce | reach LV5 | first meter speed-up |
-| 2 | 6-10 | combine: pets on trips, forge from trips, vault | develop | first relic | zone below 0.25 |
+| 2 | 6-10 | combine: garden crops into the forge, vault | develop | first relic | zone below 0.25 |
 | 3 | 11-15 | VIP bets, relic builds, combo brews | twist | crack vault 1-3 | speed past 1.6 |
 | 4 | 16-20 | star gear, sets | develop | first 3-star set | zone below 0.15 |
 | 5 | 21-26 | full team, max VIP climb | conclude | peak difficulty | meter at its hardest |
 
 ## 6. Depth and trade-offs
 
-- Pets on a trip leave the team (finds vs. bonus now).
-- Trip stance: FORAGE (x1.4 finds, x0.6 luck) vs DELVE (x0.6 finds, x1.8 luck) vs STEADY.
+- Garden: a plain seed is quick (1-30 min) and often gives a seed back; a gold seed ties a plot up for 45 min-2 h
+  for a gold fruit. SANDY's hour skip is worth most on a gold seed.
 - Junk: scrap for coins now, or keep it for combo brews.
 - Market: sell a cart a minute at a fair price, or dump and crash it.
 - Big bets: more XP and burn, more risk; OINKER and BONSAI soften losses.
 
 ## 7. Economy rules
 
+- **The farm is only a garden (2026-10-30, owner's call):** expeditions, their zones and every item only they gave
+  (wood, ember, obsidian and their junk) are gone. Seeds come from chests: every chest drops 1-4 seeds by rarity
+  plus a chance at a gold seed (always one in a legendary), and a plain seed gives a seed back half the time.
+  Each planting rolls its grow time (seed 1-30 min, gold seed 45 min-2 h). TRIP FINDS became GARDEN YIELD (more
+  of each crop line that lands); the buddy pets lost their trip job and keep a tiny passive each.
 - **Easy wins are rare-ish (2026-10-29, owner's call):** CHERRY, LEMON and BELL lines only land half the time
   (`EASY_KEEP`, the rest slip into a near miss); any line hits ~12% of spins. Payouts were not raised, so the
   slot is a **coin sink unless you time well**: base return x0.59, good timing + heat 3 ~x0.75, flawless ~x1.26.

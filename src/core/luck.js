@@ -156,6 +156,14 @@ export function mergeLines(lines) {
     return [...merged.values()];
 }
 
+// The seeds every chest drops on top of its reward (LUCK.chestSeeds).
+export function chestSeeds(state, rarity, rand = Math.random) {
+    const drop = LUCK.chestSeeds[rarity.id];
+    const lines = APPLY.item(state, { id: "seed", n: drop.seed });
+    if (rand() < drop.gold) lines.push(...APPLY.item(state, { id: "goldseed", n: 1 }));
+    return lines;
+}
+
 export function applyReward(state, reward) {
     const lines = APPLY[reward.type](state, reward);
     const xp = lines.reduce((sum, l) => sum + (l.xp ?? 0), 0);

@@ -83,7 +83,9 @@ export function createChests({ onLevelUp, onOpened }) {
     function claim(rarity) {
         state.chests.shift();
         state.stats.chestsOpened++;
-        const { lines, levels } = luck.applyReward(state, luck.rollReward(rarity));
+        const got = luck.applyReward(state, luck.rollReward(rarity));
+        const lines = [...got.lines, ...luck.chestSeeds(state, rarity)];
+        const { levels } = got;
         onOpened({ type: "chest", rarity: rarity.id, text: lines.map((l) => l.text).join(", ") });
         emit("chest-open", { rarity: rarity.id });
         return { lines, levels };
@@ -227,25 +229,6 @@ export function createChests({ onLevelUp, onOpened }) {
         }, 3800);
     }
 
-    // Reuse the loot overlay for any reveal (expedition returns, big harvests), with its own sound.
-    function reveal({ icon, title, color = "y", lines, sound = () => sfx.reveal(2) }) {
-        if (opening || !el.loot.hidden) return false;
-        el.chest.innerHTML = svgIcon(icon, 7);
-        el.loot.style.setProperty("--rarity", PALETTE[color]);
-        el.rarity.textContent = title;
-        el.lines.innerHTML = linesHtml(lines);
-        el.hint.textContent = TEXT.tapToClose;
-        el.lootAll.hidden = true;
-        el.loot.removeAttribute("data-cosmic");
-        el.loot.setAttribute("data-revealed", "");
-        el.loot.hidden = false;
-        fx.pop(el.chest);
-        sound();
-        const p = fx.centerOf(el.chest);
-        fx.burst(p.x, p.y, { count: 40, colors: [color, "w", "G"], speed: [1.5, 4], life: [24, 44] });
-        return true;
-    }
-
     function close() {
         if (opening || el.loot.hidden) return false;
         el.loot.hidden = true;
@@ -269,5 +252,5 @@ export function createChests({ onLevelUp, onOpened }) {
         if (close()) openAll();
     });
 
-    return { gain, gainWhileAway, open, openAll, autoOpen, close, skip, render, cosmic, reveal, isOpen: () => !el.loot.hidden };
+    return { gain, gainWhileAway, open, openAll, autoOpen, close, skip, render, cosmic, isOpen: () => !el.loot.hidden };
 }

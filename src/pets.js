@@ -28,7 +28,7 @@ const teamFull = () => state.pets.team.length >= state.pets.slots;
 const cooldownOf = (id) => byId[id].cooldown * Math.max(0.3, 1 - items.bonus(state, "petCd"));
 
 // The team: up to state.pets.slots pets at once. Every equipped pet's skill and passive work together.
-export function createPets({ reveal, showFarm }) {
+export function createPets({ reveal }) {
     const el = {
         button: $("btn-pet"),
         list: $("pet-list"),
@@ -139,10 +139,6 @@ export function createPets({ reveal, showFarm }) {
 
     function equip(pet, button) {
         if (equipped(pet.id)) return;
-        if (farming.isAway(state, pet.id)) {
-            sfx.denied();
-            return shout(TEXT.petBusy, "l");
-        }
         if (teamFull()) {
             sfx.denied();
             if (button) fx.shake(button, 2, 200);
@@ -211,7 +207,6 @@ export function createPets({ reveal, showFarm }) {
             pat(p.x, p.y, pet.id);
         },
         skill: (pet) => useSkill(pet.id),
-        detail: () => showFarm(),
     };
 
     function cooldownText(pet) {
@@ -235,15 +230,10 @@ export function createPets({ reveal, showFarm }) {
         const { pet, card, actions, cd } = c;
         const owned = owns(pet.id);
         const isOn = equipped(pet.id);
-        const away = farming.isAway(state, pet.id);
-        card.dataset.state = away ? "away" : isOn ? "active" : owned ? "owned" : "locked";
+        card.dataset.state = isOn ? "active" : owned ? "owned" : "locked";
         cd.textContent = owned && pet.cooldown ? cooldownText(pet) : "";
         let markup;
-        if (away) {
-            const trip = farming.tripStatus(state);
-            cd.textContent = TEXT.petAway(trip.zone.name, trip.done ? "" : econ.formatClock(trip.left));
-            markup = `<button data-action="detail" data-fx="G,w">${svgIcon("i-farm", 2)}${TEXT.petDetail}</button>`;
-        } else if (!owned) {
+        if (!owned) {
             markup = `<button data-action="buy" data-fx="y,G,w" ${state.coins < pet.price ? "disabled" : ""}>${svgIcon("coin", 2)}${econ.formatNumber(pet.price)}</button>`;
         } else if (!isOn) {
             markup = `<button data-action="equip" data-fx="c,w" ${teamFull() ? 'data-full=""' : ""}>${TEXT.petEquip}</button>`;

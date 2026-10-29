@@ -146,24 +146,76 @@ test("junk scraps into coins and stays in the collection", () => {
     assert.equal(luck.scrap(s, "pebble"), 0);
 });
 
-test("expeditions: same seed, same loot; stances trade finds for luck", () => {
-    const run = (stance) => {
+test("garden: each planting rolls its grow time in range; same seed, same harvest", () => {
+    for (const seed of farming.SEEDS) {
+        const [lo, hi] = FARM.crops[seed].minutes;
+        assert.equal(farming.rollMinutes(seed, () => 0), lo);
+        assert.equal(farming.rollMinutes(seed, () => 0.999999), hi);
+    }
+    const grow = (seed) => {
         const s = freshState(0);
-        farming.startTrip(s, "forest", 2, [], stance, 0);
-        s.trip.seed = 1234;
-        return farming.collectTrip(s, 10 * 3600 * 1000);
+        s.bag[seed] = 1;
+        assert.ok(farming.plant(s, 0, seed, 0, () => 0.5));
+        assert.equal(s.bag[seed], 0);
+        s.garden[0].roll = 1234;
+        const { total } = farming.plotStatus(s, 0, 0);
+        assert.equal(farming.harvest(s, 0, total * 1000 - 1), null);
+        return farming.harvest(s, 0, total * 1000);
     };
-    assert.deepEqual(run("steady").loot, run("steady").loot);
-    const plan = FARM.trips[2];
+    assert.deepEqual(grow("seed"), grow("seed"));
+    assert.equal(grow("goldseed").goldfruit, 1);
+    // No seed, a busy plot or a plot past the garden: nothing planted.
     const s = freshState(0);
-    const [steady, forage, delve] = FARM.stances;
-    assert.ok(farming.tripRolls(s, plan, 0, 1, forage) > farming.tripRolls(s, plan, 0, 1, steady));
-    assert.ok(farming.tripRolls(s, plan, 0, 1, delve) < farming.tripRolls(s, plan, 0, 1, steady));
-    assert.ok(farming.tripLuck(plan, delve) > farming.tripLuck(plan, steady));
-    // An old trip without a stance still collects.
-    const old = freshState(0);
-    old.trip = { zone: "forest", trip: 0, at: 0, seed: 5, pets: [] };
-    assert.ok(farming.collectTrip(old, 3600 * 1000));
+    assert.equal(farming.plant(s, 0, "seed"), false);
+    s.bag.seed = 2;
+    assert.ok(farming.plant(s, 0, "seed"));
+    assert.equal(farming.plant(s, 0, "seed"), false);
+    assert.equal(farming.plant(s, FARM.plots, "seed"), false);
+    assert.equal(s.bag.seed, 1);
+});
+
+test("garden: GARDEN YIELD scales a harvest", () => {
+    const harvestWith = (yieldBonus) => {
+        const s = freshState(0);
+        s.gear.compass = yieldBonus ? 5 : 0;
+        s.bag.seed = 1;
+        farming.plant(s, 0, "seed", 0);
+        s.garden[0].roll = 99;
+        return farming.harvest(s, 0, 10 * 3600 * 1000).herb;
+    };
+    assert.ok(harvestWith(true) > harvestWith(false));
+});
+
+test("chests: every chest drops seeds, a legendary always a gold seed", () => {
+    for (const rarity of LUCK.rarities) {
+        const s = freshState(0);
+        luck.chestSeeds(s, rarity, () => 0.5);
+        assert.equal(s.bag.seed, LUCK.chestSeeds[rarity.id].seed);
+        assert.equal(s.bag.goldseed ?? 0, LUCK.chestSeeds[rarity.id].gold > 0.5 ? 1 : 0);
+    }
+});
+
+test("save: v4 saves lose their expedition, keep their pets and turn TRIP FINDS relics into GARDEN YIELD", () => {
+    const old = {
+        version: 4,
+        coins: 10,
+        level: 12,
+        pets: { owned: ["worker", "cat"], team: ["cat"], slots: 1 },
+        trip: { zone: "forest", trip: 1, at: 0, seed: 5, pets: ["worker"] },
+        bag: { wood: 40, ember: 3, herb: 5 },
+        garden: [{ seed: "seed", at: 0, roll: 1 }, null, { seed: "wood", at: 0 }],
+        relics: { list: [{ uid: "r1", rarity: "rare", noun: "IDOL", stats: [{ stat: "loot", per: 0.2 }] }], equipped: ["r1", null, null] },
+    };
+    const s = restore(old, 1000);
+    assert.equal(s.trip, undefined);
+    assert.deepEqual(s.pets.owned, ["worker", "cat"]);
+    assert.deepEqual(s.bag, { herb: 5 });
+    assert.equal(s.garden.length, FARM.plots);
+    assert.equal(s.garden[0].seed, "seed");
+    assert.equal(s.garden[2], null);
+    assert.equal(s.relics.list[0].stats[0].stat, "yield");
+    // A plot planted before grow times were rolled grows for the crop's longest.
+    assert.equal(farming.plotStatus(s, 0, 0).total, FARM.crops.seed.minutes[1] * 60);
 });
 
 test("market: dumping sinks the price, a light sell does not", () => {

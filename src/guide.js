@@ -12,6 +12,7 @@ import { HOTKEYS } from "./keys.js";
 const icon = (name, size = 3) => svgFit(name, size * 8);
 const pct = (x) => `${Math.round(x * 100)}%`;
 const keycap = (label) => `<kbd>${label}</kbd>`;
+const growRange = (crop) => `${crop.minutes[0]}-${crop.minutes[1]} MIN`;
 const color = (c, text) => `<em style="color:${PALETTE[c]}">${text}</em>`;
 
 // ---- picture parts ----
@@ -171,13 +172,9 @@ function guideHtml() {
         section(
             "i-farm",
             "FARM",
-            `${tiles(FARM.zones.map((z) => [icon(z.icon), z.name, `LV${z.level}`]), 4)}
-            ${tiles(FARM.trips.map((t) => [icon("i-clock"), t.label, `${Math.round(t.luck * 100)}% LUCK`]), 4)}
-            <p>LONGER TRIPS ARE LUCKIER: RARE, EPIC AND LEGENDARY FINDS SHOW UP MORE.</p>
-            ${tiles(FARM.stances.map((s) => [icon(s.id === "delve" ? "crystal" : s.id === "forage" ? "wood" : "i-clock"), s.name, `x${s.rolls} FINDS, x${s.luck} LUCK`]), 3)}
-            ${tiles(FARM.party.map((m, n) => [n ? PETS.slice(0, n).map(() => icon("i-paw", 2)).join("") : icon("miner", 2), n ? `${n} PET${n > 1 ? "S" : ""}` : "DIGGS ALONE", `x${m} FINDS`]), 4)}
-            <p>PETS ON A TRIP LEAVE YOUR TEAM UNTIL YOU COLLECT. CHEAP BUDDIES ARE PERFECT FOR THIS.</p>
-            ${flow(node(icon("seed"), "PLANT"), node(icon("sprout"), `${FARM.crops.seed.minutes} MIN`), node(icon("herb"), "HARVEST"))}`,
+            `${flow(node(icon("chest"), "CHESTS"), node(icon("seed"), "PLANT"), node(icon("sprout"), "GROW"), node(icon("herb"), "HARVEST"))}
+            ${tiles(Object.entries(FARM.crops).map(([id, crop]) => [icon(id), ITEMS[id].name, growRange(crop)]), 2)}
+            <p>${FARM.plots} PLOTS. EVERY PLANTING ROLLS ITS OWN GROW TIME, AND IT KEEPS GROWING WHILE THE GAME IS CLOSED. EVERY CHEST DROPS SEEDS; GOLD SEEDS ARE RARE.</p>`,
         ),
         section(
             "i-bag",
@@ -324,23 +321,6 @@ function marketOdds() {
     return card("coin", "ORE MARKET", `SELL ABOUT ${MARKET.freeCarts} CART A MINUTE AND THE PRICE STAYS HEALTHY`, body);
 }
 
-function tripOdds() {
-    const maxLuck = FARM.trips[FARM.trips.length - 1].luck;
-    const boost = (rank) => (maxLuck ** (rank * FARM.luckCurve)).toFixed(1);
-    const zoneParts = (zone) => {
-        const total = totalWeight(zone.loot, ([, w]) => w);
-        return zone.loot.map(([id, w]) => `<span class="o-chip" data-tip="${id}">${icon(id, 3)}<small>${brief(w / total)}</small></span>`).join("");
-    };
-    const body = `${sub("LONGER TRIPS ARE LUCKIER")}
-        ${FARM.trips.map((t) => row(icon("i-clock", 3), t.label, t.luck / maxLuck, { value: `${Math.round(t.luck * 100)}% LUCK`, note: `~${t.rolls} FINDS ALONE`, c: "G" })).join("")}
-        <p class="o-tip">${icon("i-star", 2)} AT ${Math.round(maxLuck * 100)}% LUCK: RARE FINDS x${boost(1)}, EPIC x${boost(2)}, LEGENDARY x${boost(3)} AS LIKELY.</p>
-        ${sub("MORE PETS CARRY MORE LOOT")}
-        ${tiles(FARM.party.map((m, n) => [`<span class="o-icons">${n ? icon("i-paw", 2).repeat(n) : icon("miner", 2)}</span>`, n ? `${n} PET${n > 1 ? "S" : ""}` : "DIGGS ALONE", `x${m} FINDS`]), 4)}
-        ${sub("WHAT EACH ZONE DROPS (AT 100% LUCK)")}
-        ${FARM.zones.map((z) => `<div class="o-rewards"><b><span class="o-head-art">${icon(z.icon, 3)}</span>${z.name}<small>LV${z.level}</small></b><span>${zoneParts(z)}</span></div>`).join("")}`;
-    return card("i-farm", "EXPEDITIONS", `${FARM.trips[FARM.trips.length - 1].label} IS THE LUCKIEST. EACH PET ADDS LOOT`, body);
-}
-
 const DROP_SOURCES = [
     ["tap", `<span class="o-head-art">${icon("i-pick", 3)}</span>`, "MINE TAP", "EVERY TAP"],
     ["luckyTap", `<span class="o-head-art">${icon("i-star", 3)}</span>`, "LUCKY TAP", `${brief(MINE.luckyChance)} OF TAPS`],
@@ -352,14 +332,16 @@ const DROP_SOURCES = [
 function itemOdds() {
     const sources = DROP_SOURCES.map(([src, art, label, note]) => `<div class="o-rewards"><b>${art}${label}<small>${note}</small></b><span>${DROPS[src].map((d) => `<span class="o-chip" data-tip="${d.id}">${icon(d.id, 3)}<small>${brief(d.chance)}</small></span>`).join("")}</span></div>`).join("");
     const crops = Object.entries(FARM.crops)
-        .map(([seed, crop]) => `<div class="o-rewards"><b><span class="o-head-art">${icon(seed, 3)}</span>${ITEMS[seed].name}<small>${crop.minutes} MIN</small></b><span>${crop.yields.map(([id, n, p]) => `<span class="o-chip" data-tip="${id}">${icon(id, 3)}<small>${n > 1 ? `x${n} ` : ""}${brief(p)}</small></span>`).join("")}</span></div>`)
+        .map(([seed, crop]) => `<div class="o-rewards"><b><span class="o-head-art">${icon(seed, 3)}</span>${ITEMS[seed].name}<small>${growRange(crop)}</small></b><span>${crop.yields.map(([id, n, p]) => `<span class="o-chip" data-tip="${id}">${icon(id, 3)}<small>${n > 1 ? `x${n} ` : ""}${brief(p)}</small></span>`).join("")}</span></div>`)
         .join("");
     const body = `${sub("DROPS WHILE YOU PLAY (CHANCE EACH TIME)")}
         ${sources}
         ${sub("GARDEN HARVESTS")}
         ${crops}
+        ${sub("SEEDS IN EVERY CHEST")}
+        ${LUCK.rarities.map((r) => row(icon("seed", 3), color(r.color, r.name), null, { value: `${LUCK.chestSeeds[r.id].seed} SEED${LUCK.chestSeeds[r.id].seed > 1 ? "S" : ""}`, note: `GOLD SEED ${brief(LUCK.chestSeeds[r.id].gold)}` })).join("")}
         <p class="o-tip">${icon("i-bag", 2)} HOVER AN ITEM FOR ITS NAME. THE BAG SHOWS EVERY PLACE IT COMES FROM.</p>`;
-    return card("i-bag", "ITEM DROPS", "TAPS, WINS AND BATS DROP MATERIALS. TRIPS BRING THE REST", body);
+    return card("i-bag", "ITEM DROPS", "TAPS, WINS AND BATS DROP MATERIALS. THE GARDEN GROWS THE REST", body);
 }
 
 function rareOdds() {
@@ -389,7 +371,7 @@ function oddsHtml() {
         </div>`;
     return `<p class="g-lead">EVERY CHANCE IN THE GAME. TAP A CARD TO OPEN IT.</p>
         ${legend}
-        ${[slotOdds(), chestOdds(), marketOdds(), tripOdds(), itemOdds(), rareOdds()].join("")}`;
+        ${[slotOdds(), chestOdds(), marketOdds(), itemOdds(), rareOdds()].join("")}`;
 }
 
 export function buildGuide(onPlay, onTour) {

@@ -1,4 +1,6 @@
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
+// A grow time in minutes as 45M, 2H or 1H30.
+const clockRange = (min) => (min < 60 ? `${min}M` : `${Math.floor(min / 60)}H${min % 60 ? String(min % 60).padStart(2, "0") : ""}`);
 
 export const TEXT = {
     ready: "READY",
@@ -175,8 +177,8 @@ export const TEXT = {
         ],
         farm: [
             { target: '[data-tab="farm"]', text: "LEVEL 4: THE FARM IS OPEN! TAP FARM.", wait: "tab-farm" },
-            { target: "#trip", text: "SEND ME ON A TRIP: PICK A ZONE, A TIME, A PLAN AND UP TO 3 PETS. LONGER TRIPS ARE LUCKIER, MORE PETS CARRY MORE LOOT. FORAGE FINDS MORE, DELVE FINDS RARER." },
-            { target: "#garden", text: "PLANT SEEDS HERE. THEY GROW ON THEIR OWN. SEEDS COME FROM CHESTS AND THE FOREST.", last: true },
+            { target: "#garden", text: "PLANT A SEED IN ANY PLOT. IT GROWS ON ITS OWN, EVEN WITH THE POPUP CLOSED." },
+            { target: "#seed-bag", text: "EVERY CHEST DROPS SEEDS. GOLD SEEDS ARE RARE, SLOW AND GROW GOLD FRUIT.", last: true },
         ],
         forge: [
             { target: '[data-tab="bag"]', text: "LEVEL 5: THE FORGE! OPEN YOUR BAG.", wait: "tab-bag" },
@@ -261,10 +263,6 @@ export const TEXT = {
     brew: "BREW",
     drink: "DRINK",
     unlockAt: (lv) => `UNLOCKS AT LV${lv}`,
-    tripPlan: (n, zone, back, luck) => `~${n} FINDS FROM ${zone}, ${luck}. BACK AT ${back}.`,
-    send: "SEND DIGGS",
-    sendWith: (n) => (n ? `SEND DIGGS + ${n} PET${n > 1 ? "S" : ""}` : "SEND DIGGS"),
-    luckPct: (luck) => `${Math.round(luck * 100)}% LUCK`,
     playWide: "PLAY WIDE IN A TAB",
     // The web page's side panels: what the mouse does on each tab, and short tips.
     web: {
@@ -275,7 +273,7 @@ export const TEXT = {
         mouse: {
             slot: ["CLICK SPIN, CLICK AGAIN IN THE GREEN", "CLICK THE BET TO TYPE ANY AMOUNT", "GOLD = PERFECT: WIN x1.25 AND A FLAME"],
             mine: ["CLICK THE ROCK, OR SPAM THE KEYS", "CATCH THE GOLDEN BAT FOR A BLESSED CHEST", "SELL ABOUT A CART A MINUTE"],
-            farm: ["PICK A ZONE, A TIME AND A PLAN", "SEAT UP TO 3 PETS FOR MORE LOOT", "PLANT SEEDS, COME BACK LATER"],
+            farm: ["CLICK A SEED TO PLANT IT IN A PLOT", "HARVEST WHEN IT'S RIPE", "EVERY CHEST DROPS SEEDS"],
             bag: ["CLICK AN ITEM: WHAT IT MAKES, SCRAP IT", "FORGE: GEAR, STARS AND BREWS", "STARS CAN CRACK. FEELING LUCKY?"],
         },
         tips: [
@@ -284,7 +282,7 @@ export const TEXT = {
             "EVERY BET SPIN HAS A 10% CHEST, WHATEVER THE BET.",
             "DUMP MORE THAN A CART A MINUTE AND THE ORE PRICE SLIDES.",
             "Q FIRES EVERY READY PET SKILL AT ONCE.",
-            "LONGER TRIPS ARE LUCKIER. DELVE FOR RARE, FORAGE FOR MORE.",
+            "EVERY CHEST DROPS SEEDS. A GOLD SEED GROWS GOLD FRUIT.",
             "BURN NEVER RESETS: EVERY COIN YOU BET COUNTS FOREVER.",
         ],
         saves: "YOUR PROGRESS SAVES IN THIS BROWSER. BACK IT UP IN SETTINGS.",
@@ -338,27 +336,13 @@ export const TEXT = {
     scrapOne: "SCRAP 1",
     scrapExtra: (n) => `EXTRA ${n}`,
     scrapAll: (n) => `ALL ${n}`,
-    stanceNote: (s) => (s.rolls === 1 && s.luck === 1 ? "BALANCED" : s.rolls > 1 ? `MORE x${s.rolls}` : `RARER x${s.luck}`),
-    partyTitle: "PETS ALONG",
-    partyTier: ["DIGGS ALONE: x1 FINDS", "1 PET: x1.5 FINDS", "2 PETS: x2.2 FINDS. NICE", "3 PETS: x3.2 FINDS. HUGE"],
-    partyRemove: "LEAVE BEHIND",
-    partyTeam: "ON YOUR TEAM: LEAVES IT FOR THE TRIP",
-    partyNone: "BUY PETS (EVEN A CHEAP BUDDY) TO BRING THEM ALONG FOR MORE FINDS.",
-    petAway: (zone, clock) => (clock ? `ON A TRIP: ${zone}, BACK IN ${clock}` : `BACK FROM ${zone}: COLLECT IN FARM`),
-    petDetail: "DETAIL",
-    petBusy: "ON A TRIP",
-    collect: "COLLECT LOOT",
-    recall: "CALL BACK EARLY",
-    recallSure: (n) => `TAP AGAIN: KEEP ~${n} FINDS`,
-    tripDone: "BACK! COLLECT YOUR LOOT",
-    backIn: (clock) => `BACK IN ${clock}`,
-    diggsBack: "DIGGS IS BACK!",
-    backEarly: "BACK EARLY",
-    nothingFound: "NOTHING. DIGGS WAS AURA FARMING.",
-    tripAway: (zone) => `DIGGS IS BACK FROM ${zone}`,
     empty: "EMPTY",
-    noSeeds: "NO SEEDS. TRY CHESTS OR THE FOREST.",
+    noSeeds: "NO SEEDS: OPEN A CHEST",
     ripe: "RIPE!",
+    growTime: ([lo, hi]) => `GROWS ${clockRange(lo)}-${clockRange(hi)}`,
+    plantedFor: (clock) => `READY IN ${clock}`,
+    plantSeed: (name) => `PLANT A ${name}`,
+    seedsFrom: "EVERY CHEST DROPS SEEDS",
     harvest: "HARVEST",
     harvestAll: "HARVEST ALL",
     cropsReady: (n) => `${n} CROP${n > 1 ? "S" : ""} READY TO HARVEST`,

@@ -1,4 +1,4 @@
-import { SYMBOLS, EASY_KEEP, BET, PET_REEL, TIMING, LEVELS, MINE, BURN, COSMIC, LUCK, GEMS, UNLOCKS, FARM, BREW_FX } from "./config.js";
+import { SYMBOLS, EASY_KEEP, BET, PET_REEL, TIMING, LEVELS, MINE, BURN, COSMIC, LUCK, GEMS, UNLOCKS, BREW_FX } from "./config.js";
 import { bonus } from "./items.js";
 
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -243,7 +243,6 @@ export function unlocksAt(level) {
     const list = [];
     if (betCap(level) > betCap(level - 1)) list.push(`BET ${formatNumber(betCap(level))}`);
     UNLOCKS.filter((u) => u.level === level).forEach((u) => list.push(u.name));
-    FARM.zones.filter((z) => z.level === level && level > 1).forEach((z) => list.push(`${z.name} TRIPS`));
     return list;
 }
 

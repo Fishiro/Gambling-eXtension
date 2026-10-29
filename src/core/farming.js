@@ -1,9 +1,8 @@
-import { FARM, ITEMS, LUCK } from "./config.js";
+import { FARM } from "./config.js";
 import * as items from "./items.js";
-import { pickWeighted } from "./luck.js";
 
-// Pure expedition + garden logic. Nothing ticks: every result comes from a start timestamp and a stored seed,
-// so reopening the popup always shows the same outcome.
+// Pure garden logic. Nothing ticks: a plot is a seed, a plant time, a rolled grow time and a stored seed for its
+// harvest, so reopening the popup always shows the same outcome.
 
 const MIN = 60 * 1000;
 
@@ -20,103 +19,51 @@ export function seeded(seed) {
     };
 }
 
-export const zoneById = (id) => FARM.zones.find((z) => z.id === id);
+export const SEEDS = Object.keys(FARM.crops);
 
-export const isZoneOpen = (state, zone) => state.level >= zone.level;
-
-// The trip length a stored trip runs on (older saves may point past the current list).
-const planOf = (t) => FARM.trips[Math.min(t.trip, FARM.trips.length - 1)];
-
-// How DIGGS spends the trip (older trips have none: STEADY).
-export const stanceById = (id) => FARM.stances.find((s) => s.id === id) ?? FARM.stances[0];
-
-// Pets out with DIGGS. They leave the team for the trip and can't be equipped until it is collected.
-export const tripPets = (state) => state.trip?.pets ?? [];
-export const isAway = (state, id) => tripPets(state).includes(id);
-export const partyMult = (pets) => FARM.party[Math.min(pets, FARM.party.length - 1)];
-
-export function startTrip(state, zoneId, tripIndex, pets = [], stanceId = FARM.stances[0].id, now = Date.now()) {
-    if (state.trip || !isZoneOpen(state, zoneById(zoneId))) return false;
-    const party = [...new Set(pets)].filter((id) => state.pets.owned.includes(id)).slice(0, FARM.party.length - 1);
-    state.pets.team = state.pets.team.filter((id) => !party.includes(id));
-    if (party.includes("spinny")) state.auto = false;
-    state.trip = { zone: zoneId, trip: tripIndex, at: now, seed: newSeed(), pets: party, stance: stanceById(stanceId).id };
-    return true;
+// A crop's grow time in whole minutes, rolled once when it goes in.
+export function rollMinutes(seedId, rand = Math.random) {
+    const [lo, hi] = FARM.crops[seedId].minutes;
+    return lo + Math.floor(rand() * (hi - lo + 1));
 }
 
-export function tripStatus(state, now = Date.now()) {
-    const t = state.trip;
-    if (!t) return null;
-    const plan = planOf(t);
-    const total = plan.minutes * MIN;
-    const elapsed = Math.max(0, now - t.at);
-    const stance = stanceById(t.stance);
-    return {
-        zone: zoneById(t.zone),
-        plan,
-        stance,
-        luck: tripLuck(plan, stance),
-        pets: t.pets ?? [],
-        progress: Math.min(1, elapsed / total),
-        left: Math.max(0, total - elapsed) / 1000,
-        done: elapsed >= total,
-    };
-}
+// GROW SPEED shortens every plot, never below a fifth of its rolled time. Plots from older saves have no rolled
+// time and grow for the crop's longest.
+const growMs = (state, plot) => (plot.min ?? FARM.crops[plot.seed].minutes[1]) * MIN * Math.max(0.2, 1 - items.bonus(state, "grow"));
 
-export const tripLuck = (plan, stance = FARM.stances[0]) => (plan.luck ?? 1) * stance.luck;
-
-export const tripRolls = (state, plan, pets = 0, progress = 1, stance = FARM.stances[0]) =>
-    Math.floor(plan.rolls * stance.rolls * partyMult(pets) * progress * (1 + items.bonus(state, "loot")));
-
-// A zone's loot table bent by luck: rarer finds weigh luck^(rank * luckCurve) times more.
-const RANK = Object.fromEntries(LUCK.rarities.map((r, i) => [r.id, i]));
-export const luckyLoot = (zone, luck) => zone.loot.map(([id, w]) => [id, w * luck ** (RANK[ITEMS[id].rarity] * FARM.luckCurve)]);
-
-// Collect a finished trip, or recall early and keep the share already found.
-export function collectTrip(state, now = Date.now()) {
-    const status = tripStatus(state, now);
-    if (!status) return null;
-    const rand = seeded(state.trip.seed);
-    const table = luckyLoot(status.zone, status.luck);
-    const loot = {};
-    for (let i = 0; i < tripRolls(state, status.plan, status.pets.length, status.progress, status.stance); i++) {
-        const [id] = pickWeighted(table, ([, w]) => w, rand);
-        loot[id] = (loot[id] ?? 0) + 1;
-    }
-    items.addAll(state, loot);
-    state.trip = null;
-    return { zone: status.zone, loot, pets: status.pets, early: !status.done };
-}
-
-const growMs = (state, seedId) => FARM.crops[seedId].minutes * MIN * Math.max(0.2, 1 - items.bonus(state, "grow"));
-
-// Sandy's time skip: move the expedition and every growing plot `ms` closer to done.
+// Sandy's time skip: move every growing plot `ms` closer to done.
 export function skipTime(state, ms) {
-    if (state.trip) state.trip.at -= ms;
     state.garden.forEach((plot) => plot && (plot.at -= ms));
 }
 
-export function plant(state, index, seedId, now = Date.now()) {
-    if (state.garden[index] || !items.spend(state, { [seedId]: 1 })) return false;
-    state.garden[index] = { seed: seedId, at: now, roll: newSeed() };
+export function plant(state, index, seedId, now = Date.now(), rand = Math.random) {
+    if (!FARM.crops[seedId] || state.garden[index] !== null || !items.spend(state, { [seedId]: 1 })) return false;
+    state.garden[index] = { seed: seedId, at: now, min: rollMinutes(seedId, rand), roll: newSeed() };
     return true;
 }
 
 export function plotStatus(state, index, now = Date.now()) {
     const plot = state.garden[index];
     if (!plot) return null;
-    const total = growMs(state, plot.seed);
+    const total = growMs(state, plot);
     const elapsed = Math.max(0, now - plot.at);
-    return { seed: plot.seed, progress: Math.min(1, elapsed / total), left: Math.max(0, total - elapsed) / 1000, ready: elapsed >= total };
+    return { seed: plot.seed, total: total / 1000, progress: Math.min(1, elapsed / total), left: Math.max(0, total - elapsed) / 1000, ready: elapsed >= total };
 }
+
+// GARDEN YIELD scales each yield line that lands: x1.35 on 3 herbs is 4 herbs plus a 5% chance at a fifth.
+const scaled = (n, mult, rand) => {
+    const raw = n * mult;
+    return Math.floor(raw) + (rand() < raw % 1 ? 1 : 0);
+};
 
 export function harvest(state, index, now = Date.now()) {
     const status = plotStatus(state, index, now);
     if (!status?.ready) return null;
     const rand = seeded(state.garden[index].roll);
+    const mult = 1 + items.bonus(state, "yield");
     const loot = {};
     FARM.crops[status.seed].yields.forEach(([id, n, chance]) => {
-        if (rand() < chance) loot[id] = (loot[id] ?? 0) + n;
+        if (rand() < chance) loot[id] = (loot[id] ?? 0) + scaled(n, mult, rand);
     });
     items.addAll(state, loot);
     state.garden[index] = null;
@@ -125,4 +72,4 @@ export function harvest(state, index, now = Date.now()) {
 
 export const readyPlots = (state, now = Date.now()) => state.garden.filter((_, i) => plotStatus(state, i, now)?.ready).length;
 
-export const needsAttention = (state, now = Date.now()) => !!tripStatus(state, now)?.done || readyPlots(state, now) > 0;
+export const needsAttention = (state, now = Date.now()) => readyPlots(state, now) > 0;

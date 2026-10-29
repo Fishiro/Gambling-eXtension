@@ -57,13 +57,13 @@ const slotTab = document.querySelector('[data-tab="slot"]');
 const history = createHistory();
 const achievements = createAchievements();
 const bag = createBag();
-const pets = createPets({ reveal: () => openBag("pets"), showFarm: () => setTab("farm") });
+const pets = createPets({ reveal: () => openBag("pets") });
 const buffs = createBuffs();
 const chests = createChests({ onLevelUp: celebrateLevel, onOpened: history.record });
 createSkins();
 const armory = createArmory();
 const vault = createVault();
-const farm = createFarm({ reveal: chests.reveal, onLoot: bag.noteNew, replant: pets.replant });
+const farm = createFarm({ onLoot: bag.noteNew, replant: pets.replant });
 const slot = createSlot({
     onChest: chests.gain,
     onCosmic: chests.cosmic,
@@ -244,8 +244,6 @@ function welcomeBack() {
     if (nap) lines.push(`${svgIcon("cat", 2)}${TEXT.napAway(econ.formatNumber(nap))}`);
     const bats = pets.catchWhileAway(state.lastSeen);
     if (bats) lines.push(`${svgIcon("banana", 2)}${TEXT.petsAway(bats)}`);
-    const trip = farming.tripStatus(state);
-    if (trip?.done) lines.push(`${svgIcon(trip.zone.icon, 2)}${TEXT.tripAway(trip.zone.name)}`);
     const crops = farming.readyPlots(state);
     if (crops) lines.push(`${svgIcon("sprout", 2)}${TEXT.cropsReady(crops)}`);
     state.fun.opens = (state.fun.opens ?? 0) + 1;
@@ -362,7 +360,7 @@ function collapse() {
 // Button feel: a sound per kind of button, a pixel ripple, a spring on release,
 // and the gold frame flares for the buttons that spend or earn.
 const PRESS = {
-    major: "#btn-spin, #btn-sell, #btn-chest, #btn-chest-all, #loot-all, [data-action='buy'], [data-action='upgrade'], [data-action='brew'], [data-action='send'], [data-action='collect'], [data-action='harvest'], [data-action='harvestAll'], [data-action='skill'], [data-action='use']",
+    major: "#btn-spin, #btn-sell, #btn-chest, #btn-chest-all, #loot-all, [data-action='buy'], [data-action='upgrade'], [data-action='brew'], [data-action='harvest'], [data-action='harvestAll'], [data-action='skill'], [data-action='use']",
     nav: ".tab, .seg button, [data-menu], [data-bag]",
 };
 
@@ -466,7 +464,7 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("keyup", (e) => e.code === "Space" && e.preventDefault());
 
 // Once a second while visible: clock-driven effects, then the live readouts. Anything that must keep
-// going while the popup is closed (ore, cooldowns, trips) is derived from timestamps instead.
+// going while the popup is closed (ore, cooldowns, crops) is derived from timestamps instead.
 setInterval(() => {
     if (document.hidden) return;
     if (!tour.active()) {

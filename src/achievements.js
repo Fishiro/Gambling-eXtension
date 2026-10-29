@@ -82,11 +82,10 @@ const LIST = [
     ["potion", "MY POTIONS ARE TOO STRONG", "DRINK 10 BREWS", (s, f) => f.brews >= 10],
     ["thumb", "GREEN THUMB", "HARVEST 10 TIMES", (s, f) => f.harvests >= 10],
     ["farmville", "FARMVILLE VETERAN", "HARVEST 100 TIMES", (s, f) => f.harvests >= 100],
-    ["wander", "WANDERLUST", "FINISH AN EXPEDITION", (s, f) => f.trips >= 1],
-    ["tourist", "TOURIST", "FINISH A TRIP IN EVERY ZONE", (s, f) => FARM.zones.every((z) => f[`trip_${z.id}`])],
-    ["abandon", "ABANDONMENT ISSUES", "SEND DIGGS ON THE LONGEST TRIP (4 HOURS)", (s, f) => f.trip8h >= 1],
-    ["helicopter", "HELICOPTER PARENT", "CALL DIGGS BACK EARLY 5 TIMES", (s, f) => f.recalls >= 5],
-    ["nap", "DIGGS NAPPED", "COME BACK FROM A TRIP WITH NOTHING", (s, f) => f.naps >= 1, true],
+    ["sower", "SOWER", "PLANT 25 SEEDS", (s, f) => f.plants >= 25],
+    ["fullbloom", "FULL BLOOM", "HAVE EVERY PLOT GROWING AT ONCE", (s) => s.garden.every(Boolean)],
+    ["patience", "WORTH THE WAIT", `PLANT A GOLD SEED THAT TAKES THE FULL ${FARM.crops.goldseed.minutes[1] / 60} HOURS`, (s, f) => f.slowGold >= 1],
+    ["microwave", "MICROWAVE CROP", "PLANT A SEED THAT GROWS IN 1 MINUTE", (s, f) => f.minuteCrop >= 1, true],
     ["hoarder", "HOARDER", "HOLD 500 ITEMS AT ONCE", (s) => Object.values(s.bag).reduce((a, n) => a + n, 0) >= 500],
     ["spacerock", "SPACE ROCK", "FIND A METEORITE", (s) => "meteor" in s.bag],
     ["clicks", "YOUR MOUSE FILED A COMPLAINT", "CLICK 2,000 BUTTONS", (s, f) => f.clicks >= 2000],
@@ -140,7 +139,7 @@ const LIST = [
     ["timelord", "TIME LORD", "USE TIME SKIP 10 TIMES", (s, f) => f.skill_hourglass >= 10],
     ["pat5k", "LOVE LANGUAGE: TOUCH", "PET YOUR PET 5,000 TIMES", (s, f) => f.pats >= 5000],
     ["harvest500", "AGRICULTURAL EMPIRE", "HARVEST 500 TIMES", (s, f) => f.harvests >= 500],
-    ["trips50", "FREQUENT FLYER", "FINISH 50 EXPEDITIONS", (s, f) => f.trips >= 50],
+    ["plant500", "SEED BANK", "PLANT 500 SEEDS", (s, f) => f.plants >= 500],
     ["goldfruit", "FORBIDDEN FRUIT", "GROW A GOLD FRUIT", (s) => "goldfruit" in s.bag],
     ["drip", "DRIP OVERLOAD", "OWN EVERY SKIN", (s) => SKINS.every((k) => s.skins.owned.includes(k.id))],
     ["loud", "MY EARS!", "TURN THE VOLUME UP TO 200%", (s) => s.settings.volume >= 200],
@@ -178,8 +177,6 @@ const LIST = [
     ["gearAll5", "FULLY FORGED", "EVERY PIECE OF GEAR AT LV5", (s) => GEAR.every((g) => (s.gear[g.id] ?? 0) >= GEAR_MAX)],
     ["setAll", "FASHION WEEK", "SWITCH ON EVERY GEAR SET", (s) => GEAR_SETS.every((set) => set.gear.every((id) => (s.gear[id] ?? 0) >= GEAR_MAX + 3))],
     ["ascendAll", "ASCENSION COMPLETE", "EVERY PIECE OF GEAR AT 5 STARS", (s) => GEAR.every((g) => (s.gear[g.id] ?? 0) >= GEAR_MAX + 5), true],
-    ["houston", "HOUSTON, WE HAVE LOOT", "FINISH A TRIP TO SPACE", (s, f) => f.trip_space >= 1],
-    ["trips200", "DIGGS NEEDS A VACATION", "FINISH 200 EXPEDITIONS", (s, f) => f.trips >= 200],
     ["goldfruit10", "GOLDEN HARVEST", "HARVEST 10 GOLD FRUITS", (s, f) => f.goldfruits >= 10],
     ["junk10", "ONE MAN'S TRASH", "FIND 10 KINDS OF JUNK", (s) => JUNK.filter((id) => id in s.bag).length >= 10],
     ["junkAll", "...IS ANOTHER MAN'S TRASH TOO", "FIND EVERY KIND OF JUNK", (s) => JUNK.every((id) => id in s.bag)],
@@ -426,12 +423,10 @@ export function createAchievements() {
         f().goldfruits = (f().goldfruits ?? 0) + (loot.goldfruit ?? 0);
         bump("harvests");
     });
-    on("trip", ({ zone, minutes, early, found }) => {
-        if (!found) f().naps = 1;
-        if (early) return bump("recalls");
-        f()[`trip_${zone}`] = 1;
-        if (minutes >= 240) f().trip8h = 1;
-        bump("trips");
+    on("plant", ({ seed, minutes }) => {
+        if (minutes === 1) f().minuteCrop = 1;
+        if (seed === "goldseed" && minutes === FARM.crops.goldseed.minutes[1]) f().slowGold = 1;
+        bump("plants");
     });
 
     return { bump, best, check, spin, showList };
@@ -445,7 +440,7 @@ const TAGS = [
     ["LOOT", "O", "bat bat100 chest chest500 chest2k chest25 legendChest junk10 junkAll completionist"],
     ["WEALTH", "G", "lv5 lv15 lv20 lv30 lv50 broke seven balanced million billion gems1 gems100 gems500"],
     ["PETS + SKINS", "R", "pet1 pets5 pets10 petAll skills100 rock fruit fluff napper clock chester dicey timelord sixseven pat50 pat500 pat5k swap toast office meta drip"],
-    ["FARM + FORGE", "g", "wander tourist houston trips50 trips200 goldfruit10 brewAll brew50 midas gearAll5 setAll ascendAll abandon helicopter nap thumb farmville harvest500 goldfruit craft overkill loaded star5 setOn potion hoarder spacerock"],
+    ["FARM + FORGE", "g", "sower plant500 fullbloom patience microwave goldfruit10 brewAll brew50 midas gearAll5 setAll ascendAll thumb farmville harvest500 goldfruit craft overkill loaded star5 setOn potion hoarder spacerock"],
     ["ENDGAME", "v", "vipSilver vipGold vipPlat blackcard vault1 vault5 vault11 vault20 relicLeg relic3 relicCase rerolls dust100"],
     ["MEMES", "B", "lockIn cooked letHimCook crashOut delulu chillGuy mogged fanumTax ragebait ohio unc rentFree yapper clanker slop nihilist grrMondays octoberMe day67 demure wRizz sevenSquared nice leet coins67 clock67 combo67 stonks notStonks damage joever soBack sheesh luckyNotGood skillIssue goated hesitation dejavu npc sigma speedrun grassMyth afk insomnia friday13 clickbait lost wolf mainChar silent petEnough richRocks"],
     ["JUST BECAUSE", "P", "dj mute loud zen backup esc manual history reset clicks keys impatient nothing ten half all"],

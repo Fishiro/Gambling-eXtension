@@ -3300,102 +3300,131 @@ body.is-calm::after {
 #tab-farm .card-title {
     margin: 0;
 }
-#trip {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.zones {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: calc(var(--b) * 2 + 6px);
-    margin: var(--b);
-}
-.zone {
-    justify-content: flex-start;
-    gap: var(--s2);
-    padding: var(--s1) var(--s2) var(--s2);
-    text-align: left;
-}
-/* The zone's drops: one row of item icons, each in the same fixed box. */
-.zone-drops {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 3px;
-}
-.zone-loot {
-    display: inline-flex;
-}
-.zone[aria-pressed="true"] {
-    background: var(--line);
-    outline: 2px solid var(--green);
-    outline-offset: 2px;
-}
-.zone-main {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-.zone:disabled .zone-drops {
-    color: var(--muted);
-}
-.trip-run {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.trip-art {
-    display: flex;
-    animation: bounce 0.8s steps(2) infinite;
-}
-.trip-run[data-done="true"] small {
-    color: var(--gold);
-    animation: blink 0.6s steps(2) infinite;
-}
 .plots {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--s3);
 }
+/* A plot: soil tile with the crop on top, its state under it, then its button or progress bar. Fixed height so
+   planting or harvesting never moves the grid. */
 .plot {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--s2);
-    min-height: 48px;
+    justify-content: space-between;
+    gap: var(--s1);
+    height: 128px;
     padding: var(--s2);
     color: var(--muted);
     background: var(--bg);
-    box-shadow: 0 0 0 2px #6b3e2e;
-}
-.plot .bar {
-    flex: 1;
-    height: 6px;
-}
-.plot > small:first-of-type {
-    flex: 1;
-}
-.plot .bar ~ small {
-    flex: none;
+    box-shadow: 0 0 0 2px #6b3e2e, inset 0 -14px 0 #3a2418;
 }
 .plot-art {
     display: flex;
 }
+.plot-label {
+    min-height: 1.2em;
+}
+.plot .bar {
+    width: 100%;
+    height: 6px;
+}
 .plot[data-state="empty"] .plot-art {
-    opacity: 0.4;
+    opacity: 0.35;
+}
+.plot[data-state="growing"] {
+    color: var(--green);
+}
+.plot[data-state="growing"][data-seed="goldseed"] {
+    color: var(--gold);
 }
 .plot[data-state="ready"] {
     color: var(--gold);
-    box-shadow: 0 0 0 2px var(--gold);
+    box-shadow: 0 0 0 2px var(--gold), inset 0 -14px 0 #3a2418;
 }
 .plot[data-state="ready"] .plot-art {
     animation: bounce 0.5s steps(2) infinite;
 }
 .plot-actions {
     display: flex;
+    justify-content: center;
+    gap: 6px;
+    min-height: 26px;
+}
+.plot-seed {
+    padding: 3px 5px 6px;
+}
+.plot .primary-sm {
+    padding: 3px 8px 6px;
+}
+.harvest-all {
+    justify-content: center;
+    margin-top: var(--s3);
+    background: var(--green);
+}
+/* The seed bag: one row per seed (count, grow time, what it can give), then the garden stats. */
+.seed-bag {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+}
+.seed-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2);
+    background: var(--bg);
+    box-shadow: 0 0 0 2px var(--line);
+}
+.seed-row .row-icon {
+    width: auto;
+}
+.seed-row[data-out] .row-icon {
+    opacity: 0.4;
+}
+.seed-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.seed-main em {
+    font-style: normal;
+    color: var(--gold);
+}
+.seed-main small {
+    color: var(--muted);
+}
+.seed-drops {
+    display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 3px;
+    max-width: 40px;
+    margin-left: auto;
+}
+.seed-drop {
+    display: inline-flex;
+}
+.garden-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.garden-stats div {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+}
+.garden-stats b {
+    color: var(--green);
+}
+.seed-source {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    margin: 0;
+    color: var(--gold);
 }
 .row[data-stars="true"] {
     box-shadow: 0 0 0 2px var(--gold-dk);
@@ -3576,13 +3605,6 @@ body.is-calm::after {
 }
 .set-card[data-on="true"] b {
     color: var(--gold);
-}
-.plot .primary-sm {
-    padding: 3px 5px 6px;
-}
-.harvest-all {
-    justify-content: center;
-    background: var(--green);
 }
 
 /* ---- reset: the whole app shakes, cracks and drops as one block ---- */
@@ -3799,114 +3821,18 @@ body.is-calm::after {
     }
 }
 
-/* ---- expedition party: seats for pets riding along, then the owned pets to pick from (farm.js) ---- */
-.party {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: var(--s2);
-}
-.party-head {
-    display: flex;
-    align-items: baseline;
-    gap: var(--s2);
-}
-.party-head b {
-    color: var(--gold);
-}
-.party-head small {
-    margin-left: auto;
-    color: var(--muted);
-}
-.party-head small[data-tier="1"] {
-    color: var(--green);
-}
-.party-head small[data-tier="2"] {
-    color: var(--gold);
-}
-.party-head small[data-tier="3"] {
-    color: var(--orange);
-    animation: blink 0.6s steps(2) infinite;
-}
-.party-seats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-}
-.party-seat {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 34px;
-    color: var(--line-hi);
-    background: var(--bg);
-    outline: 2px dashed var(--line-hi);
-    outline-offset: -4px;
-}
-.party-seat.is-on {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--gold);
-}
-.party-pool {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-.party-pet {
-    position: relative;
-    width: 34px;
-    height: 34px;
-    padding: 0 0 3px;
-}
-.party-pet[data-team]::after {
-    content: "";
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    width: 6px;
-    height: 6px;
-    background: var(--cyan);
-    box-shadow: 0 0 0 2px var(--ink);
-}
-.trip-time {
-    flex-direction: column;
-    gap: 1px;
-    line-height: 1.1;
-}
-.trip-time small {
-    font-size: var(--fs-0);
-    color: var(--muted);
-}
-.trip-time.is-active small {
-    color: inherit;
-}
-.trip-crew {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
 /* "No seeds" sits in its own box below the plots instead of hugging them. */
 .garden-empty {
     display: flex;
     align-items: center;
     gap: var(--s2);
-    margin: var(--s3) 0 0;
+    margin: 0;
     padding: var(--s2) var(--s3);
     color: var(--muted);
     background: var(--bg);
     outline: 2px dashed var(--line-hi);
     outline-offset: -2px;
 }
-.pet-card[data-state="away"] {
-    box-shadow: 0 0 0 2px var(--green-dk);
-}
-.pet-card[data-state="away"] .pet-art {
-    opacity: 0.55;
-}
-.pet-card[data-state="away"] .pet-cd {
-    color: var(--green);
-}
-
 /* ---- combo brews: their own heading in the forge; secret ones show only what to find (bag.js) ---- */
 .list-sub {
     margin: var(--s2) 0 0;
