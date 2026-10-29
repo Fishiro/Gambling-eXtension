@@ -69,18 +69,19 @@ export const MINE = {
     },
 };
 
-// The ore market: a price multiplier that moves once a tick. A phase pushes it (drift + noise) while
-// `revert` pulls it back toward x1. Selling piles up supply for the current tick: the first demandUpTo of a
-// cart is free and nudges the next tick up; past that the price sinks, each extra cart harder
-// (dump * extraCarts^dumpCurve). When the tick closes, only `stick` of that dip stays.
+// The ore market: a base price that moves once a tick. A phase pushes it (drift + noise) while `revert`
+// pulls it back toward x1; a `spike` phase jumps it up by that much when it starts.
+// Glut is its own formula: selling past demandUpTo of a cart in one tick adds dump * extraCarts^dumpCurve,
+// and the price paid is base * e^-glut, so a dump sinks toward nothing (no floor). Each tick keeps glutKeep
+// of the glut. A light sell (up to demandUpTo of a cart) nudges the next tick up instead.
 export const MARKET = {
     tickSeconds: 60,
     history: 30,
     floor: 0.25,
-    cap: 3,
-    dump: 0.1,
-    dumpCurve: 1.5,
-    stick: 0.4,
+    cap: 3.5,
+    dump: 0.25,
+    dumpCurve: 1.6,
+    glutKeep: 0.5,
     demandUpTo: 0.5,
     demandBump: 0.03,
     catchUpTicks: 240,
@@ -90,6 +91,7 @@ export const MARKET = {
         { id: "bear", name: "BEAR", weight: 22, drift: -0.05, vol: 0.04, revert: 0.1, ticks: [3, 6], color: "R" },
         { id: "boom", name: "BOOM!", weight: 8, drift: 0.2, vol: 0.06, revert: 0, ticks: [2, 3], color: "y", loud: true },
         { id: "crash", name: "CRASH!", weight: 8, drift: -0.15, vol: 0.05, revert: 0, ticks: [2, 3], color: "r", loud: true },
+        { id: "moon", name: "TO THE MOON", weight: 6, drift: 0, vol: 0.05, revert: 0.15, ticks: [2, 2], spike: [1.5, 2], color: "c", loud: true },
     ],
 };
 

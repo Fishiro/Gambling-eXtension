@@ -15,13 +15,16 @@ import { $ } from "./ui.js";
 const GRADE_COLOR = { perfect: "y", good: "G", miss: "l" };
 const FRAME_MS = { lose: 700, free: 600, near: 1000, win: 900, big: 1600, mega: 2400, jackpot: 3200, cosmic: 8000 };
 const AUTO_DELAY = { lose: 650, near: 800, free: 650, win: 900, big: 1600, mega: 2400, jackpot: 3200, cosmic: 8000 };
+// `buzz`: [px, ms] of side-to-side buzz on the machine. Every tier also lights the machine's rim (see .machine[data-buzz]).
 const TIER_FX = {
-    win: { count: 350, coins: 4, shake: 0, sound: "win" },
-    big: { count: 900, coins: 12, shake: 3, sound: "big" },
-    mega: { count: 1500, coins: 20, shake: 5, sound: "big", confetti: 1 },
-    jackpot: { count: 2400, coins: 32, shake: 7, sound: "jackpot", confetti: 2 },
-    cosmic: { count: 4000, coins: 30, shake: 12, sound: "cosmic", confetti: 4 },
+    win: { count: 350, coins: 4, buzz: [0, 700], sound: "win" },
+    big: { count: 900, coins: 12, buzz: [2, 450], sound: "big" },
+    mega: { count: 1500, coins: 20, buzz: [2, 700], sound: "big", confetti: 1 },
+    jackpot: { count: 2400, coins: 32, buzz: [3, 1000], sound: "jackpot", confetti: 2 },
+    cosmic: { count: 4000, coins: 30, buzz: [3, 1400], sound: "cosmic", confetti: 4 },
 };
+const COSMIC_PULSES = 4;
+const COSMIC_PULSE_GAP = 900;
 
 export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCosmic, keepHeat, refundLoss, bendRoll }) {
     const el = {
@@ -45,10 +48,16 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         burnNext: $("burn-next"),
     };
 
+    // While another tab is open (auto spin) the machine is hidden. The win/loss summary by the SLOT dock button
+    // belongs to main.js (reportSlotResult), so the machine's own effects stay off; rare news (lucky spin,
+    // chests, diamonds) still shows, by the SLOT button, since fx.centerOf points hidden elements there.
+    const onScreen = () => Boolean(el.machine.offsetParent);
+
     const reels = createReels($("reels"), {
         onReelTick: sfx.clack,
         onReelStop(i) {
             sfx.reel(i);
+            if (!onScreen()) return;
             const p = reels.reelCenter(i);
             fx.burst(p.x, p.y + 34, { count: 5, colors: ["w", "l"], speed: [0.8, 2], life: [10, 18], gravity: 0.08 });
         },
@@ -71,6 +80,17 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
     let autoMarkup = "";
 
     const currentBet = () => BET_STEPS[state.betIndex];
+
+    // Buzz the machine and light its rim in `tone` for `ms`. Only the machine moves, and only sideways.
+    let rimTimer = 0;
+    function buzzMachine(tone, power, ms) {
+        if (power) fx.buzz(el.machine, power, ms);
+        clearTimeout(rimTimer);
+        delete el.machine.dataset.buzz;
+        void el.machine.offsetWidth;
+        el.machine.dataset.buzz = tone;
+        rimTimer = setTimeout(() => delete el.machine.dataset.buzz, ms + 200);
+    }
 
     function setMessage(head, sub = "", tone = "") {
         countToken++;
@@ -147,6 +167,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         if (lucky) {
             setMessage(TEXT.luckySpin, TEXT.luckySpinSub(LUCK.luckySpinMult), "big");
             sfx.lucky();
+            buzzMachine("lucky", 1, 300);
             const m = fx.centerOf(el.machine);
             fx.burst(m.x, m.y, { count: 30, colors: ["y", "w", "G", "c"], speed: [2, 5], life: [24, 44] });
             fx.float(m.x, m.y - 30, TEXT.luckySpin, { color: "y", size: 24, life: 60 });
@@ -173,7 +194,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
             grade = "perfect";
         }
         showGrade(grade, timedOut && !rocked);
-        if (rocked) {
+        if (rocked && onScreen()) {
             const p = meter.cursorPoint();
             fx.float(p.x, p.y - 32, TEXT.rockSays, { color: "l", life: 60 });
         }
@@ -197,22 +218,19 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         sfx.cosmicBuild();
         const m = fx.centerOf(el.machine);
         fx.cosmicStorm(m.y, 7200);
-        fx.shake(document.body, 3, 3800);
+        // The stars align in rising pulses, like a phone ringing harder each time.
+        for (let i = 0; i < COSMIC_PULSES; i++) setTimeout(() => buzzMachine("cosmic", 1 + Math.floor(i / 2), 300 + i * 80), i * COSMIC_PULSE_GAP);
     }
 
     function showGrade(grade, timedOut) {
+        ({ perfect: sfx.perfect, good: sfx.good, miss: sfx.miss })[grade]();
+        if (!onScreen()) return;
         const p = meter.cursorPoint();
         fx.float(p.x, p.y - 16, timedOut ? TEXT.grade.auto : TEXT.grade[grade], { color: GRADE_COLOR[grade], life: 50 });
-        if (grade === "perfect") {
-            sfx.perfect();
-            fx.burst(p.x, p.y, { count: 18, colors: ["y", "w", "G"], speed: [1.5, 3.5] });
-        } else if (grade === "good") {
-            sfx.good();
-            fx.burst(p.x, p.y, { count: 8, colors: ["G", "g", "w"], speed: [1, 2.5] });
-        } else {
-            sfx.miss();
-        }
+        if (grade === "perfect") fx.burst(p.x, p.y, { count: 18, colors: ["y", "w", "G"], speed: [1.5, 3.5] });
+        else if (grade === "good") fx.burst(p.x, p.y, { count: 8, colors: ["G", "g", "w"], speed: [1, 2.5] });
     }
+
 
     function settle(grade, outcome, symbols) {
         const { bet, heat, lucky, hot } = round;
@@ -242,7 +260,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         reels.highlight(outcome.cells);
         if (gems) {
             const m = fx.centerOf(el.machine);
-            fx.float(m.x, m.y + 30, TEXT.gemsGained(gems), { color: "c", size: 16, life: 110 });
+            fx.float(m.x, m.y + (onScreen() ? 30 : -24), TEXT.gemsGained(gems), { color: "c", size: 16, life: 110 });
         }
         if (levels.length) onLevelUp(levels);
         onResult({ tier, win, bet, grade, symbols, kind: outcome.kind });
@@ -282,7 +300,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         if (tier === "near") {
             setMessage(randomNearLine(), randomLoseLine().sub, "near");
             sfx.near();
-            fx.shake(el.machine, 2);
+            buzzMachine("near", 1, 220);
             return;
         }
 
@@ -292,8 +310,13 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         countUp(prefix, win, cfg.count, tier);
         fx.pop(el.headline);
         sfx[cfg.sound]();
-        if (cfg.shake) fx.shake(el.machine, cfg.shake, 400);
         if (cfg.confetti) fx.confetti(cfg.confetti);
+        if (!onScreen()) {
+            // Star chests are handed out in presentStars, so it still runs; it skips its own visuals.
+            if (outcome.stars && tier !== "cosmic") presentStars(outcome);
+            return;
+        }
+        buzzMachine(tier, ...cfg.buzz);
         outcome.cells.forEach((i) => {
             const p = reels.reelCenter(i);
             fx.coinShower(p.x, p.y, Math.ceil(cfg.coins / outcome.cells.length));
@@ -317,6 +340,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
             fx.cosmicStorm(fx.centerOf(el.machine).y, 1800);
             onChest(el.machine, COSMIC.double.chestBoost);
         }
+        if (!onScreen()) return;
         outcome.cells.forEach((i) => {
             const p = reels.reelCenter(i);
             fx.burst(p.x, p.y, { count: double ? 40 : 22, colors: ["v", "c", "w", "y"], speed: [1.5, double ? 5 : 3.5], life: [24, 48] });
@@ -339,6 +363,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
             state.burnChests++;
             onChest(el.burn, BURN.overflowChestBoost);
         }
+        if (!onScreen()) return;
         const from = fx.centerOf(el.spin);
         const to = fx.centerOf(el.burnValue);
         fx.burst(from.x, from.y - 10, { count: 8, colors: ["R", "y", "r"], angle: Math.atan2(to.y - from.y, to.x - from.x), spread: 0.5, speed: [4, 7], gravity: 0, drag: 0.93, life: [14, 22] });

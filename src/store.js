@@ -40,8 +40,8 @@ const fresh = () => ({
     achv: {},
     fun: {},
     // Ore market: price multiplier, current phase and ticks left in it, start of the current tick,
-    // ore sold during it and the price that knocked off, and the recent closing prices.
-    market: { price: 1, phase: "calm", left: 3, at: Date.now(), sold: 0, dumped: 0, hist: [] },
+    // ore sold during it, the glut that selling piled up, and the recent closing prices.
+    market: { price: 1, phase: "calm", left: 3, at: Date.now(), sold: 0, glut: 0, hist: [] },
     lastSeen: Date.now(),
 });
 

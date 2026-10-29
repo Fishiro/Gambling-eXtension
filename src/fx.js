@@ -348,12 +348,27 @@ export function shake(el, power = 3, duration = 280) {
     el.animate([...frames, { transform: "translate(0, 0)" }], { duration, easing: "steps(9)" });
 }
 
+// A phone-style buzz: fast left-right jitter with no vertical motion, so nothing around it seems to jump.
+export function buzz(el, power = 2, duration = 300) {
+    if (reducedMotion || !el) return;
+    const n = Math.max(4, Math.round(duration / 30));
+    const frames = Array.from({ length: n }, (_, i) => ({ transform: `translateX(${(i % 2 ? -1 : 1) * Math.max(1, Math.round(power * (1 - i / n)))}px)` }));
+    el.animate([...frames, { transform: "translateX(0)" }], { duration, easing: `steps(${n + 1})` });
+}
+
 export function pop(el) {
     if (reducedMotion || !el) return;
     el.animate([{ transform: "scale(1)" }, { transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 220, easing: "steps(4)" });
 }
 
+// Where an element sits on screen. One inside a closed tab answers with a spot just above that tab's dock
+// button, so effects from a background tab (auto spins, chests, drops) show up by their tab, not top-left.
 export const centerOf = (el) => {
+    const tab = !el.offsetParent && el.closest(".panel") && document.querySelector(`[data-tab="${el.closest(".panel").id.replace("tab-", "")}"]`);
+    if (tab?.offsetParent) {
+        const t = tab.getBoundingClientRect();
+        return { x: t.left + t.width / 2, y: t.top - 14 };
+    }
     const r = el.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 };

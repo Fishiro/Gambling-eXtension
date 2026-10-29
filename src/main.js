@@ -15,6 +15,7 @@ import { sfx, drone } from "./sound.js";
 import { createSlot } from "./slot.js";
 import { createMine } from "./mine.js";
 import { createMarket } from "./market.js";
+import { createGains } from "./gains.js";
 import { createChests } from "./chest.js";
 import { createHistory } from "./history.js";
 import { buildGuide } from "./guide.js";
@@ -72,6 +73,7 @@ const slot = createSlot({
 });
 const mine = createMine({ onLevelUp: celebrateLevel, onChest: chests.gain, onOre: (ore) => vault.damage(ore), pets });
 const market = createMarket();
+const gains = createGains();
 
 let shownCoins = state.coins;
 let coinAnim = 0;
@@ -96,6 +98,7 @@ function animateCoins() {
 
 function renderHud() {
     animateCoins();
+    gains.render();
     const need = econ.xpToNext(state.level);
     el.level.textContent = state.level;
     el.gems.textContent = econ.formatNumber(state.gems);
@@ -184,16 +187,19 @@ function reportSlotResult({ tier, win, bet, grade, symbols }) {
     if (bet) history.record({ type: "spin", tier, win, bet, grade, symbols });
     const style = RESULT_STYLE[tier];
     if (state.tab === "slot" || !style) return;
-    const p = fx.centerOf(slotTab);
+    // Just above the SLOT button, never over its label.
+    const c = fx.centerOf(slotTab);
+    const p = { x: c.x, y: c.y - slotTab.offsetHeight / 2 - 12 };
     slotTab.dataset.result = style.mood;
     clearTimeout(resultTimer);
     resultTimer = setTimeout(() => delete slotTab.dataset.result, 1100);
     if (style.coins) {
-        fx.float(p.x, p.y + 24, `+${econ.formatNumber(win)}`, { color: style.color, size: style.mood === "big" ? 24 : 16, rise: 0.5, life: 70 });
-        fx.coinShower(p.x, p.y, style.coins);
+        const label = tier === "win" ? `+${econ.formatNumber(win)}` : `${TEXT.tier[tier]} +${econ.formatNumber(win)}`;
+        fx.float(p.x, p.y, label, { color: style.color, size: style.mood === "big" ? 24 : 16, rise: 0.5, life: 80 });
+        fx.coinShower(c.x, c.y, style.coins);
         fx.pop(slotTab);
     } else {
-        fx.float(p.x, p.y + 24, `-${econ.formatNumber(bet)}`, { color: "l", rise: 0.4, life: 50 });
+        fx.float(p.x, p.y, `-${econ.formatNumber(bet)}`, { color: "l", size: 16, rise: 0.4, life: 50 });
         fx.burst(p.x, p.y, { count: 6, colors: ["r", "s", "S"], speed: [0.5, 1.5], life: [12, 20] });
         fx.shake(slotTab, 2, 220);
     }

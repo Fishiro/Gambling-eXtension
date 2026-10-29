@@ -3,13 +3,14 @@ import { state, commit } from "./store.js";
 import * as econ from "./economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";
-import * as modal from "./modal.js";
+import { toast } from "./toast.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
 import { on } from "./events.js";
 import { $ } from "./ui.js";
 
 const HOUR = 3600;
+const TOAST_MAX = 4;
 const DAY = 24 * HOUR;
 const JUNK = Object.keys(ITEMS).filter((id) => ITEMS[id].junk);
 
@@ -296,18 +297,13 @@ export function createAchievements() {
         checking = false;
     }
 
-    // Trophies unlocked close together share one popup.
+    // One toast per trophy, so nothing blocks play. A big burst shows the first few, then one "+N MORE" toast.
     function announce() {
         const batch = queue.splice(0);
-        modal.show({
-            icon: "i-trophy",
-            title: batch.length > 1 ? TEXT.trophiesUnlocked(batch.length) : TEXT.trophyUnlocked,
-            sub: TEXT.trophyReward,
-            lines: batch.map((a) => `<span class="tr-text"><b>${a.name}</b><small>${a.desc}</small></span>`),
-            ok: TEXT.trophyOk,
-            sound: sfx.trophy,
-            autoClose: Math.min(8000, 3200 + batch.length * 800),
-        });
+        sfx.trophy();
+        const shown = batch.length > TOAST_MAX ? batch.slice(0, TOAST_MAX - 1) : batch;
+        shown.forEach((a) => toast({ icon: "i-trophy", tag: TEXT.trophyUnlocked, title: a.name, text: a.desc }));
+        if (shown.length < batch.length) toast({ icon: "i-trophy", title: TEXT.trophiesMore(batch.length - shown.length), text: TEXT.trophiesMoreHint });
     }
 
     // Grouped by tag, each group with its own progress and its own #01, #02... count.

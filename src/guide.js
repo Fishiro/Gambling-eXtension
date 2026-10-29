@@ -128,9 +128,9 @@ function guideHtml() {
             "coin",
             "MARKET",
             `${flow(node(icon("ore"), "SELL"), node(market([1, 1.2, 1.5, 1.3, 0.8, 0.6, 0.9, 1.1]), "PRICE / MIN"), node(icon("coin"), "ORE x PRICE"))}
-            ${tiles(MARKET.phases.map((p) => [`<span class="g-dot" style="--c:${PALETTE[p.color]}"></span>`, color(p.color, p.name), p.drift ? `${p.drift > 0 ? "+" : ""}${pct(p.drift)} / MIN` : "STEADY"]), 5)}
+            ${tiles(MARKET.phases.map((p) => [`<span class="g-dot" style="--c:${PALETTE[p.color]}"></span>`, color(p.color, p.name), p.spike ? `+${pct(p.spike[0])}-${pct(p.spike[1])}!` : p.drift ? `${p.drift > 0 ? "+" : ""}${pct(p.drift)} / MIN` : "STEADY"]), 3)}
             <p>THE PRICE MOVES EVERY ${MARKET.tickSeconds}S AND ALWAYS DRIFTS BACK TO x1.</p>
-            <p>SELL UP TO ${pct(MARKET.demandUpTo)} OF A CART A MINUTE: +${pct(MARKET.demandBump)} NEXT MINUTE. SELL MORE AND THE PRICE SINKS AS YOU SELL, HARDER EACH CART.</p>`,
+            <p>SELL UP TO ${pct(MARKET.demandUpTo)} OF A CART A MINUTE: +${pct(MARKET.demandBump)} NEXT MINUTE. SELL MORE AND THE PRICE SINKS AS YOU SELL, FASTER EACH CART, ALL THE WAY DOWN TO PENNIES.</p>`,
         ),
         section(
             "flame",
@@ -298,15 +298,15 @@ function itemSources(id) {
 
 function marketOddsHtml() {
     const total = totalWeight(MARKET.phases);
-    const dip = (n) => MARKET.dump * Math.max(0, n - MARKET.demandUpTo) ** MARKET.dumpCurve;
-    const carts = [MARKET.demandUpTo, 1, 2, 3, 5].map((n) => [icon("i-cart", 2), `${n} CART${n === 1 ? "" : "S"} IN ONE MINUTE`, n <= MARKET.demandUpTo ? `+${MARKET.demandBump} NEXT MIN` : `PRICE -${dip(n).toFixed(2)}`, ""]);
+    const keeps = (n) => Math.exp(-(MARKET.dump * Math.max(0, n - MARKET.demandUpTo) ** MARKET.dumpCurve));
+    const carts = [MARKET.demandUpTo, 1, 2, 3, 5, 9].map((n) => [icon("i-cart", 2), `${n} CART${n === 1 ? "" : "S"} IN ONE MINUTE`, n <= MARKET.demandUpTo ? `+${MARKET.demandBump} NEXT MIN` : `PRICE x${keeps(n) < 0.01 ? keeps(n).toFixed(4) : keeps(n).toFixed(2)}`, ""]);
     return section(
         "coin",
         "MARKET",
-        `<p>A NEW MOOD IS PICKED WHEN THE LAST ONE ENDS. EACH MINUTE: PRICE += MOOD + NOISE, THEN PULLED BACK TOWARD x1. PRICE STAYS BETWEEN x${MARKET.floor} AND x${MARKET.cap}.</p>
-        ${table(MARKET.phases.map((p) => [color(p.color, p.name), rate(p.weight / total), `${p.ticks[0]}-${p.ticks[1]} MIN`, `${p.drift >= 0 ? "+" : ""}${pct(p.drift)} / MIN, PULL ${pct(p.revert)}`]))}
+        `<p>A NEW MOOD IS PICKED WHEN THE LAST ONE ENDS. EACH MINUTE: PRICE += MOOD + NOISE, THEN PULLED BACK TOWARD x1. THE MOOD ALONE KEEPS IT BETWEEN x${MARKET.floor} AND x${MARKET.cap}.</p>
+        ${table(MARKET.phases.map((p) => [color(p.color, p.name), rate(p.weight / total), `${p.ticks[0] === p.ticks[1] ? p.ticks[0] : p.ticks.join("-")} MIN`, p.spike ? `JUMPS +${pct(p.spike[0])}-${pct(p.spike[1])}, PULL ${pct(p.revert)}` : `${p.drift >= 0 ? "+" : ""}${pct(p.drift)} / MIN, PULL ${pct(p.revert)}`]))}
         ${table(carts)}
-        <p>THE DIP HITS AS YOU SELL. WHEN THE MINUTE ENDS ${pct(1 - MARKET.stick)} OF IT BOUNCES BACK, THE REST STAYS.</p>`,
+        <p>GLUT: SELLING PAST ${MARKET.demandUpTo} CART IN A MINUTE ADDS ${MARKET.dump} x EXTRA CARTS^${MARKET.dumpCurve}. YOU GET PRICE x e^-GLUT, SO DUMPS PAY PENNIES. EACH MINUTE ${pct(1 - MARKET.glutKeep)} OF THE GLUT CLEARS.</p>`,
     );
 }
 
