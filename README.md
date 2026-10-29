@@ -35,18 +35,24 @@ There is no build step. After editing, hit the reload icon on the extension card
 
 ## Layout
 
+The root holds only what runs the game or what a tool needs at the root; everything else lives in a folder.
+
 ```
-manifest.json        extension manifest
-popup.html/.css      the whole UI
-src/main.js          entry point, wires every module together
-src/core/            pure game logic, no DOM (config, economy, items, luck, farming, market, save...)
-src/store.js         live game state, saved to localStorage under "gx_state"
-src/*.js             one UI module per feature (slot, mine, farm, pets, ...)
-tests/               node --test suites (logic, saves, balance, import graph)
-index.html, web/     the web version: a wide-screen page around popup.html with key hints
-tools/               balance report, bot simulator, sprite animator (not part of the extension)
+manifest.json        the extension (Chrome needs it at the root)
+index.html           the web version (open through play.bat or npm run web)
+play.bat             double-click to play the web version
+package.json         npm scripts: test, report, web (no dependencies)
+
+src/                 the game
+  popup.html/.css    the whole UI (the extension popup)
+  main.js            entry point, wires every module together
+  core/              pure game logic, no DOM (config, economy, items, luck, farming, market, save...)
+  *.js               one UI module per feature (slot, mine, farm, pets, ...)
+assets/              fonts, and icons/ for the extension and the page
+web/                 the page around the game on the web version (side panels, scaling)
+tests/               node --test suites (logic, saves, balance, keys, sounds, file links)
+tools/               balance report, bot simulator, local web server, sprite animator
 docs/                game design document and research notes
-assets/, icons/      fonts and icons
 ```
 
 ## Tests and balance

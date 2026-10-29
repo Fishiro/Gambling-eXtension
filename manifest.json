@@ -1,20 +1,20 @@
 {
     "manifest_version": 3,
     "name": "Pixel Slots AFK",
-    "version": "1.8.0",
+    "version": "2.0.0",
     "description": "Slot + idle mine. Spin on your 5-minute break, let the mine work while you do.",
     "icons": {
-        "16": "icons/icon16.png",
-        "32": "icons/icon32.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
+        "16": "assets/icons/icon16.png",
+        "32": "assets/icons/icon32.png",
+        "48": "assets/icons/icon48.png",
+        "128": "assets/icons/icon128.png"
     },
     "action": {
-        "default_popup": "popup.html",
+        "default_popup": "src/popup.html",
         "default_title": "Pixel Slots AFK",
         "default_icon": {
-            "16": "icons/icon16.png",
-            "32": "icons/icon32.png"
+            "16": "assets/icons/icon16.png",
+            "32": "assets/icons/icon32.png"
         }
     }
 }

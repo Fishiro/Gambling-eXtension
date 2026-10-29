@@ -4,7 +4,9 @@ Chrome extension (MV3) popup game "Pixel Slots AFK": slot machine + idle mine + 
 
 ## Running
 
-Load the folder unpacked at `chrome://extensions` (Developer mode), then reload the extension after changes. `popup.html` loads `src/main.js` as a module.
+Load the folder unpacked at `chrome://extensions` (Developer mode), then reload the extension after changes. The manifest points at `src/popup.html`, which loads `src/main.js` as a module.
+
+Root = only what runs the game or what a tool needs there (`manifest.json`, `index.html`, `play.bat`, `package.json`, docs for people). Everything else goes in a folder: `src/` (game, including popup.html/css), `assets/` (fonts, `assets/icons/`), `web/`, `tests/`, `tools/`, `docs/`. `tests/imports.test.js` checks every path in the manifest, the two pages and the CSS.
 
 ## Testing
 
@@ -27,7 +29,7 @@ Load the folder unpacked at `chrome://extensions` (Developer mode), then reload 
 - `fx.js`, `sound.js`, `sprites.js`: visuals, sfx, SVG pixel icons. UI text lives in `text.js`.
 - `sound.js`: every sound is synthesized (no files) and plays on a category bus (`BUSES`: ui, slot, mine, loot, world) with its own volume in Settings. A new event gets its own sound in the right bus group; spammable sounds go in `THROTTLE`. `tests/sound.test.js` fails on any `sfx.x` that doesn't exist.
 - `src/keys.js`: every keyboard shortcut. `main.js` binds these codes; the guide, the tour and the web page describe them from this list. Add or change a key here, never only in a hint (`tests/keys.test.js` checks both).
-- `index.html` + `web/`: the web version. It runs `popup.html` unchanged in a scaled iframe and fills the side panels from `keys.js` and `TEXT.web`; it listens to the game's `gx:tab-*` events. The extension never loads it.
+- `index.html` + `web/`: the web version. It runs `src/popup.html` unchanged in a scaled iframe and fills the side panels from `keys.js` and `TEXT.web`; it listens to the game's `gx:tab-*` events. The extension never loads it.
 - `tools/sim.js`: seeded bot + slot Monte Carlo on top of `src/core`; `tools/animator.html`: standalone sprite tool.
 
 ## Conventions
@@ -35,7 +37,7 @@ Load the folder unpacked at `chrome://extensions` (Developer mode), then reload 
 - 4-space indent, double quotes, ES module imports with `.js` extension.
 - UI text is uppercase pixel style (Silkscreen font).
 - Size: the popup is Chrome's max, 800x600. Text runs on `--fs-0..3` (12/18/24/36px) and every icon goes through `svgIcon`/`svgFit`, which multiply by `sprites.UI_SCALE` (1.5), so call sites keep thinking in the original 1x scales. Use `svgFit(name, box)` wherever icons of different sprite sizes sit side by side.
-- `#boot` in popup.html is the first frame (plain HTML/CSS); main.js lifts it once the game is drawn.
+- `#boot` in src/popup.html is the first frame (plain HTML/CSS); main.js lifts it once the game is drawn.
 - Bump `version` in `manifest.json` with every change pushed:
   - `X.0.0` major: refactor / restructure.
   - `0.X.0` minor: game update, new content, security fix or major bug fix.

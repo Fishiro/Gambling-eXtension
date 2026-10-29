@@ -1,11 +1,11 @@
 @font-face {
     font-family: "Silkscreen";
-    src: url("assets/silkscreen-400.woff2") format("woff2");
+    src: url("../assets/silkscreen-400.woff2") format("woff2");
     font-weight: 400;
 }
 @font-face {
     font-family: "Silkscreen";
-    src: url("assets/silkscreen-700.woff2") format("woff2");
+    src: url("../assets/silkscreen-700.woff2") format("woff2");
     font-weight: 700;
 }
 

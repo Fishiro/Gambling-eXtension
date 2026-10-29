@@ -50,10 +50,19 @@ test("core modules never touch the DOM or storage", () => {
     }
 });
 
-test("popup.html loads the entry module", () => {
-    const html = readFileSync(join(root, "popup.html"), "utf8");
+test("the popup and the web page load files that exist", () => {
+    const html = readFileSync(join(root, "src", "popup.html"), "utf8");
     const entry = html.match(/<script[^>]+src="([^"]+)"/)[1];
-    assert.ok(existsSync(join(root, entry)), `popup.html points at missing ${entry}`);
+    assert.ok(existsSync(join(root, "src", entry)), `src/popup.html points at missing ${entry}`);
+    for (const [file, base] of [["src/popup.html", "src"], ["index.html", "."]]) {
+        const page = readFileSync(join(root, file), "utf8");
+        for (const m of page.matchAll(/(?:src|href)="([^"#:]+)"/g)) assert.ok(existsSync(join(root, base, m[1])), `${file} points at missing ${m[1]}`);
+    }
+    const css = readFileSync(join(root, "src", "popup.css"), "utf8");
+    for (const m of css.matchAll(/url\("([^"]+)"\)/g)) assert.ok(existsSync(join(root, "src", m[1])), `src/popup.css points at missing ${m[1]}`);
+    const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
+    const paths = [manifest.action.default_popup, ...Object.values(manifest.icons), ...Object.values(manifest.action.default_icon)];
+    for (const p of paths) assert.ok(existsSync(join(root, p)), `manifest.json points at missing ${p}`);
 });
 
 test("every module parses", () => {

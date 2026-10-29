@@ -5,21 +5,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Pixel Slots AFK</title>
         <meta name="description" content="Slot + idle mine pixel game. Spin on your break, let the mine work while you do." />
-        <link rel="icon" href="icons/icon32.png" />
+        <link rel="icon" href="assets/icons/icon32.png" />
         <link rel="stylesheet" href="web/shell.css" />
     </head>
     <body>
-        <!-- The web version: the extension's popup (popup.html) runs untouched in the frame, scaled to fit the
+        <!-- The web version: the extension's popup (src/popup.html) runs untouched in the frame, scaled to fit the
              screen; on wide screens the side panels list the keys for the current tab and light up as you press. -->
         <aside class="rail" id="rail-left" aria-label="Controls on this tab">
-            <h1 class="logo"><img src="icons/icon48.png" alt="" width="24" height="24" /><span id="web-title"></span></h1>
+            <h1 class="logo"><img src="assets/icons/icon48.png" alt="" width="24" height="24" /><span id="web-title"></span></h1>
             <h2 id="here-title"></h2>
             <div id="here-keys" class="keys"></div>
             <ul id="here-mouse" class="mouse"></ul>
         </aside>
         <main class="stage" id="stage">
             <div class="frame" id="frame">
-                <iframe id="game" src="popup.html" title="Pixel Slots AFK" allow="autoplay"></iframe>
+                <iframe id="game" src="src/popup.html" title="Pixel Slots AFK" allow="autoplay"></iframe>
             </div>
         </main>
         <aside class="rail" id="rail-right" aria-label="Keys that work anywhere">
