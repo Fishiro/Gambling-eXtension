@@ -126,7 +126,8 @@ export function createBag() {
             <span class="row-icon">${svgFit(gear.icon, 16)}</span>
             <div class="row-main">
                 <b>${gear.name}</b>
-                <small><em class="lv">${levelHtml(lv)}</em>${gear.label} ${statText(gear, lv)}${maxed ? "" : `${svgIcon("i-next", 1)}${statText(gear, lv + 1)}`}</small>
+                <small class="stat-name">${gear.label}</small>
+                <small><em class="lv">${levelHtml(lv)}</em>${statText(gear, lv)}${maxed ? "" : `${svgIcon("i-next", 1)}${statText(gear, lv + 1)}`}</small>
                 ${maxed ? "" : `<span class="chips">${costHtml(state, cost)}</span>`}
             </div>
             ${button}

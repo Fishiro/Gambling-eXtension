@@ -495,3 +495,15 @@ mine.renderRate();
 el.coins.textContent = econ.formatNumber(shownCoins);
 setTab(tabOpen(state.tab) ? state.tab : "slot");
 if (!state.tutorialDone) tour.start();
+
+// The boot screen (popup.html) lifts once the game is drawn and its font is in, after at least BOOT_MIN_MS so it
+// reads as a splash rather than a flicker.
+const BOOT_MIN_MS = 700;
+const BOOT_FADE_MS = 360;
+document.fonts.ready.then(() =>
+    setTimeout(() => {
+        const boot = $("boot");
+        boot.classList.add("is-done");
+        setTimeout(() => boot.remove(), BOOT_FADE_MS);
+    }, Math.max(0, BOOT_MIN_MS - performance.now())),
+);

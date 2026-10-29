@@ -421,7 +421,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         el.spinCost.innerHTML = !idle ? "" : free ? svgIcon("gift", 2) : bet ? `${svgIcon("coin", 2)}${econ.formatNumber(bet)}` : TEXT.practice;
 
         const unlocked = econ.canAutoSpin(state);
-        const markup = unlocked ? `${svgIcon("auto", 2)}AUTO` : `${svgIcon("spinny", 2)}${TEXT.autoLocked}`;
+        const markup = `${svgIcon(unlocked ? "auto" : "spinny", 2)}<small>${unlocked ? "AUTO" : TEXT.autoLocked}</small>`;
         if (markup !== autoMarkup) el.auto.innerHTML = autoMarkup = markup;
         el.auto.dataset.locked = String(!unlocked);
         el.auto.title = unlocked ? "" : TEXT.autoNeeds;

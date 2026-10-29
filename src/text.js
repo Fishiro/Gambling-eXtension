@@ -80,7 +80,7 @@ export const TEXT = {
     vipUp: (name) => `VIP ${name}!`,
     vipSub: "FOREVER. NOBODY CAN TAKE YOUR AURA.",
     vipOk: "AURA FARMING",
-    vipNext: (left, name) => `${left} MORE BET TO ${name}`,
+    vipNext: (left, name) => `${left} TO ${name}`,
     vipTop: "THE TOP. THE VERY TOP.",
     vipGuest: "BET MORE TO JOIN VIP. TIERS RAISE YOUR PAYOUTS AND CHESTS.",
     vaultTier: (n) => `#${n}`,

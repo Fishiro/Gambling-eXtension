@@ -6,6 +6,14 @@
         <link rel="stylesheet" href="popup.css" />
     </head>
     <body>
+        <!-- Boot screen: plain HTML/CSS so it is the very first frame, before any script loads. main.js fades it
+             out once the game is drawn and the font is in. -->
+        <div id="boot" class="boot" aria-hidden="true">
+            <img class="boot-logo" src="icons/icon128.png" alt="" width="96" height="96" />
+            <b class="boot-title">PIXEL SLOTS <em>AFK</em></b>
+            <div class="boot-bar"><i></i></div>
+            <small class="boot-text">LOADING</small>
+        </div>
         <div id="app" class="app">
         <nav class="topbar">
             <div class="topbar-row">
@@ -75,11 +83,14 @@
                         <label class="bet-value"><small>BET</small><input id="bet" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="9" value="5" aria-label="Bet amount" /></label>
                         <button id="bet-up" class="icon-btn" aria-label="Raise bet"><i data-icon="i-plus" data-scale="3"></i></button>
                     </div>
-                    <button id="btn-auto" class="toggle" data-fx="c,w"></button>
                 </div>
-                <button id="btn-spin" class="primary spin" data-fx="y,R,w">
-                    <span id="spin-label">SPIN</span><span id="spin-cost" class="cost"></span>
-                </button>
+                <!-- AUTO is a square beside SPIN, so the column has room for the VIP and vault cards. -->
+                <div class="spin-row">
+                    <button id="btn-auto" class="toggle" data-fx="c,w"></button>
+                    <button id="btn-spin" class="primary spin" data-fx="y,R,w">
+                        <span id="spin-label">SPIN</span><span id="spin-cost" class="cost"></span>
+                    </button>
+                </div>
                 <div id="vip" class="vip">
                     <div class="vip-top"><b id="vip-name">VIP</b><small id="vip-perks"></small></div>
                     <div class="bar"><div id="vip-fill" class="fill"></div></div>

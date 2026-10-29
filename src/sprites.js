@@ -723,7 +723,12 @@ export function drawSprite(ctx, name, x, y, flip = false) {
     ctx.restore();
 }
 
+// Every in-game icon is drawn this much bigger than the scale its caller asks for (callers think in the
+// original 1x sizes). popup.css's type scale matches it.
+export const UI_SCALE = 1.5;
+
 export function svgIcon(name, scale = 2) {
+    scale *= UI_SCALE;
     const rows = SPRITES[name] ?? SPRITES[`i-${name}`];
     const w = rows[0].length;
     const h = rows.length;
@@ -747,11 +752,12 @@ export function svgIcon(name, scale = 2) {
 // whole-pixel scale that fills at least FIT_MIN of it (pixel-sharp), else an exact fit.
 const FIT_MIN = 0.8;
 export function svgFit(name, box) {
+    box *= UI_SCALE;
     const rows = SPRITES[name] ?? SPRITES[`i-${name}`];
     const long = Math.max(rows[0].length, rows.length);
     const whole = Math.floor(box / long);
     const scale = whole >= 1 && whole * long >= box * FIT_MIN ? whole : box / long;
-    return `<span class="ibox" style="--box:${box}px">${svgIcon(name, scale)}</span>`;
+    return `<span class="ibox" style="--box:${box}px">${svgIcon(name, scale / UI_SCALE)}</span>`;
 }
 
 export function hydrateIcons(root = document) {

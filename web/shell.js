@@ -4,8 +4,8 @@ import { TEXT } from "../src/text.js";
 // The web page around the game: scales the 760x580 popup to fit the screen, and fills the side panels with
 // the keys (from keys.js, the same list the game binds) for the tab you are on. Keys light up as you press them.
 
-const GAME_W = 760;
-const GAME_H = 580;
+const GAME_W = 800;
+const GAME_H = 600;
 const TIP_MS = 9000;
 const W = TEXT.web;
 

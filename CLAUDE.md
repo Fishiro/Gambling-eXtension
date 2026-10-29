@@ -34,6 +34,8 @@ Load the folder unpacked at `chrome://extensions` (Developer mode), then reload 
 
 - 4-space indent, double quotes, ES module imports with `.js` extension.
 - UI text is uppercase pixel style (Silkscreen font).
+- Size: the popup is Chrome's max, 800x600. Text runs on `--fs-0..3` (12/18/24/36px) and every icon goes through `svgIcon`/`svgFit`, which multiply by `sprites.UI_SCALE` (1.5), so call sites keep thinking in the original 1x scales. Use `svgFit(name, box)` wherever icons of different sprite sizes sit side by side.
+- `#boot` in popup.html is the first frame (plain HTML/CSS); main.js lifts it once the game is drawn.
 - Bump `version` in `manifest.json` with every change pushed:
   - `X.0.0` major: refactor / restructure.
   - `0.X.0` minor: game update, new content, security fix or major bug fix.

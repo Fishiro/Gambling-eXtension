@@ -32,13 +32,15 @@
     --s3: 12px;
     --s4: 16px;
     --s5: 24px;
-    --fs-1: 12px;
-    --fs-2: 16px;
-    --fs-3: 24px;
-    --width: 760px;
-    --height: 580px;
+    /* Text and icons run 1.5x the original size (sprites.UI_SCALE); the popup uses Chrome's full 800x600. */
+    --fs-1: 18px;
+    --fs-2: 24px;
+    --fs-3: 36px;
+    --fs-0: 12px;
+    --width: 800px;
+    --height: 600px;
     --frame: 12px;
-    --side: 300px;
+    --side: 330px;
     --inset: calc(var(--frame) + 6px);
     --machine: 460px;
 }
@@ -76,6 +78,80 @@ body {
         "stage dock";
     height: 100%;
 }
+/* ---- boot screen: the first frame, until main.js lifts it ---- */
+/* Above every layer (sheets, popups, the tour, effects) except the gold frame (80), so the frame frames it. */
+.boot {
+    position: fixed;
+    inset: 0;
+    z-index: 79;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s3);
+    background: var(--bg);
+    color: var(--text);
+}
+.boot-logo {
+    image-rendering: pixelated;
+    animation: boot-bob 0.8s steps(2) infinite;
+}
+.boot-title {
+    font: 700 var(--fs-3)/1 "Silkscreen", monospace;
+    letter-spacing: 2px;
+}
+.boot-title em {
+    font-style: normal;
+    color: var(--gold);
+}
+.boot-bar {
+    width: 260px;
+    height: 18px;
+    padding: 3px;
+    background: var(--ink);
+    box-shadow:
+        0 calc(var(--b) * -1) 0 0 var(--line),
+        0 var(--b) 0 0 var(--line),
+        calc(var(--b) * -1) 0 0 0 var(--line),
+        var(--b) 0 0 0 var(--line);
+}
+/* Fills in pixel steps toward 90%, then jumps to full when the game is ready. */
+.boot-bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 10px, var(--gold-dk) 10px 13px);
+    animation: boot-fill 0.7s steps(10) forwards;
+}
+.boot-text {
+    color: var(--muted);
+    letter-spacing: 3px;
+    animation: blink 0.6s steps(2) infinite;
+}
+.boot.is-done .boot-bar i {
+    width: 100%;
+    animation: none;
+}
+.boot.is-done {
+    pointer-events: none;
+    animation: boot-out 0.36s steps(4) forwards;
+}
+@keyframes boot-fill {
+    to {
+        width: 90%;
+    }
+}
+@keyframes boot-bob {
+    50% {
+        transform: translateY(-6px);
+    }
+}
+@keyframes boot-out {
+    to {
+        opacity: 0;
+    }
+}
+
 /* ---- gold window frame ----
    before: the bevelled gold rim. after: a ring laid over the rim's face that shows a glint at rest,
    a rainbow while the slot spins, and a reaction per result (body[data-frame], set by fx.frame). */
@@ -329,7 +405,7 @@ i[data-icon] {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--s2);
-    padding: var(--s3) var(--s4) var(--s4) calc(var(--s4) + var(--b));
+    padding: var(--s2) var(--s4) var(--s3) calc(var(--s4) + var(--b));
 }
 .tab {
     position: relative;
@@ -559,7 +635,7 @@ i[data-icon] {
     margin-left: 6px;
 }
 .pet-chip small {
-    font-size: 8px;
+    font-size: var(--fs-0);
     font-variant-numeric: tabular-nums;
 }
 .pet-chip[data-state="ready"] small {
@@ -684,8 +760,8 @@ main,
 }
 .side {
     grid-area: side;
-    gap: var(--s3);
-    padding: var(--s3) var(--s4) var(--s2) calc(var(--s4) + var(--b));
+    gap: calc(var(--b) * 2 + 4px);
+    padding: var(--s2) var(--s4) var(--s1) calc(var(--s4) + var(--b));
 }
 #tab-slot .stage,
 #tab-mine .stage {
@@ -863,8 +939,8 @@ main,
     filter: grayscale(1) brightness(0.45);
 }
 .pip .ico {
-    width: 12px;
-    height: 16px;
+    width: 18px;
+    height: 24px;
 }
 .pip.is-on {
     filter: none;
@@ -1098,11 +1174,11 @@ main,
 }
 .combo[data-tier="10"] .combo-count,
 .combo[data-tier="11"] .combo-count {
-    font-size: 32px;
+    font-size: 48px;
     animation: rainbow 0.12s steps(1) infinite;
 }
 .combo[data-tier="11"] .combo-count {
-    font-size: 40px;
+    font-size: 60px;
 }
 .combo[data-tier="8"] .combo-timer span {
     background: #b55ce0;
@@ -1299,8 +1375,9 @@ main,
     font-size: var(--fs-2);
     line-height: 1.1;
 }
+/* The level sits on the name's line, so an upgrade row is two lines tall. */
 .up-info em {
-    display: block;
+    margin-left: var(--s1);
     font: 400 var(--fs-1) "Silkscreen", monospace;
     color: var(--muted);
 }
@@ -1515,7 +1592,7 @@ main,
     inset: var(--frame);
     z-index: 30;
     overflow-y: auto;
-    padding: var(--s3) max(var(--s4), calc((100% - 560px) / 2)) var(--s5);
+    padding: var(--s3) max(var(--s4), calc((100% - 720px) / 2)) var(--s5);
     background: var(--bg);
 }
 .sheet-head {
@@ -1750,7 +1827,7 @@ main,
     justify-content: center;
     height: 2.6em;
     line-height: 1.3;
-    font-size: var(--fs-2);
+    font-size: var(--fs-1);
     color: var(--gold);
 }
 .g-step small {
@@ -2577,6 +2654,14 @@ body.is-calm::after {
     white-space: nowrap;
     color: var(--green);
 }
+.row-main .stat-name {
+    color: var(--muted);
+}
+/* Buttons in list rows use body-size text, so the row's own text keeps the room. */
+.row > button {
+    font-size: var(--fs-1);
+    padding-inline: 8px;
+}
 .row-main .hint {
     color: var(--muted);
 }
@@ -2652,8 +2737,8 @@ body.is-calm::after {
     align-items: center;
     gap: 6px;
     min-width: 0;
-    height: 24px;
-    padding: 0 8px;
+    min-height: 30px;
+    padding: 3px 8px;
     color: var(--text);
     background: var(--panel);
 }
@@ -2661,6 +2746,7 @@ body.is-calm::after {
     flex: 1;
     min-width: 0;
     text-align: left;
+    white-space: normal !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2871,6 +2957,22 @@ body.is-calm::after {
     vertical-align: middle;
 }
 /* ---- VIP + vault cards on the slot side ---- */
+.spin-row .spin {
+    padding-inline: 10px;
+    white-space: nowrap;
+}
+.spin-row {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: calc(var(--b) * 2 + 4px);
+}
+.spin-row #btn-auto {
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 2px;
+    font-size: var(--fs-0);
+}
 .vip,
 .vault-card {
     --tone: var(--muted);
@@ -2911,7 +3013,7 @@ body.is-calm::after {
 }
 .vault-bar {
     position: relative;
-    height: 16px;
+    height: 26px;
     background: var(--ink);
     box-shadow: 0 0 0 2px var(--line);
 }
@@ -3313,7 +3415,7 @@ body.is-calm::after {
     line-height: 1.1;
 }
 .trip-time small {
-    font-size: 8px;
+    font-size: var(--fs-0);
     color: var(--muted);
 }
 .trip-time.is-active small {
@@ -3469,8 +3571,8 @@ body:has(.sheet:not([hidden])) #fx {
 }
 /* Every odds row is the same height: one line for the name, one for the note, odds on the right. */
 .o-row {
-    grid-template-columns: 64px minmax(0, 1fr) 140px;
-    height: 44px;
+    grid-template-columns: 96px minmax(0, 1fr) 190px;
+    height: 62px;
 }
 .o-row .o-what b,
 .o-row .o-what small,
@@ -3484,16 +3586,16 @@ body:has(.sheet:not([hidden])) #fx {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    height: 24px;
+    height: 36px;
     color: var(--muted);
 }
 .o-art .g-reels > span {
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
 }
 .o-art .g-reels .ico {
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
 }
 .o-what {
     display: flex;
@@ -3553,7 +3655,7 @@ body:has(.sheet:not([hidden])) #fx {
     box-shadow: 0 0 0 1px var(--ink);
 }
 .o-rewards {
-    grid-template-columns: 148px minmax(0, 1fr);
+    grid-template-columns: 200px minmax(0, 1fr);
 }
 .o-rewards > b {
     display: grid;
@@ -3594,15 +3696,15 @@ body:has(.sheet:not([hidden])) #fx {
     align-items: center;
     justify-content: flex-start;
     gap: 3px;
-    width: 52px;
+    width: 72px;
 }
 .o-chip > .ico {
-    height: 24px;
+    height: 36px;
 }
 .o-chip small {
     max-width: 100%;
     overflow: hidden;
-    font-size: 8px;
+    font-size: var(--fs-0);
     line-height: 1.2;
     color: var(--text);
     text-align: center;
@@ -3626,7 +3728,7 @@ body:has(.sheet:not([hidden])) #fx {
 }
 /* Reward chips carry a word label ("GOLD RUSH 90S"), so they get two lines instead of an ellipsis. */
 .o-chip.is-label {
-    width: 72px;
+    width: 100px;
 }
 .o-chip.is-label small {
     white-space: normal;
