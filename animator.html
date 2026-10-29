@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Pixel Sprite Animator - PRO V3</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background: #111;
+                color: #eee;
+                padding: 20px 30px;
+                user-select: none;
+                margin: 0;
+                overflow-x: hidden;
+            }
+            h2 {
+                margin-top: 0;
+                color: #f1c40f;
+                text-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .main-container {
+                display: flex;
+                gap: 30px;
+                align-items: flex-start;
+            }
+
+            /* SIDEBAR / PANELS */
+            .sidebar {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                width: 220px;
+                flex-shrink: 0;
+            }
+            .panel {
+                background: #1a1a1a;
+                padding: 15px;
+                border: 1px solid #333;
+                border-radius: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            }
+            .panel-title {
+                font-size: 11px;
+                color: #888;
+                text-transform: uppercase;
+                font-weight: bold;
+                letter-spacing: 1px;
+                border-bottom: 1px solid #333;
+                padding-bottom: 5px;
+                margin-bottom: 5px;
+            }
+
+            button {
+                background: #252525;
+                color: #ccc;
+                border: 1px solid #444;
+                padding: 10px 12px;
+                cursor: pointer;
+                font-family: inherit;
+                font-weight: bold;
+                border-radius: 6px;
+                transition: 0.1s;
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 10px;
+                font-size: 13px;
+            }
+            button:hover {
+                background: #3a3a3a;
+                color: #fff;
+            }
+            button.selected {
+                background: #2ecc71;
+                color: #000;
+                border-color: #2ecc71;
+                box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
+            }
+            button:active {
+                transform: scale(0.97);
+            }
+
+            .hotkey {
+                color: #888;
+                font-size: 10px;
+                margin-left: auto;
+                background: #111;
+                padding: 3px 6px;
+                border-radius: 4px;
+            }
+            button.selected .hotkey {
+                color: #000;
+                background: rgba(0, 0, 0, 0.2);
+            }
+
+            /* KHOẢNG GRID LỚN CHO DỄ VẼ */
+            .workspace {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            .grid-wrapper {
+                background: #151515;
+                padding: 20px;
+                border-radius: 8px;
+                border: 1px solid #333;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+                overflow: auto;
+            }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(
+                    30,
+                    28px
+                ); /* Tăng kích thước ô lên 28px */
+                gap: 1px;
+                width: fit-content;
+                background: #333;
+                border: 1px solid #555;
+                position: relative;
+            }
+
+            .cell {
+                width: 28px;
+                height: 28px;
+                background: #1e1e1e;
+                cursor: crosshair;
+            }
+            .cell:hover {
+                background: #2a2a2a;
+            }
+            .cell.active {
+                background: #f1c40f;
+                box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
+            }
+
+            /* Hiệu ứng vùng chọn */
+            .cell.selected-cell::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: rgba(52, 152, 219, 0.4);
+                border: 1px solid #3498db;
+                box-sizing: border-box;
+                pointer-events: none;
+                z-index: 10;
+            }
+            /* Hiệu ứng Ghost Paste (Xem trước khi dán) */
+            .cell.paste-preview::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: rgba(241, 196, 15, 0.5); /* Màu vàng trong suốt */
+                box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.8);
+                z-index: 5;
+                pointer-events: none;
+            }
+
+            /* KHUNG PREVIEW BẢNG TẠM */
+            #clipboard-preview-box {
+                display: none;
+                flex-direction: column;
+                gap: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px dashed #444;
+            }
+            .mini-grid {
+                display: grid;
+                gap: 1px;
+                background: #444;
+                width: fit-content;
+                border: 1px solid #555;
+                align-self: center;
+                padding: 2px;
+                background: #111;
+            }
+            .mini-cell {
+                width: 5px;
+                height: 5px;
+                background: #222;
+            }
+            .mini-cell.active {
+                background: #f1c40f;
+            }
+
+            .nudge-controls {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 6px;
+                text-align: center;
+            }
+            .nudge-controls button {
+                justify-content: center;
+                padding: 8px;
+                font-size: 16px;
+            }
+
+            .timeline {
+                background: #1a1a1a;
+                padding: 15px 20px;
+                border: 1px solid #333;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+            #status {
+                color: #2ecc71;
+                font-weight: bold;
+                font-size: 16px;
+                min-width: 130px;
+            }
+            textarea {
+                width: 100%;
+                height: 180px;
+                background: #151515;
+                color: #e0e0e0;
+                border: 1px solid #444;
+                font-family: monospace;
+                padding: 15px;
+                font-size: 13px;
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+        </style>
+    </head>
+    <body oncontextmenu="return false;">
+        <h2>⛏ PIXEL STUDIO (6x30) - ULTRA EDITION</h2>
+
+        <div class="main-container">
+            <!-- TOOLBAR BÊN TRÁI -->
+            <div class="sidebar">
+                <div class="panel">
+                    <div class="panel-title">Dụng cụ</div>
+                    <button
+                        id="tool-pen"
+                        class="selected"
+                        onclick="setTool('pen')"
+                    >
+                        ✏️ Pen <span class="hotkey">B</span>
+                    </button>
+                    <button id="tool-eraser" onclick="setTool('eraser')">
+                        🧽 Eraser <span class="hotkey">E</span>
+                    </button>
+                    <button id="tool-fill" onclick="setTool('fill')">
+                        🪣 Fill <span class="hotkey">F</span>
+                    </button>
+                    <button id="tool-select" onclick="setTool('select')">
+                        ⬚ Select <span class="hotkey">M</span>
+                    </button>
+                    <div
+                        style="
+                            font-size: 11px;
+                            color: #777;
+                            text-align: center;
+                            margin-top: 5px;
+                        "
+                    >
+                        *Chuột phải luôn là cục tẩy
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Bảng Tạm</div>
+                    <button onclick="copySelection()">
+                        📋 Copy <span class="hotkey">Ctrl+C</span>
+                    </button>
+                    <button onclick="cutSelection()">
+                        ✂️ Cut <span class="hotkey">Ctrl+X</span>
+                    </button>
+                    <button id="btn-paste" onclick="preparePaste()">
+                        📝 Paste <span class="hotkey">Ctrl+V</span>
+                    </button>
+                    <button onclick="deleteSelection()" style="color: #e74c3c">
+                        🗑 Delete <span class="hotkey">Del</span>
+                    </button>
+
+                    <!-- BẢN XEM TRƯỚC CLIPBOARD -->
+                    <div id="clipboard-preview-box">
+                        <div
+                            style="
+                                font-size: 10px;
+                                color: #888;
+                                text-align: center;
+                            "
+                        >
+                            ĐANG LƯU (CLIPBOARD)
+                        </div>
+                        <div id="clipboard-grid" class="mini-grid"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Dịch chuyển & Lịch sử</div>
+                    <div class="nudge-controls">
+                        <div></div>
+                        <button onclick="shiftGrid(0, -1)">⬆️</button>
+                        <div></div>
+                        <button onclick="shiftGrid(-1, 0)">⬅️</button
+                        ><button onclick="shiftGrid(0, 1)">⬇️</button
+                        ><button onclick="shiftGrid(1, 0)">➡️</button>
+                    </div>
+                    <button onclick="undo()" style="margin-top: 10px">
+                        ↩️ Undo <span class="hotkey">Ctrl+Z</span>
+                    </button>
+                    <button onclick="clearGrid()" style="color: #e74c3c">
+                        ⚠️ Clear Frame
+                    </button>
+                </div>
+            </div>
+
+            <!-- KHU VỰC VẼ BÊN PHẢI -->
+            <div class="workspace">
+                <div class="grid-wrapper">
+                    <div class="grid" id="grid"></div>
+                </div>
+
+                <div class="timeline">
+                    <div id="status">Frame: 1 / 1</div>
+                    <button
+                        onclick="addFrame()"
+                        style="background: #3498db; color: #fff; border: none"
+                    >
+                        ➕ Thêm Frame
+                    </button>
+                    <button onclick="prevFrame()">◀ Trái</button>
+                    <button onclick="nextFrame()">Phải ▶</button>
+                    <button
+                        onclick="playPreview()"
+                        style="background: #e67e22; color: #fff; border: none"
+                    >
+                        ▶ Xem Thử
+                    </button>
+                    <button
+                        onclick="exportCode()"
+                        style="
+                            background: #f1c40f;
+                            color: #000;
+                            border: none;
+                            margin-left: auto;
+                        "
+                    >
+                        💾 Xuất Code
+                    </button>
+                </div>
+
+                <textarea
+                    id="output"
+                    spellcheck="false"
+                    placeholder="Mã nguồn sẽ xuất hiện ở đây... Mở src/anim.js và dán đè vào mảng FarmFrames"
+                ></textarea>
+            </div>
+        </div>
+
+        <script>
+            const ROWS = 6,
+                COLS = 30;
+            let frames = [createEmptyMatrix()];
+            let currentFrame = 0,
+                isPlaying = false;
+            let currentTool = "pen";
+            let previewInterval = null;
+
+            // Mouse Tracker
+            let isDrawing = false;
+            let drawButton = 0; // 0 = Trái, 2 = Phải
+
+            // Undo Engine
+            let historyStack = [];
+            const MAX_HISTORY = 30;
+
+            // Selection & Clipboard
+            let selStart = null,
+                selEnd = null;
+            let clipboard = null;
+
+            const gridEl = document.getElementById("grid");
+
+            // Tạo lưới DOM
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const div = document.createElement("div");
+                    div.className = "cell";
+                    div.dataset.r = r;
+                    div.dataset.c = c;
+
+                    div.addEventListener("mousedown", (e) =>
+                        handleMouseDown(e, r, c),
+                    );
+                    div.addEventListener("mouseenter", () =>
+                        handleMouseEnter(r, c),
+                    );
+                    gridEl.appendChild(div);
+                }
+            }
+            document.addEventListener("mouseup", () => (isDrawing = false));
+
+            // ==========================================
+            // CƠ CHẾ LỊCH SỬ (UNDO)
+            // ==========================================
+            function saveHistory() {
+                historyStack.push(JSON.parse(JSON.stringify(getGridMatrix())));
+                if (historyStack.length > MAX_HISTORY) historyStack.shift();
+            }
+            function undo() {
+                if (historyStack.length > 0) {
+                    loadGridMatrix(historyStack.pop());
+                    clearSelectionUI();
+                }
+            }
+
+            // ==========================================
+            // CƠ CHẾ MOUSE & TOOLS MỚI (CHUỘT PHẢI = XÓA)
+            // ==========================================
+            function setTool(tool) {
+                currentTool = tool;
+                document
+                    .querySelectorAll(".sidebar .panel button")
+                    .forEach((b) => b.classList.remove("selected"));
+                const btn = document.getElementById(`tool-${tool}`);
+                if (btn) btn.classList.add("selected");
+
+                clearSelectionUI();
+                clearPastePreview();
+            }
+
+            function handleMouseDown(e, r, c) {
+                isDrawing = true;
+                drawButton = e.button; // 0 là chuột trái, 2 là chuột phải
+
+                // Bất chấp đang dùng tool gì, nhấn chuột phải là Xóa
+                if (drawButton === 2) {
+                    saveHistory();
+                    applyTool(r, c, "eraser");
+                    return;
+                }
+
+                // Xử lý chuột trái
+                if (drawButton === 0) {
+                    if (currentTool === "paste" && clipboard) {
+                        saveHistory();
+                        stampPaste(r, c);
+                        setTool("pen"); // Dán xong tự động nhả về bút
+                        return;
+                    }
+
+                    saveHistory();
+                    if (currentTool === "select") {
+                        selStart = { r, c };
+                        selEnd = { r, c };
+                        renderSelectionUI();
+                    } else if (currentTool === "fill") {
+                        floodFill(r, c);
+                    } else {
+                        applyTool(r, c, currentTool);
+                    }
+                }
+            }
+
+            function handleMouseEnter(r, c) {
+                // Render Ghost Paste (Preview dán mờ)
+                if (currentTool === "paste" && clipboard) {
+                    renderPastePreview(r, c);
+                }
+
+                if (!isDrawing) return;
+
+                // Đang giữ chuột phải lướt -> Xóa liên tục
+                if (drawButton === 2) {
+                    applyTool(r, c, "eraser");
+                    return;
+                }
+
+                // Đang giữ chuột trái
+                if (drawButton === 0) {
+                    if (currentTool === "select") {
+                        selEnd = { r, c };
+                        renderSelectionUI();
+                    } else if (
+                        currentTool === "pen" ||
+                        currentTool === "eraser"
+                    ) {
+                        applyTool(r, c, currentTool);
+                    }
+                }
+            }
+
+            function applyTool(r, c, tool) {
+                const cell = document.querySelector(
+                    `.cell[data-r="${r}"][data-c="${c}"]`,
+                );
+                if (tool === "pen") cell.classList.add("active");
+                if (tool === "eraser") cell.classList.remove("active");
+            }
+
+            function floodFill(sr, sc) {
+                const targetActive = document
+                    .querySelector(`.cell[data-r="${sr}"][data-c="${sc}"]`)
+                    .classList.contains("active");
+                const queue = [[sr, sc]];
+                const visited = new Set();
+
+                while (queue.length > 0) {
+                    const [r, c] = queue.shift();
+                    const key = `${r},${c}`;
+                    if (
+                        r < 0 ||
+                        r >= ROWS ||
+                        c < 0 ||
+                        c >= COLS ||
+                        visited.has(key)
+                    )
+                        continue;
+                    visited.add(key);
+
+                    const cell = document.querySelector(
+                        `.cell[data-r="${r}"][data-c="${c}"]`,
+                    );
+                    if (cell.classList.contains("active") === targetActive) {
+                        cell.classList.add("active");
+                        queue.push(
+                            [r + 1, c],
+                            [r - 1, c],
+                            [r, c + 1],
+                            [r, c - 1],
+                        );
+                    }
+                }
+            }
+
+            // ==========================================
+            // CƠ CHẾ SELECT / COPY / PASTE
+            // ==========================================
+            function getSelectionBounds() {
+                if (!selStart || !selEnd) return null;
+                return {
+                    minR: Math.min(selStart.r, selEnd.r),
+                    maxR: Math.max(selStart.r, selEnd.r),
+                    minC: Math.min(selStart.c, selEnd.c),
+                    maxC: Math.max(selStart.c, selEnd.c),
+                };
+            }
+
+            function renderSelectionUI() {
+                document
+                    .querySelectorAll(".cell")
+                    .forEach((c) => c.classList.remove("selected-cell"));
+                const b = getSelectionBounds();
+                if (!b) return;
+                for (let r = b.minR; r <= b.maxR; r++) {
+                    for (let c = b.minC; c <= b.maxC; c++) {
+                        document
+                            .querySelector(
+                                `.cell[data-r="${r}"][data-c="${c}"]`,
+                            )
+                            .classList.add("selected-cell");
+                    }
+                }
+            }
+
+            function clearSelectionUI() {
+                selStart = null;
+                selEnd = null;
+                document
+                    .querySelectorAll(".cell")
+                    .forEach((c) => c.classList.remove("selected-cell"));
+            }
+
+            function copySelection() {
+                const b = getSelectionBounds();
+                if (!b) {
+                    alert("Bạn chưa khoanh vùng Select!");
+                    return;
+                }
+                clipboard = [];
+                const matrix = getGridMatrix();
+                for (let r = b.minR; r <= b.maxR; r++) {
+                    let row = [];
+                    for (let c = b.minC; c <= b.maxC; c++) {
+                        row.push(matrix[r][c]);
+                    }
+                    clipboard.push(row);
+                }
+                // Flash Effect nút copy
+                const btn = document.querySelector(
+                    'button[onclick="copySelection()"]',
+                );
+                btn.style.background = "#3498db";
+                setTimeout(() => (btn.style.background = ""), 200);
+
+                updateClipboardPreview();
+            }
+
+            function updateClipboardPreview() {
+                const box = document.getElementById("clipboard-preview-box");
+                const grid = document.getElementById("clipboard-grid");
+                if (!clipboard) return;
+
+                box.style.display = "flex";
+                grid.innerHTML = "";
+                grid.style.gridTemplateColumns = `repeat(${clipboard[0].length}, 5px)`;
+
+                for (let r = 0; r < clipboard.length; r++) {
+                    for (let c = 0; c < clipboard[0].length; c++) {
+                        const div = document.createElement("div");
+                        div.className = "mini-cell";
+                        if (clipboard[r][c] === 1) div.classList.add("active");
+                        grid.appendChild(div);
+                    }
+                }
+            }
+
+            function deleteSelection() {
+                const b = getSelectionBounds();
+                if (!b) return;
+                saveHistory();
+                for (let r = b.minR; r <= b.maxR; r++) {
+                    for (let c = b.minC; c <= b.maxC; c++) {
+                        document
+                            .querySelector(
+                                `.cell[data-r="${r}"][data-c="${c}"]`,
+                            )
+                            .classList.remove("active");
+                    }
+                }
+            }
+
+            function cutSelection() {
+                copySelection();
+                deleteSelection();
+                clearSelectionUI();
+            }
+
+            function preparePaste() {
+                if (!clipboard) {
+                    alert("Bảng tạm đang trống! Hãy quét chọn và Copy trước.");
+                    return;
+                }
+                setTool("paste");
+                document.getElementById("btn-paste").classList.add("selected");
+            }
+
+            function clearPastePreview() {
+                document
+                    .querySelectorAll(".cell")
+                    .forEach((c) => c.classList.remove("paste-preview"));
+            }
+
+            function renderPastePreview(tr, tc) {
+                clearPastePreview();
+                for (let r = 0; r < clipboard.length; r++) {
+                    for (let c = 0; c < clipboard[0].length; c++) {
+                        if (clipboard[r][c] === 1) {
+                            let targetR = tr + r;
+                            let targetC = tc + c;
+                            if (targetR < ROWS && targetC < COLS) {
+                                document
+                                    .querySelector(
+                                        `.cell[data-r="${targetR}"][data-c="${targetC}"]`,
+                                    )
+                                    .classList.add("paste-preview");
+                            }
+                        }
+                    }
+                }
+            }
+
+            function stampPaste(tr, tc) {
+                for (let r = 0; r < clipboard.length; r++) {
+                    for (let c = 0; c < clipboard[0].length; c++) {
+                        if (clipboard[r][c] === 1) {
+                            let targetR = tr + r;
+                            let targetC = tc + c;
+                            if (targetR < ROWS && targetC < COLS) {
+                                document
+                                    .querySelector(
+                                        `.cell[data-r="${targetR}"][data-c="${targetC}"]`,
+                                    )
+                                    .classList.add("active");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // CƠ CHẾ NUDGE (DỊCH CHUYỂN TOÀN KHUNG)
+            // ==========================================
+            function shiftGrid(dc, dr) {
+                saveHistory();
+                const oldMatrix = getGridMatrix();
+                const newMatrix = createEmptyMatrix();
+
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        let nr = r + dr;
+                        let nc = c + dc;
+                        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+                            newMatrix[nr][nc] = oldMatrix[r][c];
+                        }
+                    }
+                }
+                loadGridMatrix(newMatrix);
+            }
+
+            // ==========================================
+            // PHÍM TẮT (KEYBOARD SHORTCUTS)
+            // ==========================================
+            document.addEventListener("keydown", (e) => {
+                if (e.target.tagName === "TEXTAREA" || isPlaying) return;
+
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key.toLowerCase() === "c") {
+                        copySelection();
+                        e.preventDefault();
+                    }
+                    if (e.key.toLowerCase() === "v") {
+                        preparePaste();
+                        e.preventDefault();
+                    }
+                    if (e.key.toLowerCase() === "x") {
+                        cutSelection();
+                        e.preventDefault();
+                    }
+                    if (e.key.toLowerCase() === "z") {
+                        undo();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (e.key === "Delete") {
+                        deleteSelection();
+                        e.preventDefault();
+                    }
+                    if (e.key.toLowerCase() === "b") setTool("pen");
+                    if (e.key.toLowerCase() === "e") setTool("eraser");
+                    if (e.key.toLowerCase() === "f") setTool("fill");
+                    if (e.key.toLowerCase() === "m") setTool("select");
+                }
+            });
+
+            // ==========================================
+            // MA TRẬN & TIMELINE
+            // ==========================================
+            function createEmptyMatrix() {
+                return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            }
+
+            function getGridMatrix() {
+                const matrix = [];
+                for (let r = 0; r < ROWS; r++) {
+                    const row = [];
+                    for (let c = 0; c < COLS; c++) {
+                        const cell = document.querySelector(
+                            `.cell[data-r="${r}"][data-c="${c}"]`,
+                        );
+                        row.push(cell.classList.contains("active") ? 1 : 0);
+                    }
+                    matrix.push(row);
+                }
+                return matrix;
+            }
+
+            function loadGridMatrix(matrix) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const cell = document.querySelector(
+                            `.cell[data-r="${r}"][data-c="${c}"]`,
+                        );
+                        if (matrix[r][c] === 1) cell.classList.add("active");
+                        else cell.classList.remove("active");
+                    }
+                }
+            }
+
+            function saveCurrent() {
+                frames[currentFrame] = getGridMatrix();
+            }
+            function clearGrid() {
+                saveHistory();
+                document
+                    .querySelectorAll(".cell")
+                    .forEach((c) => c.classList.remove("active"));
+            }
+            function updateStatus() {
+                document.getElementById("status").innerText =
+                    `Frame: ${currentFrame + 1} / ${Math.max(frames.length, 1)}`;
+            }
+
+            function addFrame() {
+                saveCurrent();
+                currentFrame = frames.length;
+                frames.push(getGridMatrix());
+                updateStatus();
+                historyStack = [];
+            }
+            function prevFrame() {
+                saveCurrent();
+                if (currentFrame > 0) {
+                    currentFrame--;
+                    loadGridMatrix(frames[currentFrame]);
+                    updateStatus();
+                    historyStack = [];
+                }
+            }
+            function nextFrame() {
+                saveCurrent();
+                if (currentFrame < frames.length - 1) {
+                    currentFrame++;
+                    loadGridMatrix(frames[currentFrame]);
+                    updateStatus();
+                    historyStack = [];
+                }
+            }
+
+            function playPreview() {
+                if (isPlaying || frames.length === 0) return;
+                saveCurrent();
+                setTool("pen");
+                isPlaying = true;
+                let playIdx = 0;
+                clearInterval(previewInterval);
+                previewInterval = setInterval(() => {
+                    loadGridMatrix(frames[playIdx]);
+                    playIdx = (playIdx + 1) % frames.length;
+                }, 200);
+                setTimeout(
+                    () => {
+                        clearInterval(previewInterval);
+                        isPlaying = false;
+                        loadGridMatrix(frames[currentFrame]);
+                    },
+                    frames.length * 200 * 3,
+                );
+            }
+
+            function exportCode() {
+                saveCurrent();
+                let out = "export const FarmFrames = [\n";
+                frames.forEach((frame, i) => {
+                    out += "  [\n";
+                    frame.forEach((row) => {
+                        out += `    [${row.join(",")}],\n`;
+                    });
+                    out += "  ]";
+                    out += i < frames.length - 1 ? ",\n" : "\n";
+                });
+                out += "];";
+                document.getElementById("output").value = out;
+            }
+        </script>
+    </body>
+</html>

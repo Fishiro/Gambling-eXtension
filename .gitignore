@@ -1,0 +1,19 @@
+# Claude Code local settings
+.claude/settings.local.json
+
+# Generated dumps
+repomix-output.xml
+
+# Packaged builds
+*.zip
+*.crx
+*.pem
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Pixel Slots</title>
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body>
+        <div id="app" class="app">
+        <nav class="topbar">
+            <div class="topbar-row">
+                <button id="btn-pet" class="pet-btn" data-fx="R,y,w" aria-label="Pet"></button>
+                <div class="tools">
+                    <button id="btn-sound" class="icon-btn" aria-label="Toggle sound"></button>
+                    <button id="btn-history" class="icon-btn" aria-label="History"><i data-icon="i-clock" data-scale="3"></i></button>
+                    <button id="btn-menu" class="icon-btn" aria-label="Menu"><i data-icon="i-menu" data-scale="3"></i></button>
+                </div>
+            </div>
+            <div id="buffs" class="buffs">
+                <button id="btn-chest" class="chest-btn" data-fx="y,O,w" title="OPEN CHEST (O)" hidden>
+                    <i data-icon="chest"></i><span id="chest-count"></span>
+                </button>
+                <button id="btn-chest-all" class="chest-all" data-fx="y,O,w" title="OPEN ALL CHESTS (SHIFT+O)" hidden>ALL</button>
+            </div>
+        </nav>
+
+        <header class="hud">
+            <div id="wallet" class="wallet">
+                <i data-icon="coin" data-scale="3"></i><span id="coins">0</span>
+                <span id="gems" class="gems" title="DIAMONDS: RARE. FROM EPIC CHESTS, JACKPOTS, COSMIC WINS, EVERY 5 LEVELS"><i data-icon="gem" data-scale="2"></i><b id="gem-count">0</b></span>
+            </div>
+            <div class="level">
+                <div class="lv-badge"><small>LV</small><b id="level">1</b></div>
+                <div class="lv-main">
+                    <div class="xp"><div id="xp-fill"></div><span id="xp-text"></span></div>
+                    <div id="next-unlock" class="next-unlock"></div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="tab-slot" class="panel">
+                <div class="stage">
+                <div id="machine" class="machine">
+                    <canvas id="reels" class="pixel-canvas tap" data-fx="y,w"></canvas>
+                </div>
+                <div id="burn" class="burn">
+                    <div class="burn-top">
+                        <span class="burn-label"><i data-icon="flame"></i><span id="burn-tier">SPARK</span></span>
+                        <b id="burn-value">+0.000%</b>
+                        <small id="burn-next"></small>
+                    </div>
+                    <div class="burn-bar"><div id="burn-fill"></div></div>
+                </div>
+                <div class="meter-row">
+                    <div class="meter-box">
+                        <small class="label">TIMING</small>
+                        <canvas id="meter" class="pixel-canvas tap" data-fx="G,y"></canvas>
+                    </div>
+                    <div class="heat-box">
+                        <small id="heat-label" class="label">HEAT</small>
+                        <div id="heat" class="heat"></div>
+                    </div>
+                </div>
+                <div class="result" aria-live="polite">
+                    <div id="headline" class="headline"></div>
+                    <div id="subline" class="subline"></div>
+                </div>
+                </div>
+                <aside class="side">
+                <div class="controls">
+                    <div class="bet">
+                        <button id="bet-down" class="icon-btn" aria-label="Lower bet"><i data-icon="i-minus" data-scale="3"></i></button>
+                        <div class="bet-value"><small>BET</small><b id="bet">5</b></div>
+                        <button id="bet-up" class="icon-btn" aria-label="Raise bet"><i data-icon="i-plus" data-scale="3"></i></button>
+                    </div>
+                    <button id="btn-auto" class="toggle" data-fx="c,w"></button>
+                </div>
+                <button id="btn-spin" class="primary spin" data-fx="y,R,w">
+                    <span id="spin-label">SPIN</span><span id="spin-cost" class="cost"></span>
+                </button>
+                <div id="vip" class="vip">
+                    <div class="vip-top"><b id="vip-name">VIP</b><small id="vip-perks"></small></div>
+                    <div class="bar"><div id="vip-fill" class="fill"></div></div>
+                    <small id="vip-next" class="hint"></small>
+                </div>
+                <div id="vault" class="vault-card">
+                    <div class="vip-top"><b><i data-icon="vault"></i>THE VAULT</b><small id="vault-tier"></small></div>
+                    <div class="vault-bar"><div id="vault-fill"></div><span id="vault-hp"></span></div>
+                </div>
+                </aside>
+            </section>
+
+            <section id="tab-mine" class="panel" hidden>
+                <div class="stage">
+                <div class="scene-wrap">
+                    <canvas id="mine-scene" class="pixel-canvas scene tap" data-fx="l,S,w"></canvas>
+                    <div id="combo" class="combo" hidden>
+                        <b class="combo-count"></b>
+                        <small class="combo-name"></small>
+                        <small class="combo-ore"></small>
+                        <div class="combo-timer"><span></span></div>
+                    </div>
+                </div>
+                <div class="cart">
+                    <div class="cart-top">
+                        <span class="cart-count"><i data-icon="ore"></i><b id="ore">0</b>/<span id="cap">100</span></span>
+                        <span class="cart-meta"><span id="mine-rate"></span><span id="mine-eta"></span></span>
+                    </div>
+                    <div class="bar"><div id="cart-fill"></div></div>
+                </div>
+                </div>
+                <aside class="side">
+                <button id="btn-sell" class="primary sell" data-fx="y,Y,w">
+                    <span id="sell-label">SELL</span><span id="sell-gain" class="cost"></span>
+                </button>
+                <div id="upgrades" class="upgrades"></div>
+                </aside>
+            </section>
+
+            <section id="tab-farm" class="panel" hidden>
+                <div class="stage">
+                <div class="card">
+                    <h4 class="card-title"><i data-icon="i-farm"></i>EXPEDITION<small>DIGGS GOES FARMING WHILE YOU WORK</small></h4>
+                    <div id="trip"></div>
+                </div>
+                </div>
+                <aside class="side">
+                <div class="card">
+                    <h4 class="card-title"><i data-icon="sprout"></i>GARDEN<small>PLANT SEEDS, COME BACK LATER</small></h4>
+                    <div id="garden" class="garden"></div>
+                </div>
+                </aside>
+            </section>
+
+            <section id="tab-bag" class="panel" hidden>
+                <div class="stage">
+                <div data-bag-view="items">
+                    <div id="item-grid" class="item-grid"></div>
+                </div>
+                <div data-bag-view="forge" hidden>
+                    <h3>GEAR</h3>
+                    <div id="gear-list" class="list"></div>
+                    <h3>BREWS</h3>
+                    <div id="brew-list" class="list"></div>
+                </div>
+                <div data-bag-view="pets" hidden>
+                    <div id="pet-list" class="list"></div>
+                </div>
+                <div data-bag-view="skins" hidden>
+                    <div id="skin-list" class="list"></div>
+                </div>
+                <div data-bag-view="relics" hidden>
+                    <div id="relic-list" class="list"></div>
+                </div>
+                </div>
+                <aside class="side">
+                <div class="seg" role="tablist">
+                    <button data-bag="items" role="tab">ITEMS</button>
+                    <button data-bag="forge" role="tab">FORGE<b class="dot" data-dot="forge" hidden></b></button>
+                    <button data-bag="pets" role="tab">PETS</button>
+                    <button data-bag="skins" role="tab">SKINS</button>
+                    <button data-bag="relics" role="tab">RELICS</button>
+                </div>
+                <div data-bag-view="items">
+                    <div id="item-detail" class="card item-detail"></div>
+                </div>
+                <p class="hint" data-bag-view="forge" hidden>GEAR IS FOREVER. PAST LV5 IT ASCENDS UP TO 5 STARS.</p>
+                <div id="set-list" class="list" data-bag-view="forge" hidden></div>
+                <div id="relic-slots" class="relic-slots" data-bag-view="relics" hidden></div>
+                <p class="hint" data-bag-view="skins" hidden>LOOKS ONLY, NO STATS. PAID IN DIAMONDS.</p>
+                <p class="hint" data-bag-view="pets" hidden>ONE PET AT A TIME. <kbd>Q</kbd> = SKILL.</p>
+                </aside>
+            </section>
+
+        </main>
+
+        <nav class="dock" role="tablist">
+            <button class="tab" data-tab="slot" role="tab" data-fx="y,R"><i data-icon="i-seven" data-scale="3"></i>SLOT<b class="dot" data-dot="slot" hidden></b></button>
+            <button class="tab" data-tab="mine" role="tab" data-fx="l,c"><i data-icon="i-pick" data-scale="3"></i>MINE<b class="dot" data-dot="mine" hidden></b></button>
+            <button class="tab" data-tab="farm" role="tab" data-fx="G,g"><i data-icon="i-farm" data-scale="3"></i>FARM<b class="dot" data-dot="farm" hidden></b></button>
+            <button class="tab" data-tab="bag" role="tab" data-fx="y,O"><i data-icon="i-bag" data-scale="3"></i>BAG<b class="dot" data-dot="bag" hidden></b></button>
+        </nav>
+        </div>
+
+        <div id="modal" class="modal" hidden>
+            <div id="modal-card" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+                <div id="modal-art" class="modal-art"></div>
+                <b id="modal-title" class="modal-title"></b>
+                <small id="modal-sub" class="hint"></small>
+                <div id="modal-lines" class="modal-lines"></div>
+                <div class="modal-actions">
+                    <button id="modal-ok" class="primary modal-ok" data-fx="y,G,w"></button>
+                    <button id="modal-cancel" class="modal-cancel" hidden></button>
+                </div>
+                <small id="modal-keys" class="hint"><kbd>SPACE</kbd> / <kbd>ENTER</kbd></small>
+                <div id="modal-timer" class="modal-timer" hidden></div>
+            </div>
+        </div>
+
+        <div id="tip" class="tip" role="tooltip" hidden></div>
+        <div id="hint" class="tip hint-box" role="status" hidden></div>
+
+        <div id="loot" class="loot" hidden>
+            <div id="loot-chest" class="loot-chest"></div>
+            <div id="loot-rarity" class="loot-rarity"></div>
+            <div id="loot-lines" class="loot-lines"></div>
+            <button id="loot-all" class="primary-sm loot-all" hidden></button>
+            <small id="loot-hint" class="loot-hint"></small>
+        </div>
+
+        <div id="history" class="sheet" hidden>
+            <div class="sheet-head">
+                <b>HISTORY</b>
+                <button id="btn-history-close" class="icon-btn" aria-label="Close"><i data-icon="i-close" data-scale="3"></i></button>
+            </div>
+            <div id="h-summary" class="stats"></div>
+            <h3>HALL OF FAME</h3>
+            <div id="h-hall" class="h-list"></div>
+            <div class="seg h-filters">
+                <button data-filter="all">ALL</button>
+                <button data-filter="wins">WINS</button>
+                <button data-filter="chests">CHESTS</button>
+            </div>
+            <div id="h-list" class="h-list"></div>
+        </div>
+
+
+        <div id="menu" class="sheet" hidden>
+            <div class="sheet-head">
+                <b>MENU</b>
+                <button id="btn-close" class="icon-btn" aria-label="Close"><i data-icon="i-close" data-scale="3"></i></button>
+            </div>
+            <div class="seg menu-tabs" role="tablist">
+                <button data-menu="start" role="tab">START</button>
+                <button data-menu="guide" role="tab">GUIDE</button>
+                <button data-menu="pay" role="tab">ODDS</button>
+                <button data-menu="stats" role="tab">STATS</button>
+                <button data-menu="trophy" role="tab">TROPHY</button>
+                <button data-menu="settings" role="tab">SETTINGS</button>
+            </div>
+
+            <div id="menu-start" class="menu-panel" data-panel="start"></div>
+            <div id="menu-guide" class="menu-panel" data-panel="guide" hidden></div>
+            <div id="menu-pay" class="menu-panel" data-panel="pay" hidden></div>
+            <div id="menu-stats" class="menu-panel" data-panel="stats" hidden>
+                <div id="stats" class="stats"></div>
+            </div>
+
+            <div id="menu-settings" class="menu-panel settings" data-panel="settings" hidden>
+                <section class="card set-group">
+                    <h4 class="card-title"><i data-icon="i-sound"></i>AUDIO</h4>
+                    <div class="set-row">
+                        <div class="row-main"><b>SOUND</b><small class="hint">BEEPS, BOOPS AND SAD TROMBONES</small></div>
+                        <button id="set-sound" class="toggle"></button>
+                    </div>
+                    <div class="set-row">
+                        <div class="row-main"><b>VOLUME</b><small class="hint">GO PAST 100% WHEN THE ROOM IS LOUD</small></div>
+                        <output id="set-volume-out" class="vol-out" for="set-volume"></output>
+                    </div>
+                    <div class="vol">
+                        <button id="set-vol-down" class="icon-btn" aria-label="Quieter"><i data-icon="i-minus" data-scale="3"></i></button>
+                        <input id="set-volume" class="slider" type="range" min="0" max="200" step="10" aria-label="Volume" />
+                        <button id="set-vol-up" class="icon-btn" aria-label="Louder"><i data-icon="i-plus" data-scale="3"></i></button>
+                    </div>
+                    <div class="seg vol-presets">
+                        <button data-vol="50">50%</button>
+                        <button data-vol="100">100%</button>
+                        <button data-vol="150">150%</button>
+                        <button data-vol="200">MAX</button>
+                    </div>
+                </section>
+
+                <section class="card set-group">
+                    <h4 class="card-title"><i data-icon="star"></i>EFFECTS</h4>
+                    <div class="set-row">
+                        <div class="row-main"><b>CALM MODE</b><small class="hint">NO SHAKES, FEWER PARTICLES, STILL ANIMATIONS</small></div>
+                        <button id="set-calm" class="toggle"></button>
+                    </div>
+                    <div class="set-row">
+                        <div class="row-main"><b>FRAME LIGHTS</b><small class="hint">RAINBOW WHILE SPINNING, FLASHES ON WINS</small></div>
+                        <button id="set-frame" class="toggle"></button>
+                    </div>
+                </section>
+
+                <section class="card set-group">
+                    <h4 class="card-title"><i data-icon="miner"></i>GAME</h4>
+                    <div class="set-row">
+                        <div class="row-main"><b>TOUR</b><small class="hint">DIGGS SHOWS YOU AROUND AGAIN</small></div>
+                        <button id="set-tour">REPLAY</button>
+                    </div>
+                    <div class="set-row">
+                        <div class="row-main"><b>SHORTCUTS</b><small class="hint">EVERY KEY, IN THE GUIDE</small></div>
+                        <button id="set-keys">VIEW</button>
+                    </div>
+                </section>
+
+                <section class="card set-group">
+                    <h4 class="card-title"><i data-icon="chest"></i>SAVE</h4>
+                    <div class="set-row">
+                        <div class="row-main"><b>BACKUP</b><small class="hint">COPY YOUR WHOLE SAVE AS A CODE</small></div>
+                        <button id="set-export">COPY</button>
+                    </div>
+                    <div class="set-row">
+                        <div class="row-main"><b>RESTORE</b><small class="hint">PASTE A CODE TO LOAD IT</small></div>
+                        <button id="set-import">PASTE</button>
+                    </div>
+                    <div id="import-box" class="import-box" hidden>
+                        <textarea id="import-text" rows="3" spellcheck="false" aria-label="Save code"></textarea>
+                        <small id="import-msg" class="hint"></small>
+                        <div class="import-actions">
+                            <button id="import-go" class="primary-sm">LOAD SAVE</button>
+                            <button id="import-cancel">CANCEL</button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="card danger">
+                    <h4 class="card-title">RESET GAME</h4>
+                    <p class="hint">WIPES EVERYTHING: COINS, ORE, PETS, GEAR, ITEMS, ACHIEVEMENTS. THERE IS NO UNDO.</p>
+                    <button id="btn-reset" class="ghost-danger">I WANT TO RESET</button>
+                </div>
+                <small id="set-version" class="hint set-version"></small>
+            </div>
+
+            <div id="menu-trophy" class="menu-panel" data-panel="trophy" hidden>
+                <div id="trophy-summary" class="tr-summary"></div>
+                <div id="trophy-list" class="tr-list"></div>
+            </div>
+        </div>
+
+        <div id="collapse" class="collapse" hidden>
+            <b>IT'S ALL GONE</b>
+            <small>EVERY COIN. EVERY PET. EVERY ROCK. BRO IS COOKED.</small>
+        </div>
+
+        <canvas id="fx" class="fx"></canvas>
+        <script type="module" src="src/main.js"></script>
+    </body>
+</html>
