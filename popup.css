@@ -2603,13 +2603,11 @@ body.is-calm::after {
 .detail-scrap .r {
     color: var(--red);
 }
+/* One recipe per row, stacked: the full name always fits. */
 .use-chips {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 3px;
-}
-.use-chips:has(> :only-child) {
-    grid-template-columns: 1fr;
 }
 .use-chip {
     display: flex;
