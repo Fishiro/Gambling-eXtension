@@ -129,6 +129,7 @@ const LIST = [
     ["cart20", "BIG BACK", "UPGRADE THE CART TO LV20", (s) => s.upgrades.cart >= 20],
     ["tap50k", "NO HANDS LEFT", "TAP THE ROCK 50,000 TIMES", (s, f) => f.taps >= 50_000],
     ["combo5k", "FINGERS OF GOD", "REACH A x5,000 COMBO", (s, f) => f.bestCombo >= 5000],
+    ["combo6700", "WHAT?", "REACH A x6,700 COMBO", (s, f) => f.bestCombo >= 6700],
     ["combo10k", "BIG BANG THEORY", "REACH A x10,000 COMBO. YOUR KEYBOARD IS IN PAIN.", (s, f) => f.bestCombo >= 10000],
     ["bat100", "BAT COUNTRY", "CATCH 100 GOLDEN BATS", (s, f) => f.bats >= 100],
     ["chest500", "LOOT GOBLIN", "OPEN 500 CHESTS", (s) => s.stats.chestsOpened >= 500],
@@ -431,7 +432,7 @@ export function createAchievements() {
 const TAGS = [
     ["TIME", "c", "hello regular grass opens500 owl midnight earlybird lunch friday monday weekend newyear halloween xmas pi away8 away3d away7d marathon marathon30"],
     ["SLOT", "y", "spin1 spin500 spin5k spin25k spin100k perfect perfect500 perfect5k bet1m perfRun5 perfRun15 timed1k winRun5 winRun10 near near100 lose10 lose25 lose50 slow practice practice500 highroller maxbet jackpot jackpot5 cosmic cosmic5 bigwin heatmax burn1m wiggle stuck autopilot"],
-    ["MINE", "l", "tap1k tap10k tap50k full sellOne sell1k ore10k ore100k combo500 combo2k combo5k combo10k pick20 drill20 cart20"],
+    ["MINE", "l", "tap1k tap10k tap50k full sellOne sell1k ore10k ore100k combo500 combo2k combo5k combo6700 combo10k pick20 drill20 cart20"],
     ["LOOT", "O", "bat bat100 chest chest500 chest2k chest25 legendChest junk10 junkAll completionist"],
     ["WEALTH", "G", "lv5 lv15 lv20 lv30 lv50 broke seven balanced million billion gems1 gems100 gems500"],
     ["PETS + SKINS", "R", "pet1 pets5 pets10 petAll skills100 rock fruit fluff napper clock chester dicey timelord sixseven pat50 pat500 pat5k swap toast office meta drip"],

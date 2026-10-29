@@ -3128,3 +3128,32 @@ body.is-calm::after {
 .pet-card[data-state="away"] .pet-cd {
     color: var(--green);
 }
+
+/* ---- combo brews: their own heading in the forge; secret ones show only what to find (bag.js) ---- */
+.list-sub {
+    margin: var(--s2) 0 0;
+    font: 700 var(--fs-1)/1 "Silkscreen", monospace;
+    color: var(--orange);
+}
+.row[data-secret] {
+    opacity: 0.7;
+}
+.row[data-secret] b {
+    color: var(--muted);
+}
+/* BOTTOMLESS FLASK: the cart bar runs rainbow while it has no limit. */
+.bar[data-bottomless] #cart-fill {
+    width: 100% !important;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 6px, var(--green) 6px 12px, var(--cyan) 12px 18px, #b55ce0 18px 24px);
+    animation: bottomless 0.4s steps(4) infinite;
+}
+@keyframes bottomless {
+    to {
+        background-position: 24px 0;
+    }
+}
+
+/* Effects already in flight hide while the menu or history sheet is open (new ones are skipped, see fx.covered). */
+body:has(.sheet:not([hidden])) #fx {
+    visibility: hidden;
+}

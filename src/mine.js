@@ -34,7 +34,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     };
 
     const scene = createMineScene(el.scene, {
-        getFill: () => econ.oreAt(state) / econ.cartCap(state),
+        getFill: () => Math.min(1, econ.oreAt(state) / econ.cartCap(state)),
         getAutoPeriod: () => econ.clamp(2.2 - 0.12 * state.upgrades.drill, 0.6, 2.2) / luck.mineBoost(state),
         isGoldRush: () => luck.mineBoost(state) > 1,
         getPet: () => pets.leader(),
@@ -64,11 +64,13 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     let heatFrame = 0;
 
     const titanMult = () => (luck.timedLeft(state, "titan") > 0 ? BREW_FX.titanMult : 1);
+    const surgeMult = () => (luck.timedLeft(state, "surge") > 0 ? BREW_FX.surgeMult : 1);
+    const hypeMult = () => (luck.timedLeft(state, "hype") > 0 ? BREW_FX.hypeMult : 1);
 
     // Titan Tonic keeps tapping for you, a couple of times a second, even on other tabs.
     function titanTick() {
         if (titanMult() === 1) return;
-        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * BREW_FX.titanMult * BREW_FX.titanTapsPerSec);
+        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * surgeMult() * BREW_FX.titanMult * BREW_FX.titanTapsPerSec);
         if (added <= 0) return;
         onOre(added);
         commit();
@@ -103,7 +105,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     function tap() {
         emit("tap");
         sixSeven();
-        if (econ.oreAt(state) >= econ.cartCap(state) - 0.001) {
+        if (econ.oreAt(state) >= econ.cartLimit(state) - 0.001) {
             const now = performance.now();
             combo.hit(0);
             scene.swing({ power: 0, lucky: false });
@@ -123,7 +125,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         const overheated = cooled < 1;
         renderHeat();
         const lucky = Math.random() < MINE.luckyChance;
-        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * titanMult() * cooled * (lucky ? MINE.luckyMult : 1));
+        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * titanMult() * surgeMult() * cooled * (lucky ? MINE.luckyMult : 1));
         const chest = luck.chance(LUCK.chestPerTap * (1 + items.bonus(state, "chest")));
         const drops = [...items.rollDrops(state, "tap"), ...(lucky ? items.rollDrops(state, "luckyTap") : [])];
         onOre(added);
@@ -170,7 +172,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         }
         market.settle(state);
         const mult = market.sell(state, amount);
-        const coins = Math.round(amount * econ.orePrice(state) * mult);
+        const coins = Math.round(amount * econ.orePrice(state) * mult * hypeMult());
         state.ore -= amount;
         state.coins += coins;
         const levels = econ.gainXp(state, amount * mult * MINE.xpPerOre);
@@ -206,7 +208,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         const now = performance.now();
         if (now < nextBatAt) return;
         nextBatAt = now + luck.nextBatDelay();
-        if (state.tab !== "mine" || document.hidden) return;
+        if (state.tab !== "mine" || document.hidden || fx.covered()) return;
         scene.spawnBat(LUCK.batSeconds);
         sfx.bat();
         const p = fx.centerOf(el.scene);
@@ -238,20 +240,22 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
 
     function render() {
         const cap = econ.cartCap(state);
+        const limitless = econ.cartLimit(state) === Infinity;
         const now = econ.oreAt(state);
         const ore = Math.floor(now);
-        const full = now >= cap - 0.001;
+        const full = !limitless && now >= cap - 0.001;
         el.ore.textContent = econ.formatNumber(ore);
-        el.cap.textContent = econ.formatNumber(cap);
-        el.cartFill.style.width = `${(now / cap) * 100}%`;
+        el.cap.textContent = limitless ? TEXT.noLimit : econ.formatNumber(cap);
+        el.cartFill.style.width = `${Math.min(1, now / cap) * 100}%`;
         el.cartFill.parentElement.toggleAttribute("data-full", full);
+        el.cartFill.parentElement.toggleAttribute("data-bottomless", limitless);
         const boost = luck.mineBoost(state);
         el.rate.textContent = `${econ.formatNumber(econ.orePerSecond(state) * 60 * boost)}/MIN`;
         el.rate.toggleAttribute("data-boost", boost > 1);
-        el.eta.textContent = full ? TEXT.cartFull : TEXT.fullIn(econ.formatClock((cap - now) / (econ.orePerSecond(state) * boost)));
+        el.eta.textContent = limitless ? TEXT.bottomless : full ? TEXT.cartFull : now >= cap ? TEXT.overCap : TEXT.fullIn(econ.formatClock((cap - now) / (econ.orePerSecond(state) * boost)));
         el.eta.toggleAttribute("data-full", full);
         el.sellLabel.textContent = ore ? TEXT.sell(econ.formatNumber(ore)) : TEXT.cartEmpty;
-        el.sellGain.innerHTML = ore ? `+${svgIcon("coin", 2)}${econ.formatNumber(Math.round(ore * econ.orePrice(state) * market.quote(state).mult))}` : "";
+        el.sellGain.innerHTML = ore ? `+${svgIcon("coin", 2)}${econ.formatNumber(Math.round(ore * econ.orePrice(state) * market.quote(state).mult * hypeMult()))}` : "";
         el.sell.disabled = !ore;
         el.sell.toggleAttribute("data-ready", ore >= cap * 0.5);
 

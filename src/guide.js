@@ -188,7 +188,9 @@ function guideHtml() {
             "FORGE",
             `${flow(node(`${icon("stone", 2)}${icon("iron", 2)}${icon("meteor", 2)}`, "MATERIALS"), node(icon("i-hammer"), "FORGE"), node(`${icon(GEAR[0].icon)}${icon("pstar", 2).repeat(3)}`, "GEAR + STARS"))}
             ${tiles(BREWS.slice(0, 5).map((b) => [icon(b.id), ITEMS[b.id].name]), 5)}
-            <p>GEAR IS FOREVER. BREWS ARE ONE-USE BOOSTS.</p>`,
+            <p>GEAR IS FOREVER. BREWS ARE ONE-USE BOOSTS.</p>
+            ${tiles(BREWS.filter((b) => b.combo).map((b) => [icon(b.id), ITEMS[b.id].name, ITEMS[b.id].effect]), 3)}
+            <p>COMBO BREWS ARE MADE FROM JUNK. EACH STAYS SECRET UNTIL YOU HAVE FOUND ALL ITS INGREDIENTS ONCE.</p>`,
         ),
         section(
             "relic",

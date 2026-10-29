@@ -521,7 +521,7 @@ export const ITEMS = {
     goldseed: { name: "GOLD SEED", rarity: "epic", from: "CHESTS, LUCKY HARVESTS" },
     goldfruit: { name: "GOLD FRUIT", rarity: "legendary", from: "GOLD SEEDS" },
     relicDust: { name: "RELIC DUST", rarity: "epic", from: "SALVAGED RELICS, THE VAULT" },
-    // Junk. No use yet: it just piles up, looks good in the bag, and waits for a purpose.
+    // Junk. Mostly it just piles up and looks good in the bag; some of it brews the combo brews.
     pebble: { name: "PEBBLE", rarity: "common", from: "MINE TAPS", junk: true },
     nail: { name: "RUSTY NAIL", rarity: "common", from: "MINE TAPS", junk: true },
     dustbunny: { name: "DUST BUNNY", rarity: "common", from: "MINE TAPS", junk: true },
@@ -555,6 +555,10 @@ export const ITEMS = {
     titanBrew: { name: "TITAN TONIC", rarity: "epic", from: "FORGE", use: { type: "timed", key: "titan", seconds: 900, label: "TITAN: TAPS x5 + AUTO TAP" }, effect: "15 MIN: TAPS x5 + AUTO TAP" },
     breakerBrew: { name: "VAULT BREAKER", rarity: "epic", from: "FORGE", use: { type: "spins", key: "breakerSpins", n: 50, label: "BREAKER: VAULT DAMAGE x3" }, effect: "50 SPINS: VAULT DAMAGE x3" },
     phoenixBrew: { name: "PHOENIX DRAUGHT", rarity: "legendary", from: "FORGE", use: { type: "timed", key: "phoenix", seconds: 60, label: "PHOENIX: UNBREAKABLE COMBO" }, effect: "60S: COMBO CAN'T BREAK, HEAT MAXED" },
+    // Combo brews: for a spam session. Brewed from junk, and secret until every ingredient has been found once.
+    voidBrew: { name: "BOTTOMLESS FLASK", rarity: "epic", from: "FORGE", use: { type: "timed", key: "bottomless", seconds: 60, label: "BOTTOMLESS: THE CART HAS NO LIMIT" }, effect: "60S: THE CART HAS NO LIMIT" },
+    hypeBrew: { name: "HYPE JUICE", rarity: "rare", from: "FORGE", use: { type: "timed", key: "hype", seconds: 120, label: "HYPE: SELLING PAYS x2" }, effect: "120S: SELLING ORE PAYS x2 COIN" },
+    surgeBrew: { name: "ORE SURGE", rarity: "rare", from: "FORGE", use: { type: "timed", key: "surge", seconds: 90, label: "SURGE: TAPS DIG x2 ORE" }, effect: "90S: EVERY TAP DIGS x2 ORE" },
 };
 
 // Chance per event that each item drops while you play.
@@ -635,10 +639,14 @@ export const BREWS = [
     { id: "titanBrew", cost: { ember: 5, obsidian: 3, meteor: 1 } },
     { id: "breakerBrew", cost: { relicDust: 5, obsidian: 2 } },
     { id: "phoenixBrew", cost: { goldfruit: 1, ember: 8 } },
+    // `combo` brews sit under their own heading and stay secret until each ingredient has been found once.
+    { id: "voidBrew", cost: { pebble: 6, nail: 4, boot: 1, iron: 2 }, combo: true },
+    { id: "hypeBrew", cost: { bottlecap: 5, ticket: 4, button: 3, oldcoin: 1 }, combo: true },
+    { id: "surgeBrew", cost: { dustbunny: 4, marble: 2, pinecone: 4, stone: 6 }, combo: true },
 ];
 
 // What the big brews do while they run.
-export const BREW_FX = { midasMult: 2, titanMult: 5, titanTapsPerSec: 2, starMult: 5, breakerMult: 3 };
+export const BREW_FX = { midasMult: 2, titanMult: 5, titanTapsPerSec: 2, starMult: 5, breakerMult: 3, hypeMult: 2, surgeMult: 2 };
 
 // The buff row, in order. `key` lives in state.buffs: a timestamp for timers, a count otherwise.
 export const BUFF_CHIPS = [
@@ -650,6 +658,9 @@ export const BUFF_CHIPS = [
     { key: "midas", kind: "timer", cls: "brew", icon: "midasBrew", scale: 1, color: "y", title: "MIDAS: SLOT WINS x2" },
     { key: "titan", kind: "timer", cls: "brew", icon: "titanBrew", scale: 1, color: "l", title: "TITAN: TAPS x5 + AUTO TAP" },
     { key: "phoenix", kind: "timer", cls: "brew", icon: "phoenixBrew", scale: 1, color: "v", title: "PHOENIX: COMBO CAN'T BREAK" },
+    { key: "bottomless", kind: "timer", cls: "brew", icon: "voidBrew", scale: 1, color: "v", title: "BOTTOMLESS: THE CART HAS NO LIMIT" },
+    { key: "hype", kind: "timer", cls: "brew", icon: "hypeBrew", scale: 1, color: "P", title: "HYPE: SELLING PAYS x2" },
+    { key: "surge", kind: "timer", cls: "brew", icon: "surgeBrew", scale: 1, color: "O", title: "SURGE: TAPS DIG x2 ORE" },
     { key: "freeze", kind: "timer", cls: "brew", icon: "frosty", scale: 1, color: "c", title: "BRAIN FREEZE: THE PICK CAN'T OVERHEAT" },
     { key: "starSpins", kind: "count", cls: "brew", icon: "starBrew", scale: 1, color: "c", title: "STARLIGHT: STAR ODDS x5" },
     { key: "breakerSpins", kind: "count", cls: "brew", icon: "breakerBrew", scale: 1, color: "B", title: "VAULT BREAKER: DAMAGE x3" },

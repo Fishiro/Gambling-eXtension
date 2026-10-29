@@ -183,6 +183,11 @@ export const heatMult = (heat) => clamp(1 - (heat - MINE.overheat.free) / MINE.o
 // Heat at which a tap hits the floor: the overheat bar is full there.
 export const maxHeat = () => MINE.overheat.free + MINE.overheat.span * (1 - MINE.overheat.floor);
 
+// BOTTOMLESS FLASK: while it runs the cart takes any amount. cartCap stays the cart's size (the market measures
+// supply in carts); cartLimit is how much it holds right now.
+const bottomless = (state, now = Date.now()) => (state.buffs.bottomless ?? 0) > now;
+export const cartLimit = (state, now = Date.now()) => (bottomless(state, now) ? Infinity : cartCap(state));
+
 export const orePrice = (state) => MINE.orePrice * (1 + bonus(state, "sell"));
 
 // state.ore is the cart at time state.mineAt; anything later is derived, never ticked.
@@ -190,7 +195,9 @@ export function oreAt(state, now = Date.now()) {
     const span = Math.max(0, now - state.mineAt);
     const rushed = clamp(state.buffs.goldRush - state.mineAt, 0, span);
     const mined = (orePerSecond(state) * (rushed * LUCK.goldRushMult + span - rushed)) / 1000;
-    return Math.min(cartCap(state), state.ore + mined);
+    // Ore piled past the cart's size during BOTTOMLESS stays; the drill just can't add more until it is sold.
+    const limit = Math.max(cartLimit(state, now), state.ore);
+    return Math.min(limit, state.ore + (state.ore >= cartCap(state) && !bottomless(state, now) ? 0 : mined));
 }
 
 // Bake the drilled ore into state.ore. Call before anything that reads or changes ore, rate, cap or gold rush.
@@ -204,7 +211,7 @@ export function settleOre(state, now = Date.now()) {
 export function addOre(state, amount) {
     settleOre(state);
     const before = state.ore;
-    state.ore = Math.min(cartCap(state), state.ore + amount);
+    state.ore = Math.min(Math.max(cartLimit(state), state.ore), state.ore + amount);
     return state.ore - before;
 }
 

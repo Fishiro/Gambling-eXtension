@@ -30,6 +30,9 @@ let running = false;
 let last = 0;
 
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+// A full-screen sheet (menu, history) covers the game: effects from underneath stay out of it.
+export const covered = () => document.querySelector(".sheet:not([hidden])") !== null;
 const range = ([lo, hi]) => lo + Math.random() * (hi - lo);
 const color = (c) => PALETTE[c] ?? c;
 
@@ -256,6 +259,7 @@ export function gild() {
 }
 
 export function burst(x, y, opts = {}) {
+    if (covered()) return;
     const {
         count = 10,
         colors = ["y", "w"],
@@ -291,6 +295,7 @@ export function burst(x, y, opts = {}) {
 }
 
 export function float(x, y, text, opts = {}) {
+    if (covered()) return;
     const { color: c = "y", size = 16, rise = 0.7, life = 60, rainbow = false } = opts;
     labels.push({ x, y, text, color: color(c), size, rise, life, max: life, rainbow });
     start();

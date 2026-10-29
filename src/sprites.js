@@ -690,7 +690,7 @@ const SPRITES = {
 
 // Brews share one bottle; only the liquid colour changes.
 const BOTTLE = ["..kkk...", "..klk...", "..klk...", ".kXXXk..", "kXwXXXk.", "kXXXXXk.", "kXXXXXk.", ".kkkkk.."];
-const BREW_COLORS = { rushBrew: "y", fireBrew: "R", hotBrew: "r", luckBrew: "G", midasBrew: "Y", starBrew: "c", titanBrew: "S", breakerBrew: "B", phoenixBrew: "v" };
+const BREW_COLORS = { rushBrew: "y", fireBrew: "R", hotBrew: "r", luckBrew: "G", midasBrew: "Y", starBrew: "c", titanBrew: "S", breakerBrew: "B", phoenixBrew: "v", voidBrew: "p", hypeBrew: "P", surgeBrew: "O" };
 Object.entries(BREW_COLORS).forEach(([id, c]) => (SPRITES[id] = BOTTLE.map((row) => row.replaceAll("X", c))));
 
 const cache = new Map();

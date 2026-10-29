@@ -95,9 +95,23 @@ export function createBag() {
         </div>`;
     }
 
-    function brewHtml(brew) {
+    // A combo brew stays a secret until every ingredient has been in the bag at least once.
+    const learned = (brew) => !brew.combo || Object.keys(brew.cost).every((id) => id in state.bag);
+
+    function brewHtml(brew, i) {
         const item = items.item(brew.id);
-        return `<div class="row">
+        const heading = brew.combo && !BREWS[i - 1]?.combo ? `<h5 class="list-sub">${TEXT.comboBrews}</h5>` : "";
+        if (!learned(brew)) {
+            return `${heading}<div class="row" data-secret>
+            <span class="row-icon">${svgIcon("lock", 2)}</span>
+            <div class="row-main">
+                <b>${TEXT.secretBrew}</b>
+                <small>${TEXT.secretBrewHint}</small>
+                <span class="chips">${costHtml(state, brew.cost)}</span>
+            </div>
+        </div>`;
+        }
+        return `${heading}<div class="row">
             <span class="row-icon">${svgIcon(brew.id, 2)}</span>
             <div class="row-main">
                 <b>${item.name} <em>x${items.count(state, brew.id)}</em></b>

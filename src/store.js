@@ -15,7 +15,7 @@ const fresh = () => ({
     burned: 0,
     betEma: 0,
     burnChests: 0,
-    buffs: { goldRush: 0, hotSpins: 0, rockSpins: 0, loadedSpins: 0, sevenSpins: 0, midas: 0, titan: 0, phoenix: 0, starSpins: 0, breakerSpins: 0, freeze: 0 },
+    buffs: { goldRush: 0, hotSpins: 0, rockSpins: 0, loadedSpins: 0, sevenSpins: 0, midas: 0, titan: 0, phoenix: 0, starSpins: 0, breakerSpins: 0, freeze: 0, bottomless: 0, hype: 0, surge: 0 },
     heat: 0,
     skill: 0.5,
     freeSpin: true,
