@@ -11,17 +11,18 @@ A Chrome extension (Manifest V3) popup game: slot machine + idle mine. Spin on y
 - **Bag & Forge**: items, gear, brews, relics.
 - **Pets, skins, achievements, chests**.
 
-## Play on the web
+## Play on the web (wide screen)
 
-`index.html` is the web version: the same game, scaled to fill the screen, with side panels listing the keys for
-the tab you are on (they light up as you press them). On narrow screens the panels hide and the game fills the
-width. ES modules need a web server, so open it through one, not as a file:
+The same game on a full page: it scales to fit the screen, and wide screens get side panels with the keys for
+the tab you are on. Progress is shared with the popup when opened from the extension. Three ways to open it:
 
-```
-python -m http.server 8000     # then open http://localhost:8000
-```
+1. **From the extension:** click the expand button (four corners) at the top of the popup. It opens in a tab.
+2. **Double-click `play.bat`** (Windows, needs [Node.js](https://nodejs.org)). It starts a small local server and
+   opens the browser; close the black window to stop it.
+3. **Any terminal:** `npm run web` (or `python -m http.server 8765`), then open http://localhost:8765.
 
-Any static host works (GitHub Pages serves `index.html` from the repo root). Progress saves in that browser.
+Opening `index.html` straight from the folder shows a blank page: browsers block ES modules on `file://`.
+Any static host works too (GitHub Pages serves `index.html` from the repo root).
 
 ## Install (dev)
 

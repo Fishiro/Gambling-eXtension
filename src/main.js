@@ -317,6 +317,17 @@ $("btn-reset").addEventListener("click", () =>
 );
 $("btn-history").addEventListener("click", () => achievements.bump("history"));
 
+// In the extension popup: open the wide web version (index.html) in a tab. It shares this save. Hidden on the
+// web page itself, where the game already runs in a frame.
+const extensionTabs = globalThis.chrome?.tabs?.create && globalThis.chrome?.runtime?.getURL && window.top === window;
+$("btn-wide").hidden = !extensionTabs;
+$("btn-wide").title = TEXT.playWide;
+$("btn-wide").addEventListener("click", () => {
+    commit();
+    chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });
+    window.close();
+});
+
 // Reset: wipe first (the store stays frozen), then let the whole UI fall apart before reloading.
 function collapse() {
     wipe();

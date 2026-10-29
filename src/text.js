@@ -262,6 +262,7 @@ export const TEXT = {
     send: "SEND DIGGS",
     sendWith: (n) => (n ? `SEND DIGGS + ${n} PET${n > 1 ? "S" : ""}` : "SEND DIGGS"),
     luckPct: (luck) => `${Math.round(luck * 100)}% LUCK`,
+    playWide: "PLAY WIDE IN A TAB",
     // The web page's side panels: what the mouse does on each tab, and short tips.
     web: {
         title: "PIXEL SLOTS AFK",
