@@ -34,6 +34,7 @@ export const TEXT = {
     broke: "COOKED!",
     brokeSub: "BRO IS BROKE. MINE ORE, SELL IT, RUN IT BACK",
     betLowered: (bet) => `BET LOWERED TO ${bet}`,
+    rateSplit: (drill, taps) => `DRILL ${drill}/MIN + TAPS ${taps}/MIN`,
     burnMax: "MAXED. BURN STAYS FOREVER",
     betCap: (cap) => `MAX BET ${cap} AT THIS LEVEL`,
     spin: "SPIN",

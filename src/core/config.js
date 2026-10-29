@@ -86,6 +86,8 @@ export const MINE = {
     overheat: { rest: 4, free: 6, span: 18, floor: 0.25 },
     luckyChance: 0.06,
     luckyMult: 5,
+    // The live ORE/MIN readout: the drill plus what taps dug over the last rateWindowSeconds, redrawn once a second.
+    rateWindowSeconds: 3,
     upgrades: {
         pick: { name: "PICK", unit: "/TAP", cost: 20, growth: 1.5, base: 1, step: 1, compound: 1.12 },
         drill: { name: "DRILL", unit: "/MIN", cost: 35, growth: 1.55, base: 6, step: 5, compound: 1.12 },

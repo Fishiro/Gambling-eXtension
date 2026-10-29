@@ -275,6 +275,13 @@ export const orePerSecond = (state) => (upgradeValue("drill", state.upgrades.dri
 
 export const cartCap = (state) => Math.round(upgradeValue("cart", state.upgrades.cart) * (1 + bonus(state, "cart")));
 
+// Ore per minute dug by taps lately: `log` is [[timeMs, ore], ...], counted over the last `windowMs` before `now`.
+export function tapRate(log, now, windowMs) {
+    const since = now - windowMs;
+    const ore = log.reduce((sum, [t, n]) => (t > since && t <= now ? sum + n : sum), 0);
+    return (ore * 60_000) / windowMs;
+}
+
 // Pick heat cooled from `lastAt` to `now` (ms) at `rate` x the base cooling, and what a tap at that heat yields
 // (1 = full, down to the floor).
 export const coolHeat = (heat, lastAt, now, rate = 1) => Math.max(0, heat - (MINE.overheat.rest * rate * (now - lastAt)) / 1000);

@@ -379,3 +379,11 @@ test("gear: LV1-5 always work, stars succeed at STAR_CHANCE and a crack keeps th
     fresh.coins = 1e6;
     assert.equal(upgrade(fresh, gear, () => 0.99), "up", "plain levels never fail");
 });
+
+test("live ore/min: taps in the window count per minute, older ones drop out", () => {
+    const log = [[0, 10], [1000, 10], [2500, 10]];
+    assert.equal(econ.tapRate(log, 2600, 3000), 600); // 30 ore in 3 s
+    assert.equal(econ.tapRate(log, 3500, 3000), 400); // the first tap left the window
+    assert.equal(econ.tapRate([], 1000, 3000), 0);
+    assert.equal(econ.tapRate(log, 10_000, 3000), 0);
+});

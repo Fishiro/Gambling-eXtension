@@ -548,6 +548,15 @@ i[data-icon] {
 .pet-btn[data-ready="true"] {
     color: var(--green);
 }
+#mine-rate {
+    display: inline-block;
+    min-width: 7ch;
+    text-align: right;
+}
+#mine-rate[data-tapping] {
+    color: var(--gold);
+    text-shadow: 0 0 4px var(--gold);
+}
 #mine-rate[data-boost] {
     color: var(--gold);
     animation: blink 0.6s steps(2) infinite;

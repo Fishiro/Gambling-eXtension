@@ -58,6 +58,11 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     });
 
     let sixSevenTaps = 0;
+    // Ore dug by hand (and TITAN) lately, for the live ORE/MIN readout: [[performance.now(), ore], ...].
+    const RATE_MS = MINE.rateWindowSeconds * 1000;
+    const tapLog = [];
+    let shownRate = 0;
+    const logTap = (ore) => ore > 0 && tapLog.push([performance.now(), ore]);
     // Pick heat only lives for this session: it cools off in seconds, so there is nothing worth saving.
     let pickHeat = 0;
     let pickAt = 0;
@@ -72,6 +77,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         if (titanMult() === 1) return;
         const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * surgeMult() * BREW_FX.titanMult * BREW_FX.titanTapsPerSec);
         if (added <= 0) return;
+        logTap(added);
         onOre(added);
         commit();
         if (el.scene.offsetParent) scene.swing({ power: added, lucky: false });
@@ -128,6 +134,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * titanMult() * surgeMult() * cooled * (lucky ? MINE.luckyMult : 1));
         const chest = luck.chance(LUCK.chestPerTap * (1 + items.bonus(state, "chest")));
         const drops = [...items.rollDrops(state, "tap"), ...(lucky ? items.rollDrops(state, "luckyTap") : [])];
+        logTap(added);
         onOre(added);
         commit();
         if (chest) onChest(el.scene, 0);
@@ -238,6 +245,23 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         tap();
     }
 
+    // Once a second: ORE/MIN = the drill (gold rush included) + what your taps dug over the last few seconds.
+    // It climbs while you spam and pops each time it does, so a hot combo feels fast.
+    function renderRate() {
+        const now = performance.now();
+        while (tapLog.length && tapLog[0][0] <= now - RATE_MS) tapLog.shift();
+        const boost = luck.mineBoost(state);
+        const drill = econ.orePerSecond(state) * 60 * boost;
+        const taps = econ.tapRate(tapLog, now, RATE_MS);
+        const total = Math.round(drill + taps);
+        el.rate.textContent = `${econ.formatNumber(total)}/MIN`;
+        el.rate.title = TEXT.rateSplit(econ.formatNumber(drill), econ.formatNumber(taps));
+        el.rate.toggleAttribute("data-boost", boost > 1);
+        el.rate.toggleAttribute("data-tapping", taps > 0);
+        if (taps > 0 && total > shownRate * 1.05 && el.rate.offsetParent) fx.pop(el.rate);
+        shownRate = total;
+    }
+
     function render() {
         const cap = econ.cartCap(state);
         const limitless = econ.cartLimit(state) === Infinity;
@@ -250,8 +274,6 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         el.cartFill.parentElement.toggleAttribute("data-full", full);
         el.cartFill.parentElement.toggleAttribute("data-bottomless", limitless);
         const boost = luck.mineBoost(state);
-        el.rate.textContent = `${econ.formatNumber(econ.orePerSecond(state) * 60 * boost)}/MIN`;
-        el.rate.toggleAttribute("data-boost", boost > 1);
         el.eta.textContent = limitless ? TEXT.bottomless : full ? TEXT.cartFull : now >= cap ? TEXT.overCap : TEXT.fullIn(econ.formatClock((cap - now) / (econ.orePerSecond(state) * boost)));
         el.eta.toggleAttribute("data-full", full);
         el.sellLabel.textContent = ore ? TEXT.sell(econ.formatNumber(ore)) : TEXT.cartEmpty;
@@ -273,5 +295,5 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     el.sell.addEventListener("click", sell);
 
     return {
-        titanTick, tap, sell, render, updateBat, needsAttention: () => econ.oreAt(state) >= econ.cartCap(state) * 0.9 };
+        titanTick, tap, sell, render, renderRate, updateBat, needsAttention: () => econ.oreAt(state) >= econ.cartCap(state) * 0.9 };
 }

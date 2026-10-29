@@ -446,6 +446,7 @@ setInterval(() => {
         mine.updateBat();
     }
     mine.titanTick();
+    mine.renderRate();
     market.tick();
     unlocks.tick();
     [mine, chests, buffs, pets].forEach((panel) => panel.render());
@@ -475,6 +476,7 @@ buildGuide(closeMenu, () => {
 settings.announceImport();
 welcomeBack();
 pets.tick();
+mine.renderRate();
 el.coins.textContent = econ.formatNumber(shownCoins);
 setTab(tabOpen(state.tab) ? state.tab : "slot");
 if (!state.tutorialDone) tour.start();
