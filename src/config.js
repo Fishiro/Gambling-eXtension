@@ -19,9 +19,9 @@ export const TIMING = {
     minSpinMs: 280,
     autoStopMs: 2400,
     grades: {
-        perfect: { mult: 1.25, xp: 2, skill: 1 },
-        good: { mult: 1.1, xp: 1.5, skill: 0.6 },
-        miss: { mult: 1, xp: 1, skill: 0 },
+        perfect: { mult: 1.25, xp: 1.4, skill: 1 },
+        good: { mult: 1.1, xp: 1.05, skill: 0.6 },
+        miss: { mult: 1, xp: 0.7, skill: 0 },
     },
     heatStep: 0.05,
     heatMax: 5,
