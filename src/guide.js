@@ -174,7 +174,7 @@ function guideHtml() {
             "FARM",
             `${flow(node(icon("chest"), "CHESTS"), node(icon("seed"), "PLANT"), node(icon("sprout"), "GROW"), node(icon("herb"), "HARVEST"))}
             ${tiles(Object.entries(FARM.crops).map(([id, crop]) => [icon(id), ITEMS[id].name, growRange(crop)]), 2)}
-            <p>${FARM.plots} PLOTS. EVERY PLANTING ROLLS ITS OWN GROW TIME, AND IT KEEPS GROWING WHILE THE GAME IS CLOSED. EVERY CHEST DROPS SEEDS; GOLD SEEDS ARE RARE.</p>`,
+            <p>ONE POT TO START; ${FARM.plots - 1} MORE OPEN FOR COINS (${FARM.plotCost.slice(1).map((c) => formatNumber(c)).join(", ")}). EVERY PLANTING ROLLS ITS OWN GROW TIME AND GROWS THROUGH ${FARM.stages} STAGES, EVEN WHILE THE GAME IS CLOSED. EVERY CHEST DROPS SEEDS; GOLD SEEDS ARE RARE.</p>`,
         ),
         section(
             "i-bag",

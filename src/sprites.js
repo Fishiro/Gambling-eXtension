@@ -686,6 +686,32 @@ const BOTTLE = ["..kkk...", "..klk...", "..klk...", ".kXXXk..", "kXwXXXk.", "kXX
 const BREW_COLORS = { rushBrew: "y", fireBrew: "R", hotBrew: "r", luckBrew: "G", midasBrew: "Y", starBrew: "c", titanBrew: "S", breakerBrew: "B", phoenixBrew: "v", voidBrew: "p", hypeBrew: "P", surgeBrew: "O" };
 Object.entries(BREW_COLORS).forEach(([id, c]) => (SPRITES[id] = BOTTLE.map((row) => row.replaceAll("X", c))));
 
+// The garden: a clay pot (dry soil, or wet once watered), a watering can, and a plant drawn in five growth stages
+// plus ripe. Every plant is 16x16 with its stem's foot on the bottom row, so any stage stands in the same pot.
+// "X" marks fruit on a ripe plant. A gold seed grows the same plant in gold (GOLD_PLANT recolours it).
+const POT = ["..kkkkkkkkkkkk..", ".koOooooOooooOk.", "kkkkkkkkkkkkkkkk", "kfRRRRRRRRRRRROk", "kOOOOOOOOOOOOOok", "kkkkkkkkkkkkkkkk", ".kROOOOOOOOOOok.", ".kROOOOOOOOOOok.", "..kROOOOOOOOok..", "..kROOOOOOOOok..", "...kkkkkkkkkk..."];
+SPRITES.pot = POT;
+SPRITES["pot-wet"] = POT.map((row, i) => (i === 1 ? ".kossossosssosk." : row));
+SPRITES.can = [".......kkkk.", "k.....k....k", "kk...kkkkkkk", ".kkkBcBBBBBk", "..kkBBBBBBBk", "....kBBBBBBk", "....kbBBBBBk", "....kkkkkkkk"];
+const EMPTY_ROW = "................";
+const plant = (rows) => [...Array(16 - rows.length).fill(EMPTY_ROW), ...rows];
+const PLANT = [
+    plant(["....kk...kk.....", "...kGGk.kGGk....", "....kkkgkk......", ".......g........"]),
+    plant(["......kkk.......", ".....kGGGk......", "......kgk.......", "..kkk..g..kkk...", ".kGGGkkgkkGGGk..", "..kkk..g..kkk...", ".......g........"]),
+    plant(["......kkk.......", ".....kGGGk......", "....kGGgGGk.....", ".....kkgkk......", "..kkk..g..kkk...", ".kGGGk.g.kGGGk..", ".kgGGGkgkGGGgk..", "..kkkkkgkkkkk...", ".......g........", ".......g........"]),
+    plant([".....kkkkk......", "....kGGGGGk.....", "...kGGwGGGGk....", "..kGGGGGGgGGk...", "..kGgGGGGGGGk...", "..kGGGGGgGGgk...", "...kgGGGGGgk....", "....kkgggkk.....", "......kOk.......", "......kOk.......", "......kOk.......", "......kOk.......", "......kOk......."]),
+    plant(["....kkkkkkk.....", "...kGGGGGGGk....", "..kGGwGGGPGGk...", ".kGGGGGGGGGGGk..", ".kGgGPGGGGGgGk..", "kGGGGGGGgGGGGGk.", "kGgGGGGGGGPGgGk.", "kGGGGgGGGGGGGGk.", ".kGGGGGGGgGGGk..", ".kgGGPGGGGGgGk..", "..kkggGGGggkk...", "....kkkOkkk.....", "......kOk.......", "......kOk.......", "......kOk.......", "......kOk......."]),
+];
+const RIPE = ["....kkkkkkk.....", "...kGGXGGGGk....", "..kGGwGGGXGGk...", ".kGXGGGGGGGXGk..", ".kGgGGGXGGGgGk..", "kGGXGGGGgGGGXGk.", "kGgGGGXGGGGGgGk.", "kGGGGgGGGXGGGGk.", ".kGXGGGGGgGGXk..", ".kgGGGGXGGGgGk..", "..kkggGGGggkk...", "....kkkOkkk.....", "......kOk.......", "......kOk.......", "......kOk.......", "......kOk......."];
+const GOLD_PLANT = { G: "y", g: "Y", P: "w" };
+const gilded = (rows) => rows.map((row) => row.replace(/[GgP]/g, (ch) => GOLD_PLANT[ch]));
+PLANT.forEach((rows, i) => {
+    SPRITES[`plant${i + 1}`] = rows;
+    SPRITES[`gplant${i + 1}`] = gilded(rows);
+});
+SPRITES["plant-ripe"] = RIPE.map((row) => row.replaceAll("X", "R"));
+SPRITES["gplant-ripe"] = gilded(RIPE).map((row) => row.replaceAll("X", "w"));
+
 const cache = new Map();
 
 export function spriteCanvas(name) {

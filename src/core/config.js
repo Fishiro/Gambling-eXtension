@@ -731,6 +731,13 @@ export const BUFF_CHIPS = [
 // [item, amount, chance]; GARDEN YIELD multiplies the amount (the fraction left over is a chance at one more).
 export const FARM = {
     plots: 6,
+    // Coins to open each plot, in order: the first pot is free, the rest cost a little more each time (about
+    // 10-20 minutes of play apiece when the farm opens, a light goal later).
+    plotCost: [0, 300, 800, 2000, 5000, 12000],
+    // A plant shows `stages` growth stages, one per equal share of its grow time; before `sproutAt` of it the
+    // pot is still just watered soil.
+    stages: 5,
+    sproutAt: 0.02,
     crops: {
         seed: { minutes: [1, 30], yields: [["herb", 3, 1], ["glowcap", 1, 0.35], ["seed", 1, 0.5], ["goldseed", 1, 0.03]] },
         goldseed: { minutes: [45, 120], yields: [["goldfruit", 1, 1], ["goldseed", 1, 0.15]] },

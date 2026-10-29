@@ -3329,51 +3329,73 @@ body.is-calm::after {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--s3);
 }
-/* A plot: soil tile with the crop on top, its state under it, then its button or progress bar. Fixed height so
-   planting or harvesting never moves the grid. */
+.plot-cell {
+    display: flex;
+    min-width: 0;
+}
+/* A pot on a shelf: its state on top, the clay pot (with whatever grows in it) in the middle, its button or
+   progress at the foot. Fixed height, so planting, growing or harvesting never moves the grid. */
 .plot {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--s1);
-    height: 128px;
-    padding: var(--s2);
+    gap: 4px;
+    height: 144px;
+    padding: var(--s2) var(--s2) 6px;
     color: var(--muted);
-    background: var(--bg);
-    box-shadow: 0 0 0 2px #6b3e2e, inset 0 -14px 0 #3a2418;
-}
-.plot-art {
-    display: flex;
+    background:
+        linear-gradient(var(--line) 0 0) bottom 40px left 0 / 100% 4px no-repeat,
+        var(--bg);
+    box-shadow: 0 0 0 2px var(--line);
 }
 .plot-label {
     min-height: 1.2em;
-}
-.plot .bar {
-    width: 100%;
-    height: 6px;
-}
-.plot[data-state="empty"] .plot-art {
-    opacity: 0.35;
+    letter-spacing: 1px;
 }
 .plot[data-state="growing"] {
     color: var(--green);
 }
-.plot[data-state="growing"][data-seed="goldseed"] {
+.plot[data-state="growing"][data-seed="goldseed"],
+.plot[data-state="ready"] {
     color: var(--gold);
 }
 .plot[data-state="ready"] {
-    color: var(--gold);
-    box-shadow: 0 0 0 2px var(--gold), inset 0 -14px 0 #3a2418;
+    box-shadow: 0 0 0 2px var(--gold);
 }
-.plot[data-state="ready"] .plot-art {
-    animation: bounce 0.5s steps(2) infinite;
-}
-.plot-actions {
+/* The pot and its plant: the plant's foot overlaps the soil row, so it stands in the pot. */
+.plot-art {
+    position: relative;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    height: 81px;
+}
+.plot-plant {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 48px;
+    height: 48px;
+    margin-bottom: -6px;
+    transform-origin: 50% 100%;
+}
+.plot-pot {
+    display: flex;
+}
+.plot-foot {
+    display: flex;
+    align-items: center;
     justify-content: center;
     gap: 6px;
+    width: 100%;
     min-height: 26px;
+    margin-top: auto;
+}
+.plot-none {
+    color: var(--line-hi);
 }
 .plot-seed {
     padding: 3px 5px 6px;
@@ -3381,8 +3403,214 @@ body.is-calm::after {
 .plot .primary-sm {
     padding: 3px 8px 6px;
 }
+/* Growing: a bar cut into one segment per stage, the time left written across it. */
+.plot-grow {
+    position: relative;
+}
+.plot-grow .bar {
+    position: relative;
+    flex: 1;
+    height: 16px;
+}
+.plot-grow .fill {
+    background: var(--green-dk);
+}
+.plot[data-seed="goldseed"] .plot-grow .fill {
+    background: var(--gold-dk);
+}
+.plot-grow .bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0 calc(100% - 2px), var(--ink) calc(100% - 2px)) 0 0 / 20% 100%;
+}
+.plot-grow small {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    text-shadow:
+        1px 0 0 var(--ink),
+        -1px 0 0 var(--ink),
+        0 1px 0 var(--ink),
+        0 -1px 0 var(--ink);
+    pointer-events: none;
+}
+/* Locked pots: a ghost of the pot under a padlock; the next one shows its price. */
+.plot[data-state="locked"] {
+    color: var(--line-hi);
+    background: var(--bg);
+    box-shadow: 0 0 0 2px var(--line);
+    outline: 2px dashed var(--line);
+    outline-offset: -6px;
+}
+.plot[data-state="locked"] .plot-pot {
+    opacity: 0.25;
+    filter: grayscale(1);
+}
+.plot[data-state="locked"][data-next] {
+    color: var(--gold);
+}
+.plot-lock {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    z-index: 2;
+    translate: -50% 0;
+}
+.plot-buy {
+    gap: 4px;
+}
+.plot-buy[data-poor="true"] {
+    opacity: 0.55;
+}
+/* Ripe: the plant bears fruit, and the crop bobs above it. */
+.plot-crop {
+    position: absolute;
+    top: 2px;
+    left: calc(50% + 18px);
+    z-index: 2;
+    animation: bounce 0.6s steps(2) infinite;
+}
+/* The planting scene (farm.js PLANT_MS = 2s): the seed drops in (0-0.6s), the can tips in and pours
+   (0.5-1.8s) while drops fall (0.75-1.6s), and the dry soil darkens as it soaks (1.2s). */
+.plot-fall,
+.plot-can,
+.plot-drops,
+.plot-dry {
+    position: absolute;
+    pointer-events: none;
+}
+.plot-fall {
+    top: 0;
+    left: 50%;
+    z-index: 3;
+    translate: -50% 0;
+    animation: seed-fall 0.6s steps(6) both;
+}
+.plot-can {
+    top: 6px;
+    left: calc(50% + 8px);
+    z-index: 3;
+    opacity: 0;
+    transform-origin: 30% 60%;
+    animation: can-pour 1.3s 0.5s both;
+}
+.plot-drops {
+    top: 22px;
+    left: calc(50% + 4px);
+    z-index: 2;
+    width: 12px;
+    height: 34px;
+    opacity: 0;
+    animation: drops-on 0.85s 0.75s steps(1) forwards;
+}
+.plot-drops i {
+    position: absolute;
+    top: 0;
+    width: 3px;
+    height: 6px;
+    background: var(--cyan);
+    box-shadow: inset -1px 0 0 #3b5dc9;
+    animation: drop-fall 0.3s steps(5) infinite;
+}
+.plot-drops i:nth-child(1) {
+    left: 0;
+}
+.plot-drops i:nth-child(2) {
+    left: 5px;
+    animation-delay: 0.1s;
+}
+.plot-drops i:nth-child(3) {
+    left: 9px;
+    animation-delay: 0.2s;
+}
+.plot-dry {
+    bottom: 0;
+    left: 50%;
+    translate: -50% 0;
+    animation: soak 1.2s steps(1) both;
+}
+.plot[data-anim="grow"] .plot-plant {
+    animation: plant-grow 0.6s steps(6) both;
+}
+@keyframes seed-fall {
+    0% {
+        transform: translateY(-14px);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    85% {
+        transform: translateY(28px);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+}
+@keyframes can-pour {
+    0% {
+        transform: translate(10px, -6px) rotate(0deg);
+        opacity: 0;
+    }
+    15% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+        animation-timing-function: steps(3);
+    }
+    35%,
+    80% {
+        transform: rotate(-35deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(6px, -4px) rotate(0deg);
+        opacity: 0;
+    }
+}
+@keyframes drops-on {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes drop-fall {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(28px);
+    }
+}
+@keyframes soak {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes plant-grow {
+    0% {
+        transform: scale(0.7, 0.4);
+    }
+    60% {
+        transform: scale(1.08, 1.12);
+    }
+    100% {
+        transform: scale(1, 1);
+    }
+}
 .harvest-all {
     justify-content: center;
+    width: 100%;
     margin-top: var(--s3);
     background: var(--green);
 }

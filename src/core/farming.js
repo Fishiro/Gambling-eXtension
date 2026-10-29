@@ -36,8 +36,24 @@ export function skipTime(state, ms) {
     state.garden.forEach((plot) => plot && (plot.at -= ms));
 }
 
+// Plots open one at a time, in order, for coins (FARM.plotCost). The next one's price, or null when all are open.
+export const isOpen = (state, index) => index < state.plotsOpen;
+export const nextPlotCost = (state) => (state.plotsOpen < FARM.plots ? FARM.plotCost[state.plotsOpen] : null);
+
+export function unlockPlot(state) {
+    const cost = nextPlotCost(state);
+    if (cost === null || state.coins < cost) return false;
+    state.coins -= cost;
+    state.plotsOpen++;
+    return true;
+}
+
+// The growth stage a plant shows: 0 while it is still bare soil (before FARM.sproutAt of its time), then 1 to
+// FARM.stages, one per equal share of the grow time.
+export const stageOf = (progress) => (progress < FARM.sproutAt ? 0 : Math.min(FARM.stages, 1 + Math.floor(progress * FARM.stages)));
+
 export function plant(state, index, seedId, now = Date.now(), rand = Math.random) {
-    if (!FARM.crops[seedId] || state.garden[index] !== null || !items.spend(state, { [seedId]: 1 })) return false;
+    if (!FARM.crops[seedId] || !isOpen(state, index) || state.garden[index] !== null || !items.spend(state, { [seedId]: 1 })) return false;
     state.garden[index] = { seed: seedId, at: now, min: rollMinutes(seedId, rand), roll: newSeed() };
     return true;
 }
@@ -47,7 +63,8 @@ export function plotStatus(state, index, now = Date.now()) {
     if (!plot) return null;
     const total = growMs(state, plot);
     const elapsed = Math.max(0, now - plot.at);
-    return { seed: plot.seed, total: total / 1000, progress: Math.min(1, elapsed / total), left: Math.max(0, total - elapsed) / 1000, ready: elapsed >= total };
+    const progress = Math.min(1, elapsed / total);
+    return { seed: plot.seed, total: total / 1000, progress, stage: stageOf(progress), left: Math.max(0, total - elapsed) / 1000, ready: elapsed >= total };
 }
 
 // GARDEN YIELD scales each yield line that lands: x1.35 on 3 herbs is 4 herbs plus a 5% chance at a fifth.

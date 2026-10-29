@@ -507,7 +507,11 @@ const world = {
         arpeggio([784, 988, 1175, 1568], 0.06, { type: "triangle", vol: 0.04 });
         noise(0.4, 0.04, 0.2, { filter: "highpass", freq: 5000 });
     },
-    // Farm: seeds go in, crops pop out.
+    // Farm: seeds go in, the can waters them, crops pop out.
+    water: () => {
+        noise(0.5, 0.025, 0, { filter: "highpass", freq: 3000 });
+        [0, 0.12, 0.22, 0.34].forEach((at, i) => tone(1400 + i * 180, 0.04, { type: "sine", slide: -600, vol: 0.018, at: at + 0.05 }));
+    },
     plant: () => {
         noise(0.08, 0.08, 0, { freq: 350 });
         tone(330, 0.08, { type: "sine", slide: 330, vol: 0.03, at: 0.05 });

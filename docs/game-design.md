@@ -76,6 +76,10 @@ LV20 ~49, LV30 ~127), so the pace is what the player feels, not a number that dr
   plus a chance at a gold seed (always one in a legendary), and a plain seed gives a seed back half the time.
   Each planting rolls its grow time (seed 1-30 min, gold seed 45 min-2 h). TRIP FINDS became GARDEN YIELD (more
   of each crop line that lands); the buddy pets lost their trip job and keep a tiny passive each.
+- **Pots open for coins (2026-10-30, owner's call):** the garden starts with one free pot; the other five cost
+  300 / 800 / 2K / 5K / 12K coins, opened in order (`FARM.plotCost`). A plant shows 5 growth stages, one per 20%
+  of its time, after bare watered soil for the first 2% (`FARM.stages`, `FARM.sproutAt`). Saves from before
+  keep the 3 pots they had for free (more if a later one was growing).
 - **Easy wins are rare-ish (2026-10-29, owner's call):** CHERRY, LEMON and BELL lines only land half the time
   (`EASY_KEEP`, the rest slip into a near miss); any line hits ~12% of spins. Payouts were not raised, so the
   slot is a **coin sink unless you time well**: base return x0.59, good timing + heat 3 ~x0.75, flawless ~x1.26.

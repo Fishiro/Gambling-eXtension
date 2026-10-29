@@ -186,6 +186,37 @@ test("garden: GARDEN YIELD scales a harvest", () => {
     assert.ok(harvestWith(true) > harvestWith(false));
 });
 
+test("garden: pots open in order for coins, plants grow through stages", () => {
+    const s = freshState(0);
+    s.bag.seed = 5;
+    assert.equal(s.plotsOpen, 1);
+    assert.equal(farming.plant(s, 1, "seed"), false);
+    s.coins = FARM.plotCost[1] - 1;
+    assert.equal(farming.unlockPlot(s), false);
+    s.coins = FARM.plotCost[1];
+    assert.ok(farming.unlockPlot(s));
+    assert.equal(s.coins, 0);
+    assert.ok(farming.plant(s, 1, "seed"));
+    s.plotsOpen = FARM.plots;
+    assert.equal(farming.nextPlotCost(s), null);
+    assert.equal(farming.unlockPlot(s), false);
+    // Bare soil before sproutAt, then one stage per equal share of the time.
+    assert.equal(farming.stageOf(0), 0);
+    assert.equal(farming.stageOf(FARM.sproutAt - 0.001), 0);
+    assert.equal(farming.stageOf(FARM.sproutAt), 1);
+    assert.equal(farming.stageOf(0.2), 2);
+    assert.equal(farming.stageOf(0.99), FARM.stages);
+    assert.equal(farming.stageOf(1), FARM.stages);
+});
+
+test("save: v5 saves keep 3 pots, or more if one past them is growing", () => {
+    assert.equal(restore({ version: 5, coins: 1, level: 5 }, 1000).plotsOpen, 3);
+    const garden = [null, null, null, null, { seed: "seed", at: 0, min: 5, roll: 1 }, null];
+    const s = restore({ version: 5, coins: 1, level: 5, garden }, 1000);
+    assert.equal(s.plotsOpen, 5);
+    assert.equal(s.garden[4].seed, "seed");
+});
+
 test("chests: every chest drops seeds, a legendary always a gold seed", () => {
     for (const rarity of LUCK.rarities) {
         const s = freshState(0);

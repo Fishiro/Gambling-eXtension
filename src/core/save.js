@@ -6,7 +6,7 @@ import { START, FARM, TIMING, RELICS, LUCK, PETS, SKINS, ITEMS, GEAR, GEAR_MAX, 
 // a time, then sanitize() forces every field into a shape and range the game can trust. Both run on load and
 // on import, so a hand-edited or broken backup can never crash the game or hand out impossible values.
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export const freshState = (now = Date.now()) => ({
     version: SAVE_VERSION,
@@ -43,6 +43,8 @@ export const freshState = (now = Date.now()) => ({
     bag: {},
     gear: {},
     garden: Array(FARM.plots).fill(null),
+    // Plots open so far (the first is free; the rest cost coins, see FARM.plotCost).
+    plotsOpen: 1,
     achv: {},
     fun: {},
     // Chests opened since the last epic-or-better / legendary (see luck.openRarity).
@@ -94,6 +96,11 @@ const MIGRATIONS = {
         for (const relic of save.relics?.list ?? []) {
             for (const line of relic?.stats ?? []) if (line?.stat === "loot") line.stat = "yield";
         }
+    },
+    // v5 -> v6: plots now open for coins. Keep the 3 every older save had for free, and any plot still growing.
+    5(save) {
+        const used = Array.isArray(save.garden) ? save.garden.map((p, i) => (p ? i + 1 : 0)) : [];
+        save.plotsOpen = Math.max(3, ...used);
     },
 };
 
@@ -185,7 +192,8 @@ export function sanitize(save, now = Date.now()) {
     s.market.price = num(s.market.price, 1, 0.01, 100);
     s.market.at = num(s.market.at, now, 0, now);
     if (!Array.isArray(s.market.hist)) s.market.hist = [];
-    s.garden = base.garden.map((_, i) => (isPlot(save.garden?.[i]) ? save.garden[i] : null));
+    s.plotsOpen = int(save.plotsOpen, base.plotsOpen, 1, FARM.plots);
+    s.garden = base.garden.map((_, i) => (i < s.plotsOpen && isPlot(save.garden?.[i]) ? save.garden[i] : null));
     for (const key of ["history", "hall"]) s[key] = Array.isArray(save[key]) ? save[key] : [];
     for (const key of ["achv", "fun"]) s[key] = isObj(save[key]) ? save[key] : {};
     if (s.unlocked !== null && !Array.isArray(s.unlocked)) s.unlocked = null;

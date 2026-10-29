@@ -177,7 +177,7 @@ export const TEXT = {
         ],
         farm: [
             { target: '[data-tab="farm"]', text: "LEVEL 4: THE FARM IS OPEN! TAP FARM.", wait: "tab-farm" },
-            { target: "#garden", text: "PLANT A SEED IN ANY PLOT. IT GROWS ON ITS OWN, EVEN WITH THE POPUP CLOSED." },
+            { target: "#garden", text: "PLANT A SEED IN YOUR POT. IT GROWS ON ITS OWN, EVEN WITH THE POPUP CLOSED. MORE POTS OPEN FOR COINS." },
             { target: "#seed-bag", text: "EVERY CHEST DROPS SEEDS. GOLD SEEDS ARE RARE, SLOW AND GROW GOLD FRUIT.", last: true },
         ],
         forge: [
@@ -342,6 +342,11 @@ export const TEXT = {
     growTime: ([lo, hi]) => `GROWS ${clockRange(lo)}-${clockRange(hi)}`,
     plantedFor: (clock) => `READY IN ${clock}`,
     plantSeed: (name) => `PLANT A ${name}`,
+    // A growing pot's label: 0 is bare watered soil, then one name per growth stage (FARM.stages).
+    stages: ["WATERED", "SPROUT", "SEEDLING", "LEAFY", "SAPLING", "IN BLOOM"],
+    plotLocked: "LOCKED",
+    plotOpened: "NEW POT!",
+    noSeedShort: "NO SEEDS",
     seedsFrom: "EVERY CHEST DROPS SEEDS",
     harvest: "HARVEST",
     harvestAll: "HARVEST ALL",
