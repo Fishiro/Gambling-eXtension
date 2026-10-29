@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TIMING, LEVELS, MINE, LUCK, BET, STAT_CAPS, FARM, MARKET, SYMBOLS, PET_REEL, GEAR, GEAR_MAX, STAR_CHANCE, STAR_COST } from "../src/core/config.js";
+import { TIMING, LEVELS, MINE, LUCK, BET, STAT_CAPS, FARM, MARKET, SYMBOLS, PET_REEL, GEAR, GEAR_MAX, GEAR_GROWTH, STAR_CHANCE, STAR_COST, CRAFT_FEE, BREWS, ITEMS } from "../src/core/config.js";
 import { recordGroups } from "../src/core/records.js";
 import * as econ from "../src/core/economy.js";
 import * as luck from "../src/core/luck.js";
 import * as farming from "../src/core/farming.js";
 import * as market from "../src/core/market.js";
-import { softcap, bonus, upgrade, upgradeChance, gearLevel } from "../src/core/items.js";
+import { softcap, bonus, upgrade, upgradeChance, gearLevel, gearCost, brewCost, spend } from "../src/core/items.js";
 import { freshState, restore, SAVE_VERSION } from "../src/core/save.js";
 import { withClock } from "../tools/sim.js";
 import { seeded } from "../src/core/farming.js";
@@ -341,7 +341,7 @@ test("chest coins follow the level, never the bet", () => {
     assert.equal(luck.rewardUnit(b), luck.rewardUnit(a));
 });
 
-test("gear: LV1-5 always work, stars succeed at STAR_CHANCE and a crack keeps the stars", () => {
+test("gear: LV1-5 always work, stars succeed at STAR_CHANCE, a failure cracks a star off", () => {
     assert.deepEqual(STAR_CHANCE, [...STAR_CHANCE].sort((x, y) => y - x), "star odds must only fall");
     assert.equal(STAR_CHANCE[0], 0.8);
     assert.equal(STAR_CHANCE.at(-1), 0.15);
@@ -358,10 +358,13 @@ test("gear: LV1-5 always work, stars succeed at STAR_CHANCE and a crack keeps th
     assert.equal(upgradeChance(s, gear), STAR_CHANCE[0]);
     const coins = s.coins;
     assert.equal(upgrade(s, gear, () => 0.99), "fail");
-    assert.equal(gearLevel(s, gear.id), GEAR_MAX, "a crack keeps the level");
-    assert.ok(s.coins < coins, "a crack still costs");
+    assert.equal(gearLevel(s, gear.id), GEAR_MAX, "a failed first star can't drop below LV5");
+    assert.ok(s.coins < coins, "a failure still costs");
     assert.equal(upgrade(s, gear, () => 0), "up");
-    assert.equal(upgradeChance(s, gear), STAR_CHANCE[1]);
+    assert.equal(upgrade(s, gear, () => 0), "up");
+    assert.equal(upgradeChance(s, gear), STAR_CHANCE[2]);
+    assert.equal(upgrade(s, gear, () => 0.99), "crack");
+    assert.equal(gearLevel(s, gear.id), GEAR_MAX + 1, "a failed third star cracks the second one off");
     // Over many tries each star lands at its odds.
     const rand = seeded(9);
     for (let star = 0; star < STAR_CHANCE.length; star++) {
@@ -386,4 +389,21 @@ test("live ore/min: taps in the window count per minute, older ones drop out", (
     assert.equal(econ.tapRate(log, 3500, 3000), 400); // the first tap left the window
     assert.equal(econ.tapRate([], 1000, 3000), 0);
     assert.equal(econ.tapRate(log, 10_000, 3000), 0);
+});
+
+test("every craft costs coins: gear levels by GEAR_GROWTH, brews by rarity", () => {
+    for (const gear of GEAR) {
+        for (let lv = 0; lv < GEAR_MAX; lv++) assert.equal(gearCost(gear, lv).coins, Math.ceil(CRAFT_FEE.gear * GEAR_GROWTH ** lv), `${gear.id} LV${lv}`);
+        assert.ok(gearCost(gear, GEAR_MAX).coins > 0, "stars cost coins too");
+    }
+    for (const brew of BREWS) {
+        const cost = brewCost(brew);
+        assert.equal(cost.coins, CRAFT_FEE.brew[ITEMS[brew.id].rarity], brew.id);
+        for (const [id, n] of Object.entries(brew.cost)) assert.equal(cost[id], n);
+    }
+    // Materials alone are not enough.
+    const s = freshState(0);
+    s.coins = 0;
+    Object.assign(s.bag, BREWS[0].cost);
+    assert.equal(spend(s, brewCost(BREWS[0])), false);
 });

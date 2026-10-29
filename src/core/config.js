@@ -652,7 +652,7 @@ export const SCRAP = { common: 0.2, rare: 0.8, epic: 3, legendary: 12 };
 export const GEAR_MAX = 5;
 export const GEAR_GROWTH = 1.7;
 export const GEAR = [
-    { id: "grip", name: "STONE GRIP", icon: "i-pick", stat: "tap", per: 1, label: "ORE PER TAP", cost: { stone: 8, coins: 150 } },
+    { id: "grip", name: "STONE GRIP", icon: "i-pick", stat: "tap", per: 1, label: "ORE PER TAP", cost: { stone: 8 } },
     { id: "bit", name: "IRON BIT", icon: "i-drill", stat: "drill", per: 0.1, pct: true, label: "DRILL SPEED", cost: { iron: 4, stone: 6 } },
     { id: "pockets", name: "BIG POCKETS", icon: "i-cart", stat: "cart", per: 0.15, pct: true, label: "CART SIZE", cost: { wood: 8, herb: 4 } },
     { id: "ring", name: "MERCHANT RING", icon: "coin", stat: "sell", per: 0.06, pct: true, label: "ORE PRICE", cost: { iron: 4, crystal: 1 } },
@@ -674,8 +674,15 @@ export const STAR_COST = [
     { coins: 3e8, gems: 35, meteor: 5, goldfruit: 2, relicDust: 20 },
     { coins: 1e9, gems: 50, meteor: 8, goldfruit: 3, relicDust: 35 },
 ];
-// The chance each star attempt (1st .. 5th star) succeeds. A failed attempt still spends its cost; the piece
-// keeps the stars it had.
+// Every craft costs coins on top of its materials: gear LV1-5 pays `gear` x GEAR_GROWTH^level (stars have their
+// own coin cost in STAR_COST), a brew pays by the rarity of what it makes.
+export const CRAFT_FEE = {
+    gear: 200,
+    brew: { common: 100, rare: 400, epic: 2000, legendary: 10_000 },
+};
+
+// The chance each star attempt (1st .. 5th star) succeeds. A failed attempt still spends its cost and cracks one
+// star off the piece (never below LV5: a failed first star just costs).
 export const STAR_CHANCE = [0.8, 0.65, 0.45, 0.3, 0.15];
 // Every piece of a set at 3 stars or more switches on the set bonus.
 export const SET_STARS = 3;

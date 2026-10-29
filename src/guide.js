@@ -193,7 +193,7 @@ function guideHtml() {
             ${tiles(BREWS.slice(0, 5).map((b) => [icon(b.id), ITEMS[b.id].name]), 5)}
             <p>GEAR IS FOREVER. BREWS ARE ONE-USE BOOSTS.</p>
             ${tiles(STAR_CHANCE.map((p, i) => [icon("pstar", 2).repeat(i + 1), `STAR ${i + 1}`, `${pct(p)} WORKS`]), 5)}
-            <p>A STAR CAN CRACK: THE COST IS GONE, THE GEAR KEEPS ITS STARS.</p>
+            <p>A FAILED STAR COSTS THE PRICE AND CRACKS ONE STAR OFF. EVERY CRAFT ALSO COSTS COINS.</p>
             ${tiles(BREWS.filter((b) => b.combo).map((b) => [icon(b.id), ITEMS[b.id].name, ITEMS[b.id].effect]), 3)}
             <p>COMBO BREWS ARE MADE FROM JUNK. EACH STAYS SECRET UNTIL YOU HAVE FOUND ALL ITS INGREDIENTS ONCE.</p>`,
         ),

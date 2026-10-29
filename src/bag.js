@@ -111,7 +111,7 @@ export function createBag() {
             <div class="row-main">
                 <b>${TEXT.secretBrew}</b>
                 <small>${TEXT.secretBrewHint}</small>
-                <span class="chips">${costHtml(state, brew.cost)}</span>
+                <span class="chips">${costHtml(state, items.brewCost(brew))}</span>
             </div>
         </div>`;
         }
@@ -120,9 +120,9 @@ export function createBag() {
             <div class="row-main">
                 <b>${item.name} <em>x${items.count(state, brew.id)}</em></b>
                 <small>${item.effect}</small>
-                <span class="chips">${costHtml(state, brew.cost)}</span>
+                <span class="chips">${costHtml(state, items.brewCost(brew))}</span>
             </div>
-            <button class="primary-sm" data-action="brew" data-id="${brew.id}" ${items.canAfford(state, brew.cost) ? "" : "disabled"}>${TEXT.brew}</button>
+            <button class="primary-sm" data-action="brew" data-id="${brew.id}" ${items.canAfford(state, items.brewCost(brew)) ? "" : "disabled"}>${TEXT.brew}</button>
         </div>`;
     }
 
@@ -163,12 +163,14 @@ export function createBag() {
             const result = items.upgrade(state, gear);
             if (!result) return deny(button);
             commit();
-            if (result === "fail") {
+            if (result !== "up") {
+                const row = button.closest(".row") ?? button;
                 sfx.lose();
-                fx.shake(button.closest(".row") ?? button, 3, 300);
-                const p = fx.centerOf(button.closest(".row") ?? button);
-                fx.float(p.x, p.y - 16, TEXT.ascendFail, { color: "R", life: 70 });
-                emit("ascend-fail", { id });
+                fx.shake(row, result === "crack" ? 5 : 3, 350);
+                const p = fx.centerOf(row);
+                fx.burst(p.x, p.y, { count: result === "crack" ? 24 : 10, colors: ["r", "R", "S"], speed: [1.5, 4], life: [16, 30] });
+                fx.float(p.x, p.y - 16, result === "crack" ? TEXT.ascendCrack : TEXT.ascendFail, { color: "R", life: 80 });
+                emit("ascend-fail", { id, lost: result === "crack" });
                 return;
             }
             sfx.upgrade();
@@ -177,7 +179,7 @@ export function createBag() {
         },
         brew(id, button) {
             const recipe = BREWS.find((b) => b.id === id);
-            if (!items.spend(state, recipe.cost)) return deny(button);
+            if (!items.spend(state, items.brewCost(recipe))) return deny(button);
             items.add(state, id);
             commit();
             sfx.chest();

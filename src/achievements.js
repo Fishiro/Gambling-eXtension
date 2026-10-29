@@ -414,7 +414,10 @@ export function createAchievements() {
     on("brew", ({ id }) => bump(`brew_${id}`));
     on("combo", ({ count }) => count === 67 && bump("combo67"));
     on("craft", () => bump("crafts"));
-    on("ascend-fail", () => bump("ascendFails"));
+    on("ascend-fail", ({ lost }) => {
+        if (lost) f().starsLost = (f().starsLost ?? 0) + 1;
+        bump("ascendFails");
+    });
     on("brew-use", ({ id }) => {
         if (id === "midasBrew") f().midas = 1;
         bump("brews");

@@ -1,4 +1,4 @@
-import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, STAR_CHANCE, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
+import { ITEMS, DROPS, GEAR, GEAR_MAX, GEAR_GROWTH, GEAR_STARS, STAR_MULT, STAR_COST, STAR_CHANCE, CRAFT_FEE, GEAR_SETS, SET_STARS, LUCK, PETS, STAT_CAPS } from "./config.js";
 import { vipBonus } from "./vip.js";
 import { relicBonus } from "./relics.js";
 
@@ -40,10 +40,16 @@ export const gearStars = (state, id) => Math.max(0, gearLevel(state, id) - GEAR_
 // Levels 1-5 add `per` each; stars 1-5 add STAR_MULT x `per` each.
 export const gearValue = (gear, level) => gear.per * (Math.min(level, GEAR_MAX) + STAR_MULT * Math.max(0, level - GEAR_MAX));
 
-export const gearCost = (gear, level) =>
-    level >= GEAR_MAX
-        ? STAR_COST[level - GEAR_MAX]
-        : Object.fromEntries(Object.entries(gear.cost).map(([id, n]) => [id, Math.ceil(n * GEAR_GROWTH ** level)]));
+// Materials grow by GEAR_GROWTH per level, plus the craft fee in coins; a star pays STAR_COST.
+export function gearCost(gear, level) {
+    if (level >= GEAR_MAX) return STAR_COST[level - GEAR_MAX];
+    const scale = GEAR_GROWTH ** level;
+    const materials = Object.fromEntries(Object.entries(gear.cost).map(([id, n]) => [id, Math.ceil(n * scale)]));
+    return { coins: Math.ceil(CRAFT_FEE.gear * scale), ...materials };
+}
+
+// A brew's ingredients plus its coin fee (by the rarity of the brew).
+export const brewCost = (brew) => ({ coins: CRAFT_FEE.brew[ITEMS[brew.id].rarity], ...brew.cost });
 
 export const isMaxed = (state, gear) => gearLevel(state, gear.id) >= MAX_LEVEL;
 
@@ -54,12 +60,16 @@ export const canUpgrade = (state, gear) => !isMaxed(state, gear) && canAfford(st
 // The chance the next upgrade of `gear` works: always for LV1-5, STAR_CHANCE for each star.
 export const upgradeChance = (state, gear) => STAR_CHANCE[gearStars(state, gear.id)] ?? (gearLevel(state, gear.id) < GEAR_MAX ? 1 : 0);
 
-// Pay and try: "up" when the piece gained a level or star, "fail" when a star attempt missed (the cost is
-// spent anyway), null when it can't be paid or is maxed.
+// Pay and try: "up" when the piece gained a level or star, "crack" when a star attempt failed and cost a star,
+// "fail" when it failed with no star to lose, null when it can't be paid or is maxed. The cost is spent either way.
 export function upgrade(state, gear, rand = Math.random) {
     const lv = gearLevel(state, gear.id);
     if (isMaxed(state, gear) || !spend(state, gearCost(gear, lv))) return null;
-    if (lv >= GEAR_MAX && rand() >= upgradeChance(state, gear)) return "fail";
+    if (lv >= GEAR_MAX && rand() >= upgradeChance(state, gear)) {
+        if (lv === GEAR_MAX) return "fail";
+        state.gear[gear.id] = lv - 1;
+        return "crack";
+    }
     state.gear[gear.id] = lv + 1;
     return "up";
 }
