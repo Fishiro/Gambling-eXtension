@@ -121,6 +121,70 @@ body {
         "stage dock";
     height: 100%;
 }
+/* ---- right-click quick menu (radial.js): four tabs on a ring around the pointer, the menu in its centre ---- */
+.radial {
+    position: fixed;
+    z-index: 72;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.radial > * {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: auto;
+}
+.radial-ring {
+    width: 196px;
+    height: 196px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 28, 44, 0.72);
+    box-shadow:
+        inset 0 0 0 var(--b) var(--line),
+        0 0 0 var(--b) var(--ink);
+    pointer-events: none;
+    animation: radial-in 0.14s steps(4);
+}
+.radial-item {
+    flex-direction: column;
+    gap: 3px;
+    width: 64px;
+    height: 54px;
+    padding: 4px 2px;
+    font-size: var(--fs-0);
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y)));
+    animation: radial-item-in 0.16s steps(4);
+}
+.radial-item[aria-current] {
+    background: var(--text);
+    color: var(--ink);
+}
+.radial-item[data-locked="true"] {
+    opacity: 0.4;
+}
+.radial-center {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    transform: translate(-50%, -50%);
+    background: var(--gold);
+    color: var(--ink);
+}
+@keyframes radial-in {
+    from {
+        transform: translate(-50%, -50%) scale(0.4);
+        opacity: 0;
+    }
+}
+@keyframes radial-item-in {
+    from {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+}
+
 /* ---- boot screen: the first frame, until main.js lifts it ---- */
 /* Above every layer (sheets, popups, the tour, effects) except the gold frame (80), so the frame frames it. */
 .boot {

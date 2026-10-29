@@ -36,7 +36,7 @@ function renderTab(tab) {
     $("here-title").textContent = `${W.here}: ${W.tabs[tab] ?? tab.toUpperCase()}`;
     const keys = HOTKEYS.map((k, i) => [k, i]).filter(([k]) => k.group === tab);
     $("here-keys").innerHTML = keys.length ? keys.map(([k, i]) => row(k, i)).join("") : "";
-    $("here-mouse").innerHTML = (W.mouse[tab] ?? []).map((t) => `<li>${t}</li>`).join("");
+    $("here-mouse").innerHTML = [...(W.mouse[tab] ?? []), W.rightClick].map((t) => `<li>${t}</li>`).join("");
 }
 
 $("web-title").textContent = W.title;
@@ -143,6 +143,8 @@ document.addEventListener("keydown", (e) => {
 });
 document.addEventListener("keyup", release);
 window.addEventListener("blur", releaseAll);
+// The browser's right-click menu is off on the page around the game too (the game has its own, see radial.js).
+document.addEventListener("contextmenu", (e) => e.preventDefault());
 // Clicking a side panel gives the keyboard back to the game.
 document.querySelectorAll(".rail").forEach((rail) => rail.addEventListener("pointerup", () => game.contentWindow?.focus()));
 

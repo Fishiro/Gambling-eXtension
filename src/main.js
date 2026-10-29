@@ -30,6 +30,7 @@ import { emit } from "./events.js";
 import { TEXT } from "./text.js";
 import { $ } from "./ui.js";
 import { MINE_CODES } from "./keys.js";
+import { createRadial } from "./radial.js";
 
 const el = {
     tabs: document.querySelectorAll("[data-tab]"),
@@ -422,6 +423,8 @@ const KEYS = {
 };
 
 document.addEventListener("keydown", (e) => {
+    // Any key closes the right-click ring; Escape only does that.
+    if (radial.isOpen() && radial.close() && e.code === "Escape") return;
     if (e.code === "Escape") achievements.bump("esc");
     if (modal.isOpen()) {
         if (["Space", "Enter", "Escape"].includes(e.code)) {
@@ -493,6 +496,16 @@ subscribe(() => {
 });
 
 const tour = createTutorial({ setTab });
+// Right-click quick menu (radial.js): a tab or the menu, from anywhere. Not over a popup or during a tour.
+const radial = createRadial({
+    goTab(name) {
+        closeMenu();
+        if (history.isOpen()) history.close();
+        setTab(name);
+    },
+    openMenu: () => openMenu(),
+    blocked: () => modal.isOpen() || tour.active(),
+});
 const unlocks = createUnlocks({ tour, stopAuto: () => state.auto && slot.toggleAuto() });
 buildGuide(closeMenu, () => {
     closeMenu();

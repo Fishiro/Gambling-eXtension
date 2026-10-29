@@ -72,6 +72,7 @@ function startHtml() {
     // Straight from keys.js. Mining on the MINE tab with SPACE is already covered by SPACE's own row.
     const caps = (list) => list.map(keycap).join("");
     const keys = HOTKEYS.filter((k) => !(k.group === "mine" && k.caps[0] === "SPACE")).map((k) => [k.alt ? `${caps(k.caps)} ${caps(k.alt)}` : caps(k.caps), k.label]);
+    keys.push([keycap(TEXT.quickMenu[0]), TEXT.quickMenu[1]]);
     return `<p class="g-lead">PLAY IN SHORT BREAKS. THE MINE WORKS WHILE YOU WORK.</p>
         <div class="g-steps">${steps.map(([art, title, text]) => `<div class="g-step"><div class="g-step-art">${art}</div><b>${title}</b><small>${text}</small></div>`).join("")}</div>
         <h3>CONTROLS</h3>

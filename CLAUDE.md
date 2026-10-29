@@ -28,6 +28,7 @@ Root = only what runs the game or what a tool needs there (`manifest.json`, `ind
 - Feature modules export a `createX(...)` factory returning `{ render, ... }`; `main.js` wires them and runs a once-a-second loop.
 - `fx.js`, `sound.js`, `sprites.js`: visuals, sfx, SVG pixel icons. UI text lives in `text.js`.
 - `sound.js`: every sound is synthesized (no files) and plays on a category bus (`BUSES`: ui, slot, mine, loot, world) with its own volume in Settings. A new event gets its own sound in the right bus group; spammable sounds go in `THROTTLE`. `tests/sound.test.js` fails on any `sfx.x` that doesn't exist.
+- `src/radial.js`: the right-click quick menu (the browser's own context menu is off, except in text fields): a ring of the four tabs around the pointer, the menu in its centre.
 - `src/keys.js`: every keyboard shortcut. `main.js` binds these codes; the guide, the tour and the web page describe them from this list. Add or change a key here, never only in a hint (`tests/keys.test.js` checks both).
 - `index.html` + `web/`: the web version. It runs `src/popup.html?web` full-size (the game's own layout is responsive) and fills the side panels from `keys.js` and `TEXT.web`; it listens to the game's `gx:tab-*` events. The extension never loads it.
 - `tools/sim.js`: seeded bot + slot Monte Carlo on top of `src/core`; `tools/animator.html`: standalone sprite tool.
