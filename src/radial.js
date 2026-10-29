@@ -13,6 +13,12 @@ import { state } from "./store.js";
 const PX = 4;
 const HUB = 8;
 const OUTER = 21;
+// The outer edge is a squircle, not a circle: |x|^p + |y|^p = r^p. Past p = 2 the corners fill out, so the
+// diagonals (where each slice's icon and name sit) get room instead of the edge curving in on them.
+const SQUARENESS = 3;
+const edgeDist = (x, y) => (Math.abs(x) ** SQUARENESS + Math.abs(y) ** SQUARENESS) ** (1 / SQUARENESS);
+// How far out the squircle reaches along a diagonal.
+const DIAGONAL = OUTER * 2 ** (1 / 2 - 1 / SQUARENESS);
 // Clockwise from the top: each slice spans 90 degrees, centred on a diagonal (`mid`, 0 = right, 90 = down).
 const SLICES = [
     { tab: "slot", icon: "i-seven", mid: -45 },
@@ -30,9 +36,10 @@ const at = (deg, r) => {
 // cuts, two cells wide on the axes) or null (outside).
 function partAt(x, y) {
     const d = Math.hypot(x, y);
-    if (d > OUTER + 1) return null;
+    const edge = edgeDist(x, y);
+    if (edge > OUTER + 1) return null;
     if (d <= HUB) return "hub";
-    if (d <= HUB + 1 || d > OUTER || Math.abs(x) < 1 || Math.abs(y) < 1) return "ink";
+    if (d <= HUB + 1 || edge > OUTER || Math.abs(x) < 1 || Math.abs(y) < 1) return "ink";
     return SLICES[(y < 0 ? (x > 0 ? 0 : 3) : x > 0 ? 1 : 2)].tab;
 }
 
@@ -61,7 +68,7 @@ export function createRadial({ goTab, openMenu, blocked }) {
             <path class="radial-hub" data-go="menu" d="${parts.hub}" />
         </svg>
         ${SLICES.map(({ tab, icon, mid }) => {
-            const [x, y] = at(mid, ((OUTER + HUB + 2) / 2) * PX);
+            const [x, y] = at(mid, ((DIAGONAL + HUB + 2) / 2) * PX);
             return `<span class="radial-label" data-for="${tab}" style="--x:${x}px;--y:${y}px">${svgFit(icon, 16)}<small>${tab.toUpperCase()}</small></span>`;
         }).join("")}
         <span class="radial-hub-icon">${svgFit("i-menu", 16)}</span>`;
