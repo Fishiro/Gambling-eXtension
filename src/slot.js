@@ -423,10 +423,14 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         renderHeat();
         const burn = econ.burnTier(state.burned);
         el.burnTier.textContent = burn.tier.name;
-        el.burnValue.textContent = `+${econ.formatPercent(econ.burnBonus(state.burned))}`;
+        // At the top tier the bonus is a round number and the next-tier line becomes a short MAX badge.
+        const maxed = !burn.next;
+        el.burnValue.textContent = maxed ? `+${Math.round(burn.tier.bonus * 100)}%` : `+${econ.formatPercent(econ.burnBonus(state.burned))}`;
         el.burnFill.style.width = `${burn.progress * 100}%`;
-        el.burnNext.textContent = burn.next ? `${burn.next.name} IN ${econ.formatNumber(burn.toNext)}` : TEXT.burnMax;
+        el.burnNext.textContent = maxed ? TEXT.burnMax : `${burn.next.name} IN ${econ.formatNumber(burn.toNext)}`;
+        el.burnNext.title = maxed ? TEXT.burnMaxTip : el.burnNext.textContent;
         el.burn.dataset.tier = burn.index;
+        el.burn.toggleAttribute("data-max", maxed);
     }
 
     function setBet(next) {

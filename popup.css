@@ -749,6 +749,12 @@ main,
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+}
+.burn-label,
+#burn-value {
+    flex: none;
+    white-space: nowrap;
 }
 .burn[data-tier="5"] .burn-label,
 .burn[data-tier="5"] #burn-value {
@@ -778,9 +784,27 @@ main,
     font: 700 var(--fs-2)/1 "Silkscreen", monospace;
     color: var(--ember);
 }
+/* The only part of the row that may shrink: it cuts with "..." instead of pushing the panel wider. */
 #burn-next {
+    flex: 0 1 auto;
+    min-width: 0;
     margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
+}
+.burn[data-max] #burn-next {
+    flex: none;
+    padding: 1px 5px;
+    color: var(--ink);
+    background: var(--ember);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+.burn[data-max] #burn-fill {
+    width: 100%;
+    background: var(--ember);
+    box-shadow: 0 0 6px var(--ember);
 }
 
 .meter-row {
