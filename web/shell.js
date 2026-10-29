@@ -80,8 +80,28 @@ function capsFor(e) {
     });
 }
 
-const press = (e) => capsFor(e).forEach((cap) => cap.classList.add("is-down"));
-const release = (e) => capsFor({ code: e.code, shiftKey: true }).concat(capsFor({ code: e.code, shiftKey: false })).forEach((cap) => cap.classList.remove("is-down"));
+// A cap goes down the instant the key does. On release it stays down at least MIN_DOWN_MS since its press, so
+// even the lightest tap shows one quick press.
+const MIN_DOWN_MS = 70;
+const pressedAt = new WeakMap();
+
+function press(e) {
+    for (const cap of capsFor(e)) {
+        cap.classList.add("is-down");
+        pressedAt.set(cap, performance.now());
+    }
+}
+
+function release(e) {
+    const caps = capsFor({ code: e.code, shiftKey: true }).concat(capsFor({ code: e.code, shiftKey: false }));
+    for (const cap of caps) {
+        const at = pressedAt.get(cap) ?? 0;
+        const left = MIN_DOWN_MS - (performance.now() - at);
+        // A newer press of the same key keeps its cap down.
+        if (left > 0) setTimeout(() => pressedAt.get(cap) === at && cap.classList.remove("is-down"), left);
+        else cap.classList.remove("is-down");
+    }
+}
 // Focus leaving mid-press would strand a cap down.
 const releaseAll = () => document.querySelectorAll("kbd.is-down").forEach((cap) => cap.classList.remove("is-down"));
 

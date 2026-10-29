@@ -141,11 +141,6 @@ kbd {
         0 0 0 1px var(--ink);
 }
 /* The key you hold sinks and turns gold; it springs back white when you let go. */
-kbd {
-    transition:
-        transform 60ms steps(1),
-        background-color 60ms steps(1);
-}
 kbd.is-down {
     transform: translateY(2px);
     background: var(--gold);
