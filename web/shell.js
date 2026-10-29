@@ -91,6 +91,32 @@ function release(e) {
 // Focus leaving mid-press would strand a cap down.
 const releaseAll = () => document.querySelectorAll("kbd.is-down").forEach((cap) => cap.classList.remove("is-down"));
 
+// ---- the panels: shown when the window has room for them and the player hasn't turned them off ----
+
+const HINTS_KEY = "gx_hints";
+const RAILS_MIN_WIDTH = 1200;
+let hintsOn = true;
+try {
+    hintsOn = localStorage.getItem(HINTS_KEY) !== "off";
+} catch {}
+
+// Lay the panels out and tell the game, which shows its key button only when the panels can fit.
+function layoutRails() {
+    const available = window.innerWidth >= RAILS_MIN_WIDTH;
+    document.body.dataset.rails = available && hintsOn ? "on" : "off";
+    game.contentWindow?.postMessage({ type: "gx:hints", available, shown: hintsOn }, location.origin);
+}
+window.addEventListener("resize", layoutRails);
+window.addEventListener("message", (e) => {
+    if (e.source !== game.contentWindow || e.data?.type !== "gx:toggle-hints") return;
+    hintsOn = !hintsOn;
+    try {
+        localStorage.setItem(HINTS_KEY, hintsOn ? "on" : "off");
+    } catch {}
+    layoutRails();
+});
+layoutRails();
+
 // ---- wiring to the game in the frame (same origin) ----
 
 game.addEventListener("load", () => {
@@ -101,6 +127,7 @@ game.addEventListener("load", () => {
     win.addEventListener("blur", releaseAll);
     for (const tab of Object.keys(W.tabs)) doc.addEventListener(`gx:tab-${tab}`, () => renderTab(tab));
     renderTab(doc.querySelector(".tab.is-active")?.dataset.tab ?? "slot");
+    layoutRails();
     win.focus();
 });
 

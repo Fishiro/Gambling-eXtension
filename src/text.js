@@ -285,6 +285,7 @@ export const TEXT = {
             "BURN NEVER RESETS: EVERY COIN YOU BET COUNTS FOREVER.",
         ],
         saves: "YOUR PROGRESS SAVES IN THIS BROWSER. BACK IT UP IN SETTINGS.",
+        hintsToggle: "SHOW / HIDE THE KEY HINTS",
     },
     usedIn: "USED IN",
     usedNowhere: "NOTHING. ONLY HERE FOR THE COLLECTION, OR TO SCRAP.",

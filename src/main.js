@@ -322,6 +322,16 @@ $("btn-history").addEventListener("click", () => achievements.bump("history"));
 const extensionTabs = globalThis.chrome?.tabs?.create && globalThis.chrome?.runtime?.getURL && window.top === window;
 $("btn-wide").hidden = !extensionTabs;
 $("btn-wide").title = TEXT.playWide;
+// Web version only: the page around the game (web/shell.js) owns the key hint panels. It says whether they fit
+// and are shown; this button asks it to flip them.
+const keysBtn = $("btn-keys");
+keysBtn.title = TEXT.web.hintsToggle;
+window.addEventListener("message", (e) => {
+    if (e.source !== window.parent || e.data?.type !== "gx:hints") return;
+    keysBtn.hidden = !e.data.available;
+    keysBtn.classList.toggle("is-on", e.data.shown);
+});
+keysBtn.addEventListener("click", () => window.parent.postMessage({ type: "gx:toggle-hints" }, location.origin));
 $("btn-wide").addEventListener("click", () => {
     commit();
     chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });

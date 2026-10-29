@@ -21,8 +21,7 @@
     --gold-dk: #e8a33a;
     --green: #a7f070;
     --cyan: #73eff7;
-    /* Panels and their text grow with the screen, so they read next to a scaled-up game. */
-    --rail: clamp(220px, 15vw, 280px);
+    --rail: clamp(210px, 15vw, 280px);
     --fs: 9pt;
     --gap: 20px;
     --b: 3px;
@@ -176,13 +175,11 @@ kbd.is-down {
     font-size: calc(var(--fs) - 2px);
 }
 
-/* Below a wide desktop the key panels step aside and the game takes the whole window. */
-@media (max-width: 1400px) {
-    body {
-        grid-template-columns: minmax(0, 1fr);
-        padding: 0;
-    }
-    .rail {
-        display: none;
-    }
+/* Panels off (the game's key button, or a window too narrow for them): the game takes the whole window. */
+body[data-rails="off"] {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+}
+body[data-rails="off"] .rail {
+    display: none;
 }

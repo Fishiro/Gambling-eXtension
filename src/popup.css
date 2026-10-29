@@ -67,14 +67,34 @@ body {
    column grows with it and the stage content stays centred at a readable width. */
 html.web {
     --side: clamp(330px, 26vw, 440px);
-    --machine: 600px;
+    /* The slot machine and the mine scene size to the window's height as well as its width, so a wide but short
+       window still fits without scrolling (the rest of their tab takes about 340 / 400px). */
+    --machine: clamp(280px, calc((100vh - 340px) * 2), 640px);
 }
 html.web body {
     width: 100%;
     height: 100vh;
 }
 html.web .stage {
-    padding-inline: max(var(--s5), calc((100% - 760px) / 2));
+    padding-inline: max(var(--s5), calc((100% - 820px) / 2));
+}
+/* Windows smaller than the layout's minimum (src/mode.js sets --zoom): the game area shrinks to fit. */
+html.web .app {
+    zoom: var(--zoom, 1);
+    width: var(--app-w, 100%);
+    height: var(--app-h, 100%);
+}
+html.web .scene-wrap {
+    width: 100%;
+    max-width: clamp(320px, calc((100vh - 400px) * 2.4), 820px);
+    margin-inline: auto;
+}
+/* Short windows: tighter spacing before anything has to scroll. */
+@media (max-height: 760px) {
+    html.web {
+        --s4: 12px;
+        --s5: 18px;
+    }
 }
 
 body {
@@ -478,6 +498,10 @@ i[data-icon] {
     background: var(--orange);
     box-shadow: 0 0 0 2px var(--ink);
     animation: blink 0.8s steps(2) infinite;
+}
+/* A toggle in the tool row that is on (the web version's key hints). */
+.icon-btn.is-on {
+    color: var(--gold);
 }
 .icon-btn {
     width: 30px;
