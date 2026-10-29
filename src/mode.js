@@ -21,6 +21,18 @@ if (new URLSearchParams(location.search).has("web")) {
         const h = Math.min(WEB_MAX_H, document.body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
         root.style.setProperty("--app-w", `${w / zoom}px`);
         root.style.setProperty("--app-h", `${h / zoom}px`);
+        requestAnimationFrame(frame);
+    };
+    // The gold frame (body::before/::after) wraps the box, one body padding out from it.
+    const frame = () => {
+        const app = document.getElementById("app");
+        if (!app) return;
+        const r = app.getBoundingClientRect();
+        const pad = parseFloat(getComputedStyle(document.body).paddingTop);
+        root.style.setProperty("--frame-l", `${r.left - pad}px`);
+        root.style.setProperty("--frame-t", `${r.top - pad}px`);
+        root.style.setProperty("--frame-w", `${r.width + pad * 2}px`);
+        root.style.setProperty("--frame-h", `${r.height + pad * 2}px`);
     };
     fit();
     addEventListener("DOMContentLoaded", fit);
