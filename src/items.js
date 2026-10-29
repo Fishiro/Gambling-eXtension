@@ -57,13 +57,13 @@ export function upgrade(state, gear) {
     return true;
 }
 
-// Everything feeding one stat: gear (and set bonuses), the equipped pet's passive, VIP tier, worn relics.
+// Everything feeding one stat: gear (and set bonuses), every equipped pet's passive, VIP tier, worn relics.
 // Cheap enough to call per frame.
 export function bonus(state, stat) {
     const gear = GEAR.reduce((sum, g) => (g.stat === stat ? sum + gearValue(g, gearLevel(state, g.id)) : sum), 0);
     const sets = GEAR_SETS.reduce((sum, set) => (set.stat === stat && setActive(state, set) ? sum + set.per : sum), 0);
-    const passive = PETS.find((p) => p.id === state.pets?.active)?.passive;
-    return gear + sets + (passive?.stat === stat ? passive.per : 0) + vipBonus(state, stat) + relicBonus(state, stat);
+    const pets = PETS.reduce((sum, p) => sum + (state.pets?.team?.includes(p.id) && p.passive?.stat === stat ? p.passive.per : 0), 0);
+    return gear + sets + pets + vipBonus(state, stat) + relicBonus(state, stat);
 }
 
 export function rollDrops(state, source, rand = Math.random) {

@@ -70,6 +70,9 @@ const slot = createSlot({
     keepHeat: pets.keepHeat,
     refundLoss: pets.refundLoss,
     bendRoll: pets.bendRoll,
+    autoGood: pets.autoGood,
+    onNeedPet: () => pets.open(),
+    doubleWin: pets.doubleWin,
 });
 const mine = createMine({ onLevelUp: celebrateLevel, onChest: chests.gain, onOre: (ore) => vault.damage(ore), pets });
 const market = createMarket();
@@ -440,7 +443,7 @@ setInterval(() => {
     if (document.hidden) return;
     if (!tour.active()) {
         pets.tick();
-        if (pets.activeId() === "chester") chests.autoOpen(el.petButton);
+        if (pets.has("chester")) chests.autoOpen(el.petButton);
         mine.updateBat();
     }
     mine.titanTick();

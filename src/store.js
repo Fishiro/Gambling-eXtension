@@ -15,7 +15,7 @@ const fresh = () => ({
     burned: 0,
     betEma: 0,
     burnChests: 0,
-    buffs: { goldRush: 0, hotSpins: 0, rockSpins: 0, loadedSpins: 0, sevenSpins: 0, midas: 0, titan: 0, phoenix: 0, starSpins: 0, breakerSpins: 0 },
+    buffs: { goldRush: 0, hotSpins: 0, rockSpins: 0, loadedSpins: 0, sevenSpins: 0, midas: 0, titan: 0, phoenix: 0, starSpins: 0, breakerSpins: 0, freeze: 0 },
     heat: 0,
     skill: 0.5,
     freeSpin: true,
@@ -26,7 +26,8 @@ const fresh = () => ({
     stats: { spins: 0, timed: 0, perfects: 0, bestWin: 0, bestMult: 0, cosmic: 0, chestsOpened: 0 },
     history: [],
     hall: [],
-    pets: { owned: [], active: null, readyAt: {} },
+    // team: equipped pet ids, at most `slots` of them (more slots are bought with diamonds).
+    pets: { owned: [], team: [], slots: 1, readyAt: {} },
     gems: 0,
     unlocked: null,
     relics: { list: [], equipped: [null, null, null] },
@@ -50,7 +51,7 @@ function load() {
     try {
         const saved = JSON.parse(localStorage.getItem(KEY));
         if (saved) {
-            return {
+            const loaded = {
                 ...base,
                 ...saved,
                 mineAt: saved.mineAt ?? saved.lastSeen ?? Date.now(),
@@ -65,6 +66,14 @@ function load() {
                 market: { ...base.market, ...saved.market },
                 garden: base.garden.map((_, i) => saved.garden?.[i] ?? null),
             };
+            // One equipped pet (`active`) became a team. Auto spin used to open at LV3 and is now SPINNY's job,
+            // so players who already had it get SPINNY for free.
+            if (!saved.pets?.team) {
+                loaded.pets.team = saved.pets?.active ? [saved.pets.active] : [];
+                if ((saved.level ?? 1) >= 3 && !loaded.pets.owned.includes("spinny")) loaded.pets.owned = [...loaded.pets.owned, "spinny"];
+            }
+            delete loaded.pets.active;
+            return loaded;
         }
     } catch {
         localStorage.removeItem(KEY);

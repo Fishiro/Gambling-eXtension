@@ -37,7 +37,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         getFill: () => econ.oreAt(state) / econ.cartCap(state),
         getAutoPeriod: () => econ.clamp(2.2 - 0.12 * state.upgrades.drill, 0.6, 2.2) / luck.mineBoost(state),
         isGoldRush: () => luck.mineBoost(state) > 1,
-        getPet: () => pets.activeId(),
+        getPet: () => pets.leader(),
         getSkin: () => state.skins.active,
     });
     let nextBatAt = performance.now() + luck.nextBatDelay();
@@ -84,10 +84,14 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         fx.float(p.x, p.y - 10, TEXT.sixSeven, { size: 24, rainbow: true, rise: 0.25, life: 110 });
     }
 
+    // FROSTY's passive cools the pick faster; its BRAIN FREEZE stops heat altogether.
+    const coolRate = () => 1 + items.bonus(state, "cool");
+    const frozen = () => luck.timedLeft(state, "freeze") > 0;
+
     // The overheat gauge, redrawn every frame while the pick cools.
     function renderHeat() {
         cancelAnimationFrame(heatFrame);
-        const heat = econ.coolHeat(pickHeat, pickAt, performance.now());
+        const heat = econ.coolHeat(pickHeat, pickAt, performance.now(), coolRate());
         const mult = econ.heatMult(heat);
         el.heat.hidden = heat < MINE.overheat.free / 2;
         el.heat.toggleAttribute("data-hot", mult < 1);
@@ -113,7 +117,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
             return;
         }
         const now = performance.now();
-        pickHeat = econ.coolHeat(pickHeat, pickAt, now) + 1;
+        pickHeat = frozen() ? 0 : econ.coolHeat(pickHeat, pickAt, now, coolRate()) + 1;
         pickAt = now;
         const cooled = econ.heatMult(pickHeat);
         const overheated = cooled < 1;

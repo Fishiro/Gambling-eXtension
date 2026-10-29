@@ -103,7 +103,8 @@ export const TEXT = {
     tipFrom: (from) => `FIND IT: ${from}`,
     skipHint: "SPACE / TAP TO SKIP",
     freeSpin: "FREE SPIN",
-    autoLocked: (lv) => `LV${lv}`,
+    autoLocked: "SPINNY",
+    autoNeeds: "AUTO NEEDS SPINNY ON YOUR PET TEAM",
     welcomeTitle: "WE'RE SO BACK",
     awayFor: (clock) => `YOU WERE GONE FOR ${clock}`,
     welcomeOk: "BET",
@@ -156,7 +157,8 @@ export const TEXT = {
         ],
         bag: [
             { target: '[data-tab="bag"]', text: "LEVEL 2! YOUR BAG IS OPEN. EVERYTHING YOU FIND LANDS HERE. TAP BAG.", wait: "tab-bag" },
-            { target: "#item-grid", text: "TAP ANY ITEM TO SEE WHAT IT IS AND WHERE TO FIND MORE.", last: true },
+            { target: "#item-grid", text: "TAP ANY ITEM TO SEE WHAT IT IS AND WHERE TO FIND MORE." },
+            { target: '[data-bag="skins"]', text: "SKINS LIVE HERE TOO: NEW LOOKS FOR THE MINE, PAID IN DIAMONDS. NO STATS, ALL DRIP.", last: true },
         ],
         farm: [
             { target: '[data-tab="farm"]', text: "LEVEL 4: THE FARM IS OPEN! TAP FARM.", wait: "tab-farm" },
@@ -170,13 +172,9 @@ export const TEXT = {
             { target: "#brew-list", text: "BREWS ARE ONE-USE BOOSTS. DRINK THEM FROM THE ITEMS TAB.", last: true },
         ],
         pets: [
-            { target: "#btn-pet", text: "LEVEL 6: PETS! TAP THE PAW UP HERE.", wait: "bag-pets" },
-            { target: "#pet-list", text: "SAVE UP AND BUY ONE. EACH HAS A SKILL AND A BONUS. Q USES THE SKILL. W PETS ONLY.", last: true },
-        ],
-        skins: [
-            { target: '[data-tab="bag"]', text: "LEVEL 8: SKINS! OPEN YOUR BAG.", wait: "tab-bag" },
-            { target: '[data-bag="skins"]', text: "TAP SKINS.", wait: "bag-skins" },
-            { target: "#skin-list", text: "SKINS CHANGE HOW THE MINE LOOKS. THEY COST DIAMONDS, COUNTED TOP RIGHT.", last: true },
+            { target: "#btn-pet", text: "LEVEL 3: PETS! TAP THE PAW UP HERE.", wait: "bag-pets" },
+            { target: ".pet-team", text: "YOUR TEAM: 1 SLOT NOW, 2 MORE FOR DIAMONDS. EVERY PET ON THE TEAM WORKS AT ONCE." },
+            { target: "#pet-list", text: "HELPERS DO CHORES: SPINNY AUTO SPINS, CHESTER OPENS CHESTS. THE REST PICK A PLAYSTYLE. Q USES A SKILL.", last: true },
         ],
         endgame: [
             { target: "#vip", tab: "slot", text: "LEVEL 10: MAIN CHARACTER ERA! VIP: EVERY COIN YOU BET RAISES YOUR TIER AND YOUR MAX BET." },
@@ -208,6 +206,11 @@ export const TEXT = {
     petOn: "ON",
     petAuto: "AUTO SKILL",
     petEquip: "EQUIP",
+    petRemove: "REMOVE",
+    teamFull: (n) => `TEAM FULL (${n}). REMOVE ONE FIRST`,
+    slotOpened: "NEW PET SLOT!",
+    slotLocked: "LOCKED",
+    goldenPaw: "GOLDEN PAW: WIN x2!",
     petUse: "USE",
     petPat: "PET",
     petCooldown: (clock) => `RECHARGING ${clock}`,

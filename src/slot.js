@@ -1,4 +1,4 @@
-import { BET_STEPS, TIMING, LEVELS, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./config.js";
+import { BET_STEPS, TIMING, LUCK, COSMIC, BURN, GEMS, BREW_FX } from "./config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./economy.js";
 import * as luck from "./luck.js";
@@ -26,7 +26,7 @@ const TIER_FX = {
 const COSMIC_PULSES = 4;
 const COSMIC_PULSE_GAP = 900;
 
-export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCosmic, keepHeat, refundLoss, bendRoll }) {
+export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCosmic, keepHeat, refundLoss, bendRoll, autoGood, doubleWin, onNeedPet }) {
     const el = {
         machine: $("machine"),
         meter: $("meter"),
@@ -188,12 +188,15 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         render();
 
         let grade = meter.stop(timedOut);
+        // SPINNY: an auto spin's stop often lands in the green instead of freezing.
+        const steadied = timedOut && state.auto && autoGood();
+        if (steadied) grade = "good";
         const rocked = round.bet > 0 && state.buffs.rockSpins > 0;
         if (rocked) {
             state.buffs.rockSpins--;
             grade = "perfect";
         }
-        showGrade(grade, timedOut && !rocked);
+        showGrade(grade, timedOut && !rocked && !steadied);
         if (rocked && onScreen()) {
             const p = meter.cursorPoint();
             fx.float(p.x, p.y - 32, TEXT.rockSays, { color: "l", life: 60 });
@@ -237,7 +240,8 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         const burn = bet ? econ.burnApplied(state.burned, grade) : 0;
         const midas = luck.timedLeft(state, "midas") > 0 ? BREW_FX.midasMult : 1;
         const boost = (lucky ? LUCK.luckySpinMult : 1) * (hot ? LUCK.hotMachineMult : 1) * (1 + burn) * (1 + items.bonus(state, "payout")) * midas;
-        const win = econ.payout(bet, outcome, grade, heat, boost);
+        let win = econ.payout(bet, outcome, grade, heat, boost);
+        if (bet && doubleWin(win)) win *= 2;
         const tier = bet ? econ.winTier(outcome, win, bet) : "free";
         const shielded = bet && grade === "miss" && state.heat > 0 && keepHeat();
         if (bet && !shielded) state.heat = econ.nextHeat(state.heat, grade);
@@ -375,14 +379,14 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
 
     function scheduleAuto(tier) {
         clearTimeout(autoTimer);
-        if (!state.auto || !econ.canAutoSpin(state.level)) return;
+        if (!state.auto || !econ.canAutoSpin(state)) return;
         autoTimer = setTimeout(() => {
             if (state.auto && phase === "idle") spin();
         }, AUTO_DELAY[tier] ?? 700);
     }
 
     function setAuto(on) {
-        state.auto = on && econ.canAutoSpin(state.level);
+        state.auto = on && econ.canAutoSpin(state);
         commit();
         if (state.auto && phase === "idle") scheduleAuto("lose");
         else clearTimeout(autoTimer);
@@ -415,10 +419,11 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         el.spinLabel.textContent = phase === "spinning" ? TEXT.stop : phase === "stopping" ? TEXT.skip : free && idle ? TEXT.freeSpin : TEXT.spin;
         el.spinCost.innerHTML = !idle ? "" : free ? svgIcon("gift", 2) : bet ? `${svgIcon("coin", 2)}${econ.formatNumber(bet)}` : TEXT.practice;
 
-        const unlocked = econ.canAutoSpin(state.level);
-        const markup = unlocked ? `${svgIcon("auto", 2)}AUTO` : `${svgIcon("lock", 2)}${TEXT.autoLocked(LEVELS.autoSpinLevel)}`;
+        const unlocked = econ.canAutoSpin(state);
+        const markup = unlocked ? `${svgIcon("auto", 2)}AUTO` : `${svgIcon("spinny", 2)}${TEXT.autoLocked}`;
         if (markup !== autoMarkup) el.auto.innerHTML = autoMarkup = markup;
-        el.auto.disabled = !unlocked;
+        el.auto.dataset.locked = String(!unlocked);
+        el.auto.title = unlocked ? "" : TEXT.autoNeeds;
         el.auto.classList.toggle("is-on", state.auto && unlocked);
         el.auto.setAttribute("aria-pressed", String(state.auto && unlocked));
         renderHeat();
@@ -448,7 +453,7 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
     el.spin.addEventListener("click", () => press());
     el.betDown.addEventListener("click", () => changeBet(-1));
     el.betUp.addEventListener("click", () => changeBet(1));
-    el.auto.addEventListener("click", () => setAuto(!state.auto));
+    el.auto.addEventListener("click", () => toggleAuto());
     $("reels").addEventListener("pointerdown", () => phase === "spinning" && stop(false));
     el.meter.addEventListener("pointerdown", () => phase === "spinning" && stop(false));
 
@@ -461,5 +466,15 @@ export function createSlot({ onLevelUp, onBroke, onSpin, onResult, onChest, onCo
         else if (phase === "idle") spin();
     }
 
-    return { press, changeBet, toggleAuto: () => setAuto(!state.auto), render };
+    // Without SPINNY on the team, AUTO says so and opens the pets instead.
+    function toggleAuto() {
+        if (econ.canAutoSpin(state)) return setAuto(!state.auto);
+        sfx.denied();
+        fx.shake(el.auto, 2, 200);
+        const p = fx.centerOf(el.auto);
+        fx.float(p.x, p.y - 18, TEXT.autoNeeds, { color: "c", life: 70 });
+        onNeedPet();
+    }
+
+    return { press, changeBet, toggleAuto, render };
 }

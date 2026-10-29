@@ -1,4 +1,4 @@
-import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./config.js";
+import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./config.js";
 import { formatNumber } from "./economy.js";
 import { PALETTE, svgIcon } from "./sprites.js";
 import { TEXT } from "./text.js";
@@ -162,11 +162,17 @@ function guideHtml() {
             "LEVELS + BURN",
             `${tiles([
                 [icon("i-star"), "LEVEL UP", `+${LEVELS.coinRewardPerLevel} COIN x LV, BIGGER BET`],
-                [icon("i-auto"), `LV${LEVELS.autoSpinLevel}`, "AUTO SPIN"],
+                [icon("spinny"), "AUTO SPIN", "SPINNY ON YOUR PET TEAM"],
                 [icon("flame"), "BURN", `BETS GIVE UP TO +${pct(top(BURN.tiers).bonus)}`],
             ])}`,
         ),
-        section("i-paw", "PETS", `${tiles(PETS.map((p) => [icon(p.id), p.name, formatNumber(p.price)]), 5)}<p>ONE AT A TIME. SKILLS RECHARGE EVEN WHILE CLOSED.</p>`),
+        section(
+            "i-paw",
+            "PETS",
+            `${tiles(Object.entries(PET_ROLES).map(([id, r]) => [`${PETS.filter((p) => p.role === id).map((p) => icon(p.id, 2)).join("")}`, color(r.color, r.name), r.desc]), 5)}
+            ${tiles(PETS.map((p) => [icon(p.id), p.name, formatNumber(p.price)]), 5)}
+            <p>UP TO ${PET_SLOTS.length} ON YOUR TEAM, ALL WORKING AT ONCE. SLOT 2 COSTS ${PET_SLOTS[1]} DIAMONDS, SLOT 3 COSTS ${PET_SLOTS[2]}. SKILLS RECHARGE EVEN WHILE CLOSED.</p>`,
+        ),
         section(
             "i-farm",
             "FARM",

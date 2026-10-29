@@ -1,10 +1,11 @@
-import { PETS, LUCK } from "./config.js";
+import { PETS, PET_SLOTS, PET_ROLES, LUCK } from "./config.js";
 import { state, commit } from "./store.js";
 import * as econ from "./economy.js";
 import * as luck from "./luck.js";
 import * as items from "./items.js";
 import * as farming from "./farming.js";
-import { svgIcon } from "./sprites.js";
+import * as market from "./market.js";
+import { PALETTE, svgIcon } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
@@ -20,22 +21,36 @@ export const petById = (id) => byId[id];
 const readyAt = (id) => state.pets.readyAt[id] ?? 0;
 const cooldownLeft = (id) => Math.max(0, readyAt(id) - Date.now()) / 1000;
 const owns = (id) => state.pets.owned.includes(id);
+const equipped = (id) => state.pets.team.includes(id);
+const teamFull = () => state.pets.team.length >= state.pets.slots;
 
 const cooldownOf = (id) => byId[id].cooldown * Math.max(0.3, 1 - items.bonus(state, "petCd"));
 
+// The team: up to state.pets.slots pets at once. Every equipped pet's skill and passive work together.
 export function createPets({ reveal }) {
     const el = {
         button: $("btn-pet"),
         list: $("pet-list"),
     };
 
+    const team = document.createElement("div");
+    team.className = "pet-team";
+    team.addEventListener("click", (e) => {
+        const button = e.target.closest("button");
+        if (!button) return;
+        if (button.dataset.unequip) ACTIONS.unequip(byId[button.dataset.unequip]);
+        else if (button.dataset.slot) buySlot(button);
+    });
+    el.list.append(team);
+
     const cards = PETS.map((pet) => {
+        const role = PET_ROLES[pet.role];
         const card = document.createElement("div");
         card.className = "pet-card";
         card.innerHTML = `
             <span class="pet-art">${svgIcon(pet.id, 4)}</span>
             <div class="pet-info">
-                <b>${pet.name}</b>
+                <b>${pet.name}<em class="pet-role" style="--tone:${PALETTE[role.color]}">${role.name}</em></b>
                 <small class="pet-kind">${pet.kind} / ${pet.skill}${pet.auto ? " (AUTO)" : ""}</small>
                 <p>${pet.desc}</p>
                 ${pet.passive ? `<small class="pet-passive">${TEXT.petPassive(pet.passive)}</small>` : ""}
@@ -52,13 +67,13 @@ export function createPets({ reveal }) {
         return { pet, card, actions, cd: card.querySelector(".pet-cd"), markup: "" };
     });
 
-    const active = () => (state.pets.active ? byId[state.pets.active] : null);
+    const members = () => state.pets.team.map((id) => byId[id]).filter(Boolean);
 
     function ready(id) {
-        return state.pets.active === id && cooldownLeft(id) <= 0;
+        return equipped(id) && cooldownLeft(id) <= 0;
     }
 
-    // Consume the active pet's skill if it is ready. Returns true when it fired.
+    // Consume an equipped pet's skill if it is ready. Returns true when it fired.
     function trigger(id) {
         if (!ready(id)) return false;
         state.pets.readyAt[id] = Date.now() + cooldownOf(id);
@@ -72,7 +87,7 @@ export function createPets({ reveal }) {
         fx.pop(el.button);
     }
 
-    function pat(x, y, id = state.pets.active) {
+    function pat(x, y, id = state.pets.team[0]) {
         const pet = byId[id];
         if (!pet) return;
         state.fun.pats = (state.fun.pats ?? 0) + 1;
@@ -83,21 +98,25 @@ export function createPets({ reveal }) {
         commit();
     }
 
-    function useSkill() {
-        const pet = active();
-        if (!pet) return reveal();
-        if (pet.auto) {
+    // Q / USE: fire `id`'s skill, or with no id the first tap skill on the team that is ready.
+    function useSkill(id) {
+        const tappers = members().filter((p) => !p.auto);
+        if (!state.pets.team.length) return reveal();
+        if (!tappers.length) {
             sfx.denied();
             return shout(TEXT.petAuto, "l");
         }
+        const pet = id ? byId[id] : (tappers.find((p) => cooldownLeft(p.id) <= 0) ?? tappers[0]);
         if (!trigger(pet.id)) {
             sfx.denied();
-            return shout(econ.formatClock(cooldownLeft(pet.id)), "l");
+            return shout(`${pet.name} ${econ.formatClock(cooldownLeft(pet.id))}`, "l");
         }
         if (pet.id === "toaster") {
             econ.addOre(state, econ.cartCap(state));
             luck.applyReward(state, { type: "goldRush", seconds: pet.rushSeconds });
         }
+        if (pet.id === "frosty") luck.applyReward(state, { type: "timed", key: "freeze", seconds: pet.freezeSeconds, label: pet.skill });
+        if (pet.id === "stonks") market.pump(state, pet.pump);
         if (pet.id === "rock") state.buffs.rockSpins += pet.perfectSpins;
         if (pet.id === "dice") state.buffs.loadedSpins += pet.loadedSpins;
         if (pet.id === "digit7") state.buffs.sevenSpins = 1;
@@ -106,6 +125,38 @@ export function createPets({ reveal }) {
         sfx.upgrade();
         shout(`${pet.skill}!`);
         fx.confetti(1);
+    }
+
+    function equip(pet, button) {
+        if (equipped(pet.id)) return;
+        if (teamFull()) {
+            sfx.denied();
+            if (button) fx.shake(button, 2, 200);
+            return shout(TEXT.teamFull(state.pets.slots), "l");
+        }
+        econ.settleOre(state);
+        state.pets.team = [...state.pets.team, pet.id];
+        commit();
+        sfx.upgrade();
+        emit("pet-equip", { id: pet.id });
+    }
+
+    // The next locked team slot, paid in diamonds.
+    function buySlot(button) {
+        const cost = PET_SLOTS[state.pets.slots];
+        if (cost === undefined) return;
+        if (state.gems < cost) {
+            sfx.denied();
+            return fx.shake(button, 2, 200);
+        }
+        state.gems -= cost;
+        state.pets.slots += 1;
+        commit();
+        sfx.levelUp();
+        const p = fx.centerOf(button);
+        fx.burst(p.x, p.y, { count: 30, colors: ["c", "B", "w"], speed: [1.5, 4], life: [20, 40] });
+        fx.float(p.x, p.y - 16, TEXT.slotOpened, { color: "c", life: 80 });
+        emit("pet-slot", { slots: state.pets.slots });
     }
 
     const ACTIONS = {
@@ -119,7 +170,7 @@ export function createPets({ reveal }) {
             econ.settleOre(state);
             state.coins -= pet.price;
             state.pets.owned.push(pet.id);
-            state.pets.active = pet.id;
+            if (!teamFull()) state.pets.team = [...state.pets.team, pet.id];
             commit();
             sfx.levelUp();
             fx.confetti(1);
@@ -127,18 +178,19 @@ export function createPets({ reveal }) {
             fx.float(p.x, p.y - 20, TEXT.petHello(pet.name), { color: "y", life: 80 });
             emit("pet-buy", { id: pet.id, price: pet.price });
         },
-        equip(pet) {
+        equip,
+        unequip(pet) {
             econ.settleOre(state);
-            state.pets.active = pet.id;
+            state.pets.team = state.pets.team.filter((id) => id !== pet.id);
+            if (pet.id === "spinny" && state.auto) state.auto = false;
             commit();
-            sfx.upgrade();
-            emit("pet-equip", { id: pet.id });
+            sfx.tab();
         },
         pat(pet, button) {
             const p = fx.centerOf(button);
             pat(p.x, p.y, pet.id);
         },
-        skill: () => useSkill(),
+        skill: (pet) => useSkill(pet.id),
     };
 
     function cooldownText(pet) {
@@ -146,36 +198,53 @@ export function createPets({ reveal }) {
         return left > 0 ? TEXT.petCooldown(econ.formatClock(left)) : TEXT.petReady;
     }
 
+    function renderTeam() {
+        const { slots } = state.pets;
+        const markup = PET_SLOTS.map((cost, i) => {
+            const id = state.pets.team[i];
+            if (i < slots && id) return `<button class="pet-slot is-on" data-unequip="${id}" title="${TEXT.petRemove}">${svgIcon(id, 2)}<small>${byId[id].name}</small></button>`;
+            if (i < slots) return `<span class="pet-slot is-empty">${TEXT.empty}</span>`;
+            const next = i === slots;
+            return `<button class="pet-slot is-locked" ${next ? `data-slot="${i}"` : "disabled"} ${next && state.gems < cost ? 'data-poor=""' : ""}>${svgIcon(next ? "gem" : "lock", 2)}<small>${next ? cost : TEXT.slotLocked}</small></button>`;
+        }).join("");
+        if (team.innerHTML !== markup) team.innerHTML = markup;
+    }
+
     function renderCard(c) {
         const { pet, card, actions, cd } = c;
         const owned = owns(pet.id);
-        const isActive = state.pets.active === pet.id;
-        card.dataset.state = isActive ? "active" : owned ? "owned" : "locked";
-        cd.textContent = owned ? cooldownText(pet) : "";
+        const isOn = equipped(pet.id);
+        card.dataset.state = isOn ? "active" : owned ? "owned" : "locked";
+        cd.textContent = owned && pet.cooldown ? cooldownText(pet) : "";
         let markup;
         if (!owned) {
             markup = `<button data-action="buy" data-fx="y,G,w" ${state.coins < pet.price ? "disabled" : ""}>${svgIcon("coin", 2)}${econ.formatNumber(pet.price)}</button>`;
-        } else if (!isActive) {
-            markup = `<button data-action="equip" data-fx="c,w">${TEXT.petEquip}</button>`;
+        } else if (!isOn) {
+            markup = `<button data-action="equip" data-fx="c,w" ${teamFull() ? 'data-full=""' : ""}>${TEXT.petEquip}</button>`;
         } else {
             const skill = pet.auto ? "" : `<button data-action="skill" class="pet-skill" data-fx="y,R,w" ${cooldownLeft(pet.id) > 0 ? "disabled" : ""}>${TEXT.petUse}</button>`;
-            markup = `${skill}<button data-action="pat" data-fx="R,r,w">${svgIcon("heart", 2)}${TEXT.petPat}</button>`;
+            markup = `${skill}<button data-action="pat" data-fx="R,r,w">${svgIcon("heart", 2)}${TEXT.petPat}</button><button data-action="unequip" data-fx="l,w">${TEXT.petRemove}</button>`;
         }
         if (markup !== c.markup) actions.innerHTML = c.markup = markup;
     }
 
+    // Top bar: the team's faces, then the first tap skill's countdown (or ON for an all-auto team).
     function render() {
-        const pet = active();
+        const list = members();
         let markup;
-        if (!pet) markup = `${svgIcon("i-paw", 2)}${TEXT.pets}`;
+        if (!list.length) markup = `${svgIcon("i-paw", 2)}${TEXT.pets}`;
         else {
-            const left = cooldownLeft(pet.id);
-            markup = `${svgIcon(pet.id, 2)}<span>${left > 0 ? econ.formatClock(left) : pet.auto ? TEXT.petOn : TEXT.petReady}</span>`;
+            const tapper = list.find((p) => !p.auto);
+            const left = tapper ? cooldownLeft(tapper.id) : 0;
+            markup = `${list.map((p) => svgIcon(p.id, 2)).join("")}<span>${left > 0 ? econ.formatClock(left) : tapper ? TEXT.petReady : TEXT.petOn}</span>`;
             el.button.dataset.ready = String(left <= 0);
         }
-        if (!pet) delete el.button.dataset.ready;
+        if (!list.length) delete el.button.dataset.ready;
         if (markup !== el.button.innerHTML) el.button.innerHTML = markup;
-        if (el.list.offsetParent) cards.forEach(renderCard);
+        if (el.list.offsetParent) {
+            renderTeam();
+            cards.forEach(renderCard);
+        }
     }
 
     // Auto skills that only need a clock: run on open and on every display tick.
@@ -201,7 +270,7 @@ export function createPets({ reveal }) {
             state.buffs.loadedSpins--;
             roll = econ.loadDice(roll);
         }
-        if (state.pets.active === "digit6") {
+        if (equipped("digit6")) {
             state.pets.sixCount = (state.pets.sixCount ?? 0) + 1;
             if (state.pets.sixCount % byId.digit6.every === 0) {
                 roll = econ.loadDice(roll);
@@ -209,6 +278,16 @@ export function createPets({ reveal }) {
             }
         }
         return roll;
+    }
+
+    // SPINNY: an auto spin's stop lands in the green this often instead of freezing.
+    const autoGood = () => equipped("spinny") && Math.random() < byId.spinny.autoGood;
+
+    // MANEKI: a bet win sometimes pays double.
+    function doubleWin(win) {
+        if (!win || !equipped("maneki") || Math.random() >= byId.maneki.doubleChance) return false;
+        shout(TEXT.goldenPaw, "y");
+        return true;
     }
 
     // Oinker: refund part of a lost bet. Returns the refund.
@@ -230,7 +309,7 @@ export function createPets({ reveal }) {
     // Meemee's nap interest for time away, from timestamps like everything else offline.
     function napInterest(awaySeconds) {
         const cat = byId.cat;
-        if (state.pets.active !== "cat" || awaySeconds < cat.napMinMinutes * 60) return 0;
+        if (!equipped("cat") || awaySeconds < cat.napMinMinutes * 60) return 0;
         const rate = Math.min(cat.napCap, (awaySeconds / 3600) * cat.napPerHour);
         const gain = Math.floor(state.coins * rate);
         state.coins += gain;
@@ -247,7 +326,7 @@ export function createPets({ reveal }) {
 
     // Banana catches bats while the popup is closed: one per cooldown, worked out from timestamps.
     function catchWhileAway(awaySince) {
-        if (state.pets.active !== "banana") return 0;
+        if (!equipped("banana")) return 0;
         const now = Date.now();
         const start = Math.max(readyAt("banana"), awaySince + LUCK.batMeanSeconds * 1000);
         if (start > now) return 0;
@@ -262,7 +341,11 @@ export function createPets({ reveal }) {
     }
 
     el.button.addEventListener("click", reveal);
-    on("bag-view", ({ view }) => view === "pets" && cards.forEach(renderCard));
+    on("bag-view", ({ view }) => {
+        if (view !== "pets") return;
+        renderTeam();
+        cards.forEach(renderCard);
+    });
 
     return {
         render,
@@ -273,11 +356,14 @@ export function createPets({ reveal }) {
         keepHeat,
         refundLoss,
         bendRoll,
+        autoGood,
+        doubleWin,
         replant,
         napInterest,
         pat,
-        useSkill,
+        useSkill: () => useSkill(),
         catchWhileAway,
-        activeId: () => state.pets.active,
+        has: equipped,
+        leader: () => state.pets.team[0] ?? null,
     };
 }

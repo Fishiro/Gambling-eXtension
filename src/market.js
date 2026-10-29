@@ -87,6 +87,13 @@ export function sell(state, amount) {
     return mult;
 }
 
+// STONKS' PUMP IT: the glut is wiped and the base price jumps by `amount`.
+export function pump(state, amount) {
+    settle(state);
+    state.market.glut = 0;
+    state.market.price = Math.min(MARKET.cap, state.market.price + amount);
+}
+
 export const supply = (state) => state.market.sold / econ.cartCap(state);
 
 export const formatMult = (x) => `x${x.toFixed(x < 0.1 ? 3 : 2)}`;

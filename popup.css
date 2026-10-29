@@ -2237,6 +2237,65 @@ body.is-calm::after {
     background: var(--gold);
     color: var(--ink);
 }
+/* The pet team: one box per slot. Filled boxes remove that pet, the next locked one is bought with diamonds. */
+.pet-team {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s2);
+}
+.pet-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 4px;
+    color: var(--muted);
+    background: var(--bg);
+    box-shadow: 0 0 0 2px var(--line);
+}
+.pet-slot small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pet-slot.is-on {
+    color: var(--gold);
+    box-shadow: 0 0 0 2px var(--gold);
+}
+.pet-slot.is-empty {
+    box-shadow: 0 0 0 2px var(--line);
+    outline: 2px dashed var(--line-hi);
+    outline-offset: -6px;
+}
+.pet-slot.is-locked:not(:disabled) {
+    color: var(--cyan);
+    box-shadow: 0 0 0 2px var(--cyan);
+}
+.pet-slot[data-poor] {
+    opacity: 0.6;
+}
+.pet-role {
+    margin-left: 6px;
+    padding: 0 3px;
+    font: 400 var(--fs-1)/1.2 "Silkscreen", monospace;
+    font-style: normal;
+    color: var(--tone);
+    vertical-align: middle;
+    box-shadow: 0 0 0 1px var(--tone);
+}
+.pet-actions [data-full] {
+    opacity: 0.55;
+}
+.pet-btn {
+    gap: 2px;
+}
+#btn-auto[data-locked="true"] {
+    color: var(--muted);
+    opacity: 0.75;
+}
 
 .tr-text {
     display: flex;
@@ -2812,42 +2871,63 @@ body.is-calm::after {
     }
 }
 
-/* ---- gain tags: "+N" badges pinned to the corners of coins, diamonds and the XP bar (gains.js) ---- */
-.wallet,
-.gems {
-    position: relative;
+/* ---- gain badges: "+N" popping out at random spots around coins, diamonds and XP (gains.js) ---- */
+.gains {
+    position: fixed;
+    inset: 0;
+    z-index: 75;
+    pointer-events: none;
 }
 .gain {
+    --tilt: 0deg;
     position: absolute;
-    z-index: 2;
     padding: 2px 4px 3px;
     font: 700 var(--fs-1)/1 "Silkscreen", monospace;
     color: var(--green);
     background: var(--ink);
-    box-shadow: 0 0 0 2px currentColor;
+    box-shadow:
+        0 0 0 2px currentColor,
+        3px 3px 0 2px rgba(0, 0, 0, 0.45);
     white-space: nowrap;
-    pointer-events: none;
-}
-.gain.is-pop {
-    animation: gain-pop 0.3s steps(3);
+    transform: translate(-50%, -50%) rotate(var(--tilt));
+    animation: gain-burst 1.4s steps(28) forwards;
 }
 .gain[data-kind="coin"] {
-    left: 30px;
-    bottom: calc(100% - 2px);
+    color: var(--gold);
 }
-.gain[data-kind="gem"] {
-    right: -4px;
-    bottom: calc(100% + 2px);
-    color: var(--cyan);
-}
+.gain[data-kind="gem"],
 .gain[data-kind="xp"] {
-    right: -2px;
-    top: calc(100% + 2px);
     color: var(--cyan);
 }
-@keyframes gain-pop {
+.gain.is-big {
+    padding: 3px 6px 4px;
+    font-size: var(--fs-2);
+}
+.gain[data-kind="coin"].is-big {
+    animation:
+        gain-burst 1.4s steps(28) forwards,
+        rainbow 0.3s steps(1) 4;
+}
+@keyframes gain-burst {
     0% {
-        transform: scale(1.5);
+        transform: translate(-50%, -50%) scale(0) rotate(calc(var(--tilt) * -3));
+    }
+    16% {
+        transform: translate(-50%, -50%) scale(1.7) rotate(var(--tilt));
+    }
+    28% {
+        transform: translate(-50%, -50%) scale(0.85) rotate(var(--tilt));
+    }
+    40% {
+        transform: translate(-50%, -50%) scale(1.12) rotate(var(--tilt));
+    }
+    55% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(var(--tilt));
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% - 24px)) scale(0.9) rotate(var(--tilt));
     }
 }
 
