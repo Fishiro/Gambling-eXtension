@@ -3,7 +3,7 @@ import { state, commit } from "./store.js";
 import * as econ from "./core/economy.js";
 import * as luck from "./core/luck.js";
 import * as items from "./core/items.js";
-import { svgIcon, PALETTE } from "./sprites.js";
+import { svgIcon, svgFit, PALETTE } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
@@ -17,7 +17,7 @@ const statText = (gear, level) => {
 };
 // LV1-LV5, then pixel stars (gold = earned, outline = to go) once the piece ascends.
 const levelHtml = (lv) =>
-    lv > GEAR_MAX ? `${svgIcon("pstar", 2).repeat(lv - GEAR_MAX)}${svgIcon("pstar-off", 2).repeat(GEAR_MAX + GEAR_STARS - lv)}` : `LV${lv}/${GEAR_MAX}`;
+    lv > GEAR_MAX ? `${svgIcon("pstar", 2).repeat(lv - GEAR_MAX)}${svgIcon("pstar-off", 2).repeat(GEAR_MAX + GEAR_STARS - lv)}` : `LV${lv}`;
 const levelText = (lv) => (lv > GEAR_MAX ? `STAR ${lv - GEAR_MAX}` : `LV${lv}`);
 
 export function createBag() {
@@ -63,17 +63,17 @@ export function createBag() {
         const item = items.item(selected);
         const rarity = items.rarityOf(selected);
         const n = items.count(state, selected);
-        const use = item.use ? `<button class="primary-sm" data-action="use" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.use}</button>` : "";
+        const use = item.use ? `<button class="primary-sm detail-use" data-action="use" data-id="${selected}" ${n ? "" : "disabled"}>${TEXT.use}</button>` : "";
         return `<div class="detail-top">
-                <span class="detail-art">${svgIcon(selected, 4)}</span>
+                <span class="detail-art">${svgFit(selected, 32)}</span>
                 <div class="detail-info">
                     <b style="color:${PALETTE[rarity.color]}">${item.name}</b>
                     <small>${rarity.name} / ${TEXT.owned(econ.formatNumber(n))}</small>
                     ${item.effect ? `<small class="y">${item.effect}</small>` : ""}
                     <small>${TEXT.foundIn(item.from)}</small>
                 </div>
-                ${use}
             </div>
+            ${use}
             ${usesHtml(selected)}
             ${item.junk ? scrapHtml(selected, n) : ""}`;
     }
@@ -93,18 +93,22 @@ export function createBag() {
     }
 
     // Junk: the price per piece, then scrap one, scrap the spare ones a brew doesn't need, or scrap them all.
+    // Each button says what it does on top and what it pays underneath.
     function scrapHtml(id, n) {
         const each = luck.scrapValue(state, id);
         const keep = items.brewNeed(id);
         const spare = Math.max(0, n - keep);
-        const extra = keep && spare && spare < n ? `<button data-action="scrap" data-id="${id}" data-n="${spare}">${TEXT.scrapExtra(spare, econ.formatNumber(spare * each))}</button>` : "";
+        const button = (label, count, cls = "") =>
+            `<button class="scrap-btn ${cls}" data-action="scrap" data-id="${id}" ${count === n ? "" : `data-n="${count}"`} ${count ? "" : "disabled"}>
+                <b>${label}</b><small>${svgFit("coin", 8)}+${econ.formatNumber(count * each)}</small>
+            </button>`;
         return `<div class="detail-scrap">
                 <small class="detail-label">${TEXT.scrapEach(econ.formatNumber(each))}</small>
                 ${keep ? `<small class="r">${TEXT.scrapKeep(keep)}</small>` : ""}
                 <div class="scrap-buttons">
-                    <button data-action="scrap" data-id="${id}" data-n="1" ${n ? "" : "disabled"}>${TEXT.scrapOne}</button>
-                    ${extra}
-                    <button class="primary-sm" data-action="scrap" data-id="${id}" ${n ? "" : "disabled"}>${TEXT.scrapAll(econ.formatNumber(n * each))}</button>
+                    ${button(TEXT.scrapOne, Math.min(1, n))}
+                    ${keep && spare && spare < n ? button(TEXT.scrapExtra(spare), spare) : ""}
+                    ${button(TEXT.scrapAll(n), n, "primary-sm")}
                 </div>
             </div>`;
     }
@@ -119,7 +123,7 @@ export function createBag() {
             ? `<button disabled>${TEXT.max}</button>`
             : `<button class="primary-sm" data-action="upgrade" data-id="${gear.id}" ${items.canAfford(state, cost) ? "" : "disabled"}>${label}</button>`;
         return `<div class="row" data-ready="${!maxed && items.canAfford(state, cost)}" data-stars="${lv > GEAR_MAX}">
-            <span class="row-icon">${svgIcon(gear.icon, 2)}</span>
+            <span class="row-icon">${svgFit(gear.icon, 16)}</span>
             <div class="row-main">
                 <b>${gear.name}</b>
                 <small><em class="lv">${levelHtml(lv)}</em>${gear.label} ${statText(gear, lv)}${maxed ? "" : `${svgIcon("i-next", 1)}${statText(gear, lv + 1)}`}</small>
@@ -161,7 +165,7 @@ export function createBag() {
         const on = items.setActive(state, set);
         const pieces = set.gear.map((id) => {
             const g = GEAR.find((x) => x.id === id);
-            return `<span class="chip" data-short="${items.gearStars(state, id) < SET_STARS}">${svgIcon(g.icon, 1)}${items.gearStars(state, id)}${svgIcon("pstar", 1)}</span>`;
+            return `<span class="chip" data-short="${items.gearStars(state, id) < SET_STARS}">${svgFit(g.icon, 8)}${items.gearStars(state, id)}${svgFit("pstar", 8)}</span>`;
         });
         return `<div class="set-card" data-on="${on}">
             <b>${set.name}</b>

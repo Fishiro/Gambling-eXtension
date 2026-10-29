@@ -1,6 +1,6 @@
 import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS, PET_ROLES, PET_SLOTS, FARM, GEAR, STAR_CHANCE, ITEMS, DROPS, BREWS, RELICS, GEMS, VAULT, VIP } from "./core/config.js";
 import { formatNumber, lineOdds } from "./core/economy.js";
-import { PALETTE, svgIcon, iconScale } from "./sprites.js";
+import { PALETTE, svgFit } from "./sprites.js";
 import { TEXT } from "./text.js";
 import { HOTKEYS } from "./keys.js";
 
@@ -8,8 +8,8 @@ import { HOTKEYS } from "./keys.js";
 // one folding card per system).
 // Pictures carry the explanation; text stays to one short line per idea.
 
-// `size` 3 = a 24px box, 2 = 16px, 1 = 8px; every sprite is fitted into it (see iconScale) so they match.
-const icon = (name, size = 3) => svgIcon(name, iconScale(name, size * 8));
+// `size` 3 = a 24px box, 2 = 16px, 1 = 8px; every sprite sits in that fixed square (see svgFit), so they match.
+const icon = (name, size = 3) => svgFit(name, size * 8);
 const pct = (x) => `${Math.round(x * 100)}%`;
 const keycap = (label) => `<kbd>${label}</kbd>`;
 const color = (c, text) => `<em style="color:${PALETTE[c]}">${text}</em>`;
@@ -52,9 +52,10 @@ const flow = (...steps) => `<div class="g-flow">${steps.join(icon("i-next", 2))}
 // One picture with a short caption under it.
 const node = (art, label = "") => `<span class="g-node"><span class="g-art">${art}</span>${label ? `<small>${label}</small>` : ""}</span>`;
 
-// A grid of picture tiles: [art, title, sub].
+// A grid of picture tiles: [art, title, sub]. Every tile keeps the sub line (empty or not), so all tiles in
+// the manual are one size.
 const tiles = (list, cols = 3) =>
-    `<div class="g-tiles" style="--cols:${cols}">${list.map(([art, title, sub = ""]) => `<div class="g-tile"><span class="g-tile-art">${art}</span><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</div>`).join("")}</div>`;
+    `<div class="g-tiles" style="--cols:${cols}">${list.map(([art, title, sub = ""]) => `<div class="g-tile"><span class="g-tile-art">${art}</span><b>${title}</b><small>${sub}</small></div>`).join("")}</div>`;
 
 const section = (iconName, title, body) => `<section class="g-section"><h4>${icon(iconName, 2)}${title}</h4>${body}</section>`;
 
@@ -256,7 +257,7 @@ function slotOdds() {
         ${rows.join("")}
         ${sub("COSMIC STARS (ANY REEL)")}
         ${row(reels(["cherry", "cosmic", "lemon"], [1]), "1 STAR", COSMIC.odds[1], { note: `+x${COSMIC.single.scatter}, LINE x${COSMIC.single.lineMult}`, c: "v" })}
-        ${row(reels(["cosmic", "cosmic", "bell"], [0, 1]), "2 STARS", COSMIC.odds[2], { note: `+x${COSMIC.double.scatter}, ITS CHEST IS BLESSED`, c: "v" })}
+        ${row(reels(["cosmic", "cosmic", "bell"], [0, 1]), "2 STARS", COSMIC.odds[2], { note: `+x${COSMIC.double.scatter}, BLESSED CHEST`, c: "v" })}
         ${row(reels(["cosmic", "cosmic", "cosmic"], [0, 1, 2]), "3 STARS", COSMIC.odds[3], { note: `x${COSMIC.payout}!`, c: "v" })}
         <p class="o-tip">${icon("i-star", 2)} A PERFECT STOP DOUBLES EVERY STAR CHANCE.</p>
         ${sub("YOUR TIMING MULTIPLIES THE WIN")}
@@ -267,7 +268,7 @@ function slotOdds() {
         ])}
         ${sub("EXTRAS ON EVERY BET SPIN")}
         ${row(icon("i-star", 3), "LUCKY SPIN", LUCK.luckySpinChance, { note: `THIS SPIN PAYS x${LUCK.luckySpinMult}` })}
-        ${row(icon("chest", 3), "A CHEST DROPS", LUCK.chestPerSpin, { note: "SAME FOR EVERY BET, AT MOST ONE A SPIN" })}
+        ${row(icon("chest", 3), "A CHEST DROPS", LUCK.chestPerSpin, { note: "ANY BET, AT MOST ONE A SPIN" })}
         ${row(reels(["seven", "seven", "seven"], [0, 1, 2]), "JACKPOT 7-7-7", null, { value: `+${GEMS.tiers.jackpot} ${icon("gem", 2)}` })}`;
     return card("i-seven", "SLOT", `ABOUT 1 SPIN IN ${Math.round(1 / win)} WINS SOMETHING`, body, true);
 }
@@ -295,13 +296,13 @@ function chestOdds() {
         ${LUCK.rarities
             .map((r) => {
                 const list = LUCK.rewards[r.id];
-                return `<div class="o-rewards"><b style="color:${PALETTE[r.color]}"><span class="o-head-art">${icon("chest", 3)}</span>${r.name}<small>EACH ${brief(1 / list.length)}</small></b>
+                return `<div class="o-rewards o-rewards-grid"><b style="color:${PALETTE[r.color]}"><span class="o-head-art">${icon("chest", 3)}</span>${r.name}<small>EACH ${brief(1 / list.length)}</small></b>
                     <span>${list.map((rw) => REWARD_ART[rw.type](rw)).map(([art, label]) => `<span class="o-chip is-label">${art}<small>${label}</small></span>`).join("")}</span></div>`;
             })
             .join("")}
         ${sub("WHERE CHESTS COME FROM")}
         ${row(icon("i-pick", 3), "EVERY MINE TAP", LUCK.chestPerTap)}
-        ${row(icon("i-seven", 3), "EVERY BET SPIN", LUCK.chestPerSpin, { note: "ANY BET, AT MOST ONE. BLESSED ON A GEM/SEVEN TRIPLE" })}
+        ${row(icon("i-seven", 3), "EVERY BET SPIN", LUCK.chestPerSpin, { note: "ANY BET. GEM/7 TRIPLE: BLESSED" })}
         ${row(icon("bat0", 3), "GOLDEN BAT", 1, { note: "A BLESSED CHEST: BETTER RARITY" })}
         ${row(icon("i-clock", 3), "WHILE AWAY", null, { value: `1 / ${LUCK.awayMinutesPerChest} MIN`, note: `UP TO ${LUCK.awayMaxChests}` })}`;
     return card("chest", "CHESTS", `MOSTLY COMMON. ABOUT 1 IN ${Math.round(total / legendary.weight)} IS ${legendary.name}`, body);
@@ -311,11 +312,11 @@ function marketOdds() {
     const total = totalWeight(MARKET.phases);
     const mood = (p) => (p.spike ? `JUMPS +${pct(p.spike[0])}-${pct(p.spike[1])}` : p.drift > 0 ? `+${pct(p.drift)} EACH MIN` : p.drift < 0 ? `${pct(p.drift)} EACH MIN` : "STAYS NEAR x1");
     const glut = (n) => MARKET.dump * Math.max(0, n - MARKET.freeCarts) ** MARKET.dumpCurve;
-    const next = (n) => (n <= MARKET.demandUpTo ? color("G", "GOES UP A BIT") : n <= MARKET.freeCarts ? color("l", "STAYS STEADY") : glut(n) < 0.5 ? color("y", "DIPS SLOWLY") : glut(n) < 2 ? color("R", "DIPS") : color("r", "SINKS TO PENNIES"));
+    const next = (n) => (n <= MARKET.demandUpTo ? color("G", "GOES UP A BIT") : n <= MARKET.freeCarts ? color("l", "STAYS STEADY") : glut(n) < 0.5 ? color("y", "DIPS SLOWLY") : glut(n) < 2 ? color("R", "DIPS") : color("r", "CRASHES"));
     const body = `${sub("THE PRICE MOVES ONCE A MINUTE, IN MOODS")}
         ${stack(MARKET.phases.map((p) => ({ p: p.weight / total, c: p.color, label: p.name })))}
         ${MARKET.phases.map((p) => row(`<span class="g-dot" style="--c:${PALETTE[p.color]}"></span>`, color(p.color, p.name), p.weight / total, { note: `${mood(p)} · ${p.ticks[0] === p.ticks[1] ? p.ticks[0] : p.ticks.join("-")} MIN`, c: p.color })).join("")}
-        ${row(icon("flame", 3), "SURPRISE JOLT", MARKET.jolt.chance, { note: `ANY MINUTE CAN JUMP UP OR DOWN BY UP TO ${pct(MARKET.jolt.size)}` })}
+        ${row(icon("flame", 3), "SURPRISE JOLT", MARKET.jolt.chance, { note: `ANY MINUTE, UP OR DOWN ${pct(MARKET.jolt.size)}` })}
         ${sub("WHAT SELLING DOES TO THE NEXT MINUTES")}
         ${[MARKET.demandUpTo, MARKET.freeCarts, 2, 3, 9].map((n) => row(`${icon("i-cart", 3)}<small>x${n}</small>`, `${n} CART${n === 1 ? "" : "S"} A MINUTE`, null, { value: next(n) })).join("")}
         <p class="o-tip">${icon("coin", 2)} YOU ALWAYS GET THIS MINUTE'S PRICE. A BIG DUMP ONLY BITES IN THE MINUTES AFTER, AND FADES AGAIN.</p>`;

@@ -1,6 +1,6 @@
 import * as items from "./core/items.js";
 import { formatNumber } from "./core/economy.js";
-import { svgIcon } from "./sprites.js";
+import { svgFit } from "./sprites.js";
 
 // Small DOM + markup helpers shared across panels so costs and loot look the same everywhere.
 
@@ -14,7 +14,7 @@ export function costHtml(state, cost) {
         .map(([id, need]) => {
             const have = items.count(state, id);
             const tip = id in ICONS ? "" : ` data-tip="${id}" data-need="${need}"`;
-            return `<span class="chip" data-short="${have < need}"${tip}>${svgIcon(iconOf(id), 1)}${formatNumber(have)}/${formatNumber(need)}</span>`;
+            return `<span class="chip" data-short="${have < need}"${tip}>${svgFit(iconOf(id), 8)}${formatNumber(have)}/${formatNumber(need)}</span>`;
         })
         .join("");
 }
@@ -24,7 +24,7 @@ export const lootLines = (loot) =>
 
 export const lootHtml = (loot) =>
     Object.entries(loot)
-        .map(([id, n]) => `<span class="chip" data-tip="${id}">${svgIcon(id, 1)}${n}</span>`)
+        .map(([id, n]) => `<span class="chip" data-tip="${id}">${svgFit(id, 8)}${n}</span>`)
         .join("");
 
 // Rebuild a container only when its markup actually changes, so buttons are not swapped out mid-click.

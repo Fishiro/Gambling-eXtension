@@ -5,7 +5,7 @@ import * as luck from "./core/luck.js";
 import * as items from "./core/items.js";
 import * as farming from "./core/farming.js";
 import * as market from "./core/market.js";
-import { PALETTE, svgIcon } from "./sprites.js";
+import { PALETTE, svgIcon, svgFit } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
@@ -48,7 +48,7 @@ export function createPets({ reveal, showFarm }) {
         const card = document.createElement("div");
         card.className = "pet-card";
         card.innerHTML = `
-            <span class="pet-art">${svgIcon(pet.id, 4)}</span>
+            <span class="pet-art">${svgFit(pet.id, 48)}</span>
             <div class="pet-info">
                 <b>${pet.name}<em class="pet-role" style="--tone:${PALETTE[role.color]}">${role.name}</em></b>
                 <small class="pet-kind">${pet.kind} / ${pet.skill}${pet.auto ? " (AUTO)" : ""}</small>

@@ -742,11 +742,16 @@ export function svgIcon(name, scale = 2) {
     return `<svg class="ico" viewBox="0 0 ${w} ${h}" width="${w * scale}" height="${h * scale}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
 }
 
-// The whole-number scale that brings a sprite closest to `box` px on its long side, so sprites of different
-// sizes (7x7 UI glyphs, 8x8 items, 10x12 pets) line up at one size while staying pixel-sharp.
-export function iconScale(name, box) {
+// A sprite in a fixed `box`-px square. Sprites come in many sizes (5x5 glyphs, 8x8 items, 10x12 pets, 12x14
+// characters), so a shared scale makes them uneven. The square never changes size: the sprite takes the biggest
+// whole-pixel scale that fills at least FIT_MIN of it (pixel-sharp), else an exact fit.
+const FIT_MIN = 0.8;
+export function svgFit(name, box) {
     const rows = SPRITES[name] ?? SPRITES[`i-${name}`];
-    return Math.max(1, Math.round(box / Math.max(rows[0].length, rows.length)));
+    const long = Math.max(rows[0].length, rows.length);
+    const whole = Math.floor(box / long);
+    const scale = whole >= 1 && whole * long >= box * FIT_MIN ? whole : box / long;
+    return `<span class="ibox" style="--box:${box}px">${svgIcon(name, scale)}</span>`;
 }
 
 export function hydrateIcons(root = document) {

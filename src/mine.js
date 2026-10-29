@@ -7,7 +7,7 @@ import * as market from "./core/market.js";
 import { createMineScene } from "./mine-scene.js";
 import { createCombo } from "./combo.js";
 import { petById } from "./pets.js";
-import { svgIcon } from "./sprites.js";
+import { svgIcon, svgFit } from "./sprites.js";
 import * as fx from "./fx.js";
 import { sfx } from "./sound.js";
 import { TEXT } from "./text.js";
@@ -48,7 +48,7 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         const row = document.createElement("div");
         row.className = "upgrade";
         row.innerHTML = `
-            <span class="up-icon">${svgIcon(ICONS[kind], 2)}</span>
+            <span class="up-icon">${svgFit(ICONS[kind], 16)}</span>
             <span class="up-info"><b>${cfg.name} <em></em></b><small></small></span>
             <button class="buy" data-fx="y,G,w"></button>`;
         const button = row.querySelector("button");
