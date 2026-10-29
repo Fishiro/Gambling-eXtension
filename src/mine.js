@@ -58,7 +58,8 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     });
 
     let sixSevenTaps = 0;
-    // Ore dug by hand (and TITAN) lately, for the live ORE/MIN readout: [[performance.now(), ore], ...].
+    // Tap power lately, for the live ORE/MIN readout: [[performance.now(), ore], ...]. It logs what each swing
+    // digs at full strength, so a full cart still shows how strong your spam is.
     const RATE_MS = MINE.rateWindowSeconds * 1000;
     const tapLog = [];
     let shownRate = 0;
@@ -75,9 +76,10 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
     // Titan Tonic keeps tapping for you, a couple of times a second, even on other tabs.
     function titanTick() {
         if (titanMult() === 1) return;
-        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * surgeMult() * BREW_FX.titanMult * BREW_FX.titanTapsPerSec);
+        const power = econ.tapPower(state) * luck.mineBoost(state) * surgeMult() * BREW_FX.titanMult * BREW_FX.titanTapsPerSec;
+        logTap(power);
+        const added = econ.addOre(state, power);
         if (added <= 0) return;
-        logTap(added);
         onOre(added);
         commit();
         if (el.scene.offsetParent) scene.swing({ power: added, lucky: false });
@@ -108,10 +110,24 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
         if (heat > 0) heatFrame = requestAnimationFrame(renderHeat);
     }
 
+    // One swing heats the pick and returns its strength: the ore it digs into a cart with room.
+    function swing(lucky) {
+        const now = performance.now();
+        pickHeat = frozen() ? 0 : econ.coolHeat(pickHeat, pickAt, now, coolRate()) + 1;
+        pickAt = now;
+        const cooled = econ.heatMult(pickHeat);
+        renderHeat();
+        const power = econ.tapPower(state) * luck.mineBoost(state) * titanMult() * surgeMult() * cooled * (lucky ? MINE.luckyMult : 1);
+        logTap(power);
+        return { power, overheated: cooled < 1 };
+    }
+
     function tap() {
         emit("tap");
         sixSeven();
         if (econ.oreAt(state) >= econ.cartLimit(state) - 0.001) {
+            // Nothing goes in, but the swing still counts toward the ORE/MIN readout (and still heats the pick).
+            swing(false);
             const now = performance.now();
             combo.hit(0);
             scene.swing({ power: 0, lucky: false });
@@ -124,17 +140,11 @@ export function createMine({ onLevelUp, onChest, onOre, pets }) {
             fx.shake(el.sell, 3);
             return;
         }
-        const now = performance.now();
-        pickHeat = frozen() ? 0 : econ.coolHeat(pickHeat, pickAt, now, coolRate()) + 1;
-        pickAt = now;
-        const cooled = econ.heatMult(pickHeat);
-        const overheated = cooled < 1;
-        renderHeat();
         const lucky = Math.random() < MINE.luckyChance;
-        const added = econ.addOre(state, econ.tapPower(state) * luck.mineBoost(state) * titanMult() * surgeMult() * cooled * (lucky ? MINE.luckyMult : 1));
+        const { power, overheated } = swing(lucky);
+        const added = econ.addOre(state, power);
         const chest = luck.chance(LUCK.chestPerTap * (1 + items.bonus(state, "chest")));
         const drops = [...items.rollDrops(state, "tap"), ...(lucky ? items.rollDrops(state, "luckyTap") : [])];
-        logTap(added);
         onOre(added);
         commit();
         if (chest) onChest(el.scene, 0);
