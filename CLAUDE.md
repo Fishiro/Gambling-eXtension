@@ -20,5 +20,8 @@ Load the folder unpacked at `chrome://extensions` (Developer mode), then reload 
 
 - 4-space indent, double quotes, ES module imports with `.js` extension.
 - UI text is uppercase pixel style (Silkscreen font).
-- Bump `version` in `manifest.json` for releases.
+- Bump `version` in `manifest.json` with every change pushed:
+  - `X.0.0` major: refactor / restructure.
+  - `0.X.0` minor: game update, new content, security fix or major bug fix.
+  - `0.0.X` patch: small bug fix or small improvement.
 - Main branch: `main`. Remote: https://github.com/Fishiro/Gambling-eXtension.git
