@@ -89,9 +89,12 @@ export function createTutorial({ setTab }) {
         });
         ring.hidden = r.right === r.left;
         Object.assign(ring.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.right - r.left}px`, height: `${r.bottom - r.top}px` });
+        // The bubble sits under or over the target, but always fully on screen, even for a target that is
+        // taller than the screen or still scrolling into view.
+        const fit = (y) => `${Math.max(8, Math.min(h - bubble.offsetHeight - 8, y))}px`;
         const below = (r.top + r.bottom) / 2 < h / 2;
-        bubble.style.top = below ? `${Math.min(h - bubble.offsetHeight - 8, r.bottom + 10)}px` : "";
-        bubble.style.bottom = below ? "" : `${Math.min(h - bubble.offsetHeight - 8, h - r.top + 10)}px`;
+        bubble.style.top = below ? fit(r.bottom + 10) : "";
+        bubble.style.bottom = below ? "" : fit(h - r.top + 10);
         if (r.right === r.left) {
             bubble.style.top = `${(h - bubble.offsetHeight) / 2}px`;
             bubble.style.bottom = "";
@@ -118,6 +121,9 @@ export function createTutorial({ setTab }) {
         if (index >= steps.length) return finish();
         const s = step();
         if (s.tab) setTab(s.tab);
+        // A target down a scrolled list (the forge's brews, the garden...) comes into view first.
+        const target = s.target && document.querySelector(s.target);
+        if (target?.offsetParent) target.scrollIntoView({ block: "nearest" });
         fullText = s.text;
         progress = 0;
         type();
