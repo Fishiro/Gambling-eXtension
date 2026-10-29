@@ -29,6 +29,7 @@ import { recordGroups } from "./core/records.js";
 import { emit } from "./events.js";
 import { TEXT } from "./text.js";
 import { $ } from "./ui.js";
+import { MINE_CODES } from "./keys.js";
 
 const el = {
     tabs: document.querySelectorAll("[data-tab]"),
@@ -376,11 +377,9 @@ function mineKey() {
     mine.tap();
 }
 
+// The bindings keys.js describes (the guide and the web page's side panels read that list).
 const KEYS = {
-    KeyH: mineKey,
-    KeyJ: mineKey,
-    KeyK: mineKey,
-    KeyL: mineKey,
+    ...Object.fromEntries(MINE_CODES.map((code) => [code, mineKey])),
     Space: primaryAction,
     Enter: primaryAction,
     ArrowLeft: () => slot.changeBet(-1),

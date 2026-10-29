@@ -2,6 +2,7 @@ import { SYMBOLS, TIMING, LEVELS, MINE, MARKET, LUCK, COSMIC, BURN, COMBO, PETS,
 import { formatNumber, lineOdds } from "./core/economy.js";
 import { PALETTE, svgIcon, iconScale } from "./sprites.js";
 import { TEXT } from "./text.js";
+import { HOTKEYS } from "./keys.js";
 
 // The in-game manual: START (four steps), GUIDE (one picture-first card per system), ODDS (every chance,
 // one folding card per system).
@@ -67,19 +68,9 @@ function startHtml() {
         [reels(["seven", "seven", null], [0, 1]), "3. MATCH FROM THE LEFT", "2 OR 3 THE SAME WINS"],
         [flow(icon("i-pick"), icon("ore"), icon("coin")), "4. BROKE? MINE", `TAP THE ROCK, SELL THE ORE`],
     ];
-    const keys = [
-        [keycap("SPACE"), "SPIN / STOP / SKIP"],
-        [`${keycap("H")}${keycap("J")}${keycap("K")}${keycap("L")}`, "MINE"],
-        [`${keycap("&lt;")}${keycap("&gt;")}`, "BET"],
-        [keycap("A"), "AUTO"],
-        [keycap("S"), "SELL ORE"],
-        [`${keycap("O")} ${keycap("SHIFT")}${keycap("O")}`, "CHEST / ALL"],
-        [`${keycap("1")}-${keycap("4")}`, "TABS"],
-        [`${keycap("B")}${keycap("F")}`, "BAG / FORGE"],
-        [`${keycap("P")}${keycap("Q")}`, "PETS / SKILL"],
-        [keycap("Y"), "HISTORY"],
-        [keycap("ESC"), "CLOSE"],
-    ];
+    // Straight from keys.js. Mining on the MINE tab with SPACE is already covered by SPACE's own row.
+    const caps = (list) => list.map(keycap).join("");
+    const keys = HOTKEYS.filter((k) => !(k.group === "mine" && k.caps[0] === "SPACE")).map((k) => [k.alt ? `${caps(k.caps)} ${caps(k.alt)}` : caps(k.caps), k.label]);
     return `<p class="g-lead">PLAY IN SHORT BREAKS. THE MINE WORKS WHILE YOU WORK.</p>
         <div class="g-steps">${steps.map(([art, title, text]) => `<div class="g-step"><div class="g-step-art">${art}</div><b>${title}</b><small>${text}</small></div>`).join("")}</div>
         <h3>CONTROLS</h3>
@@ -141,7 +132,7 @@ function guideHtml() {
                 COMBO.tiers.slice(1).map((t) => [`<span class="g-dot" style="--c:${PALETTE[t.glow]}"></span>`, color(t.glow, t.name), `x${formatNumber(t.at)}`]),
                 4,
             )}
-            <p>SPAM ${keycap("H")}${keycap("J")}${keycap("K")}${keycap("L")}. HIGHER TIERS GIVE YOU LESS TIME BETWEEN TAPS.</p>`,
+            <p>SPAM ${HOTKEYS.find((k) => k.group === "mine").caps.map(keycap).join("")}. HIGHER TIERS GIVE YOU LESS TIME BETWEEN TAPS.</p>`,
         ),
         section(
             "chest",

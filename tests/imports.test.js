@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const files = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? files(join(dir, d.name)) : d.name.endsWith(".js") ? [join(dir, d.name)] : []));
-const sources = files(join(root, "src"));
+// The extension (src/) and the web page around it (web/).
+const sources = [...files(join(root, "src")), ...files(join(root, "web"))];
 
 function exportsOf(file) {
     const src = readFileSync(file, "utf8");

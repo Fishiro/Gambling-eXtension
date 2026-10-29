@@ -187,7 +187,7 @@ export const TEXT = {
         pets: [
             { target: "#btn-pet", text: "LEVEL 3: PETS! TAP THE PAW UP HERE.", wait: "bag-pets" },
             { target: ".pet-team", text: "YOUR TEAM: 1 SLOT NOW, 2 MORE FOR DIAMONDS. EVERY PET ON THE TEAM WORKS AT ONCE." },
-            { target: "#pet-list", text: "HELPERS DO CHORES: SPINNY AUTO SPINS, CHESTER OPENS CHESTS. THE REST PICK A PLAYSTYLE. Q USES A SKILL.", last: true },
+            { target: "#pet-list", text: "HELPERS DO CHORES: SPINNY AUTO SPINS, CHESTER OPENS CHESTS. THE REST PICK A PLAYSTYLE. Q FIRES EVERY READY SKILL.", last: true },
         ],
         vault: [
             { target: "#vip", tab: "slot", text: "LEVEL 7: MAIN CHARACTER ERA! VIP: EVERY COIN YOU BET RAISES YOUR TIER: BIGGER PAYOUTS, MORE CHESTS." },
@@ -208,7 +208,7 @@ export const TEXT = {
         { target: ".heat-box", text: "HIT THE ZONE IN A ROW TO STACK FLAMES. MORE FLAMES, BIGGER WINS." },
         { target: "#burn", text: "EVERY COIN YOU BET FEEDS BURN: A BONUS THAT STAYS FOREVER." },
         { target: '[data-tab="mine"]', text: "LOW ON COINS? THE MINE PAYS. TAP MINE.", wait: "tab-mine" },
-        { target: ".scene-wrap", text: "SMASH THE ROCK! TAP IT OR SPAM J K L. LOCK IN!", wait: "tap", count: 10 },
+        { target: ".scene-wrap", text: "SMASH THE ROCK! TAP IT OR SPAM H J K L. LOCK IN!", wait: "tap", count: 10 },
         { target: ".scene-wrap", text: "SPAM TOO FAST AND THE PICK OVERHEATS: LESS ORE PER TAP. FIND A RHYTHM, OR GO FERAL FOR THE SPARKS." },
         { target: "#btn-sell", text: "SELL ORE FOR COINS. THE CART FILLS EVEN WHILE YOU WORK." },
         { target: "#market", text: "THE ORE MARKET MOVES EVERY MINUTE. SELL WHEN IT'S GREEN. DUMP MORE THAN A CART A MINUTE AND IT SLIDES DOWN OVER THE NEXT MINUTES." },
@@ -262,6 +262,29 @@ export const TEXT = {
     send: "SEND DIGGS",
     sendWith: (n) => (n ? `SEND DIGGS + ${n} PET${n > 1 ? "S" : ""}` : "SEND DIGGS"),
     luckPct: (luck) => `${Math.round(luck * 100)}% LUCK`,
+    // The web page's side panels: what the mouse does on each tab, and short tips.
+    web: {
+        title: "PIXEL SLOTS AFK",
+        here: "ON THIS TAB",
+        everywhere: "ANYWHERE",
+        tabs: { slot: "SLOT", mine: "MINE", farm: "FARM", bag: "BAG" },
+        mouse: {
+            slot: ["CLICK SPIN, CLICK AGAIN IN THE GREEN", "CLICK THE BET TO TYPE ANY AMOUNT", "GOLD = PERFECT: WIN x1.25 AND A FLAME"],
+            mine: ["CLICK THE ROCK, OR SPAM THE KEYS", "CATCH THE GOLDEN BAT FOR A BLESSED CHEST", "SELL ABOUT A CART A MINUTE"],
+            farm: ["PICK A ZONE, A TIME AND A PLAN", "SEAT UP TO 3 PETS FOR MORE LOOT", "PLANT SEEDS, COME BACK LATER"],
+            bag: ["CLICK AN ITEM: WHAT IT MAKES, SCRAP IT", "FORGE: GEAR, STARS AND BREWS", "STARS CAN CRACK. FEELING LUCKY?"],
+        },
+        tips: [
+            "THE MINE AND THE FARM KEEP GOING WHILE THIS PAGE IS CLOSED.",
+            "A MISS PUTS YOUR FLAMES OUT. FIVE IN A ROW IS x1.25.",
+            "EVERY BET SPIN HAS A 10% CHEST, WHATEVER THE BET.",
+            "DUMP MORE THAN A CART A MINUTE AND THE ORE PRICE SLIDES.",
+            "Q FIRES EVERY READY PET SKILL AT ONCE.",
+            "LONGER TRIPS ARE LUCKIER. DELVE FOR RARE, FORAGE FOR MORE.",
+            "BURN NEVER RESETS: EVERY COIN YOU BET COUNTS FOREVER.",
+        ],
+        saves: "YOUR PROGRESS SAVES IN THIS BROWSER. BACK IT UP IN SETTINGS.",
+    },
     usedIn: "USED IN",
     usedNowhere: "NOTHING. ONLY HERE FOR THE COLLECTION, OR TO SCRAP.",
     scrapEach: (coins) => `SCRAP: ${coins} COIN EACH`,

@@ -5,6 +5,7 @@ import { sfx } from "./sound.js";
 import * as fx from "./fx.js";
 import { TEXT } from "./text.js";
 import * as modal from "./modal.js";
+import { MINE_CODES } from "./keys.js";
 
 const ACTION_KEYS = {
     spin: ["Space", "Enter"],
@@ -14,7 +15,7 @@ const ACTION_KEYS = {
     "tab-bag": ["Digit4", "KeyB"],
     "bag-forge": ["KeyF"],
     "bag-pets": ["KeyP"],
-    tap: ["Space", "KeyJ", "KeyK", "KeyL"],
+    tap: ["Space", ...MINE_CODES],
 };
 const PAD = 6;
 const TYPE_MS = 22;
