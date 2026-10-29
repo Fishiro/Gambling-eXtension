@@ -26,11 +26,24 @@ new ResizeObserver(fit).observe(stage);
 
 // ---- side panels ----
 
-const kbd = (cap) => `<kbd>${cap}</kbd>`;
-const row = (k, i) => `<div class="key" data-key="${i}">
-        <span class="caps">${k.caps.map(kbd).join("")}${k.alt ? `<i>/</i>${k.alt.map(kbd).join("")}` : ""}</span>
+// Which KeyboardEvent codes press each keycap of a row. Caps (and alt caps) line up with the row's codes one to
+// one (H J K L, 1-4, arrows then - =); SHIFT is the modifier of a combo like SHIFT+O.
+const SHIFT = "ShiftLeft ShiftRight";
+function capCodes(k) {
+    const all = [...k.caps, ...(k.alt ?? [])];
+    if (all.length === k.codes.length) return all.map((_, i) => k.codes[i]);
+    return all.map((cap) => (cap === "SHIFT" ? SHIFT : k.codes.join(" ")));
+}
+
+const row = (k, i) => {
+    const codes = capCodes(k);
+    const kbd = (cap, j) => `<kbd data-codes="${codes[j]}">${cap}</kbd>`;
+    const alt = k.alt ? `<i>/</i>${k.alt.map((cap, j) => kbd(cap, k.caps.length + j)).join("")}` : "";
+    return `<div class="key" data-key="${i}" data-combo="${k.caps.includes("SHIFT")}">
+        <span class="caps">${k.caps.map(kbd).join("")}${alt}</span>
         <small>${k.label}</small>
     </div>`;
+};
 
 function renderTab(tab) {
     document.body.dataset.tab = tab;
@@ -56,31 +69,30 @@ function nextTip() {
 nextTip();
 setInterval(nextTip, TIP_MS);
 
-// ---- press feedback: the keycaps of whatever you pressed sink and glow for a moment ----
+// ---- press feedback: exactly the keycap you hold goes down and gold, and comes back up white on release ----
 
-// Which rows a key press belongs to. SHIFT+O is its own row; plain O is the other.
-function rowsFor(e) {
-    return HOTKEYS.map((k, i) => [k, i])
-        .filter(([k]) => k.codes.includes(e.code) && (e.code !== "KeyO" || k.caps.includes("SHIFT") === e.shiftKey))
-        .map(([, i]) => i);
+// The caps a key event belongs to. O lights the plain O row, or SHIFT+O's O while SHIFT is held.
+function capsFor(e) {
+    return [...document.querySelectorAll("kbd[data-codes]")].filter((cap) => {
+        if (!cap.dataset.codes.split(" ").includes(e.code)) return false;
+        if (e.code !== "KeyO") return true;
+        return (cap.closest(".key").dataset.combo === "true") === e.shiftKey;
+    });
 }
 
-function flash(e) {
-    for (const i of rowsFor(e)) {
-        document.querySelectorAll(`[data-key="${i}"]`).forEach((el) => {
-            el.classList.remove("is-down");
-            void el.offsetWidth;
-            el.classList.add("is-down");
-        });
-    }
-}
+const press = (e) => capsFor(e).forEach((cap) => cap.classList.add("is-down"));
+const release = (e) => capsFor({ code: e.code, shiftKey: true }).concat(capsFor({ code: e.code, shiftKey: false })).forEach((cap) => cap.classList.remove("is-down"));
+// Focus leaving mid-press would strand a cap down.
+const releaseAll = () => document.querySelectorAll("kbd.is-down").forEach((cap) => cap.classList.remove("is-down"));
 
 // ---- wiring to the game in the frame (same origin) ----
 
 game.addEventListener("load", () => {
     const win = game.contentWindow;
     const doc = game.contentDocument;
-    win.addEventListener("keydown", flash, true);
+    win.addEventListener("keydown", press, true);
+    win.addEventListener("keyup", release, true);
+    win.addEventListener("blur", releaseAll);
     for (const tab of Object.keys(W.tabs)) doc.addEventListener(`gx:tab-${tab}`, () => renderTab(tab));
     renderTab(doc.querySelector(".tab.is-active")?.dataset.tab ?? "slot");
     win.focus();
@@ -94,8 +106,10 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     win.focus();
     win.document.dispatchEvent(new win.KeyboardEvent("keydown", { code: e.code, key: e.key, shiftKey: e.shiftKey, repeat: e.repeat, bubbles: true }));
-    flash(e);
+    press(e);
 });
+document.addEventListener("keyup", release);
+window.addEventListener("blur", releaseAll);
 // Clicking a side panel gives the keyboard back to the game.
 document.querySelectorAll(".rail").forEach((rail) => rail.addEventListener("pointerup", () => game.contentWindow?.focus()));
 

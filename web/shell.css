@@ -133,16 +133,18 @@ kbd {
         inset 0 -3px 0 #b4bccb,
         0 0 0 1px var(--ink);
 }
-/* A pressed key sinks and turns gold. */
-.key.is-down kbd {
-    animation: press 0.18s steps(2);
-    background: var(--gold);
+/* The key you hold sinks and turns gold; it springs back white when you let go. */
+kbd {
+    transition:
+        transform 60ms steps(1),
+        background-color 60ms steps(1);
 }
-@keyframes press {
-    0% {
-        transform: translateY(2px);
-        box-shadow: inset 0 -1px 0 var(--gold-dk), 0 0 0 1px var(--ink);
-    }
+kbd.is-down {
+    transform: translateY(2px);
+    background: var(--gold);
+    box-shadow:
+        inset 0 -1px 0 var(--gold-dk),
+        0 0 0 1px var(--ink);
 }
 .mouse {
     margin: 0;
